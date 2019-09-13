@@ -20,7 +20,7 @@
  * */
 
 //#define DEBUG_LEVEL 2
-#include "arduino_ldl.h"
+#include <arduino_ldl.h>
 #include "src/Grove_Temperature_And_Humidity_Sensor/DHT.h"
 
 static void get_identity(struct lora_system_identity *id)
@@ -79,7 +79,7 @@ void setup()
  
     ArduinoLDL& ldl = get_ldl();
 
-    ldl.on_rx(on_rx);
+    ldl.onRX(on_rx);
 }
 
 void loop() 

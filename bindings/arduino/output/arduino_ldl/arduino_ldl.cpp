@@ -19,7 +19,7 @@
  *
  * */
 
-#include "arduino_ldl.h"
+#include <arduino_ldl.h>
 
 #include <SPI.h>
 #include <stdlib.h>
@@ -67,6 +67,47 @@ ISR(PCINT1_vect, ISR_ALIASOF(PCINT0_vect));
 ISR(PCINT2_vect, ISR_ALIASOF(PCINT0_vect));
 
 /* public methods *****************************************************/
+
+ArduinoLDL::ArduinoLDL(get_identity_fn get_id, enum lora_region region, enum lora_radio_type radio_type, enum lora_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1) : 
+    dio0(dio0, 0, mac), dio1(dio1, 1, mac), nreset(nreset), nselect(nselect), get_id(get_id)
+{
+    handle_rx = NULL;
+    
+    pinMode(nreset, INPUT);
+    pinMode(nselect, OUTPUT);
+    digitalWrite(nselect, HIGH);
+    
+    arm_dio(&this->dio0);
+    arm_dio(&this->dio1);
+    
+    SPI.begin();
+    
+    LDL_Board_init(&board,
+        this, 
+        radio_select, 
+        radio_reset,
+        radio_write,
+        radio_read
+    );
+    
+    LDL_Radio_init(&radio, radio_type, &board);
+    LDL_Radio_setPA(&radio, pa);
+    LDL_MAC_init(&mac, this, region, &radio, adapter);
+    
+    /* works for AVR only */
+    PCICR |= _BV(PCIE0) |_BV(PCIE1) |_BV(PCIE2);  
+    
+    /* apply TTN fair access policy 
+     * 
+     * ~30s per day
+     * 
+     * 30 / (60*60*24)  = 0.000347222
+     * 
+     * (2 ^ 11)         = 0.000488281
+     * 
+     * */
+    setAggregatedDutyCycleLimit(11U);
+}
 
 uint32_t ArduinoLDL::time()
 {
@@ -172,14 +213,44 @@ void ArduinoLDL::enableADR()
     LDL_MAC_enableADR(&mac);
 }
 
+void ArduinoLDL::disableADR()
+{
+    LDL_MAC_enableADR(&mac);
+}
+
 bool ArduinoLDL::adr()
 {
     LDL_MAC_adr(&mac);
 }
 
-void ArduinoLDL::on_rx(handle_rx_fn handler)
+void ArduinoLDL::onRX(handle_rx_fn handler)
 {
     handle_rx = handler;
+}
+
+uint32_t ArduinoLDL::ticksUntilNextEvent()
+{
+    return LDL_MAC_ticksUntilNextEvent(&mac);
+}
+
+uint32_t ArduinoLDL::ticksUntilNextChannel()
+{
+    return LDL_MAC_ticksUntilNextEvent(&mac);
+}
+
+uint32_t ArduinoLDL::ticksPerSecond()
+{
+    return LDL_System_tps();
+}
+
+void ArduinoLDL::setSendDither(uint8_t dither)
+{
+    return LDL_MAC_setSendDither(&mac, dither);
+}
+
+void ArduinoLDL::setAggregatedDutyCycleLimit(uint8_t limit)
+{
+    return LDL_MAC_setAggregatedDutyCycleLimit(&mac, limit);
 }
 
 /* protected methods **************************************************/

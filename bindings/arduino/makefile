@@ -28,20 +28,19 @@ VERSION := $(subst $(SPACE),,$(VERSION))
 
 EXAMPLES := $(patsubst src/%,build/arduino_ldl/%, $(wildcard src/examples/*))
 
-LIBS := -libraries output
-
 package: output/arduino_ldl
 
 output/arduino_ldl:
 	@ echo packaging $@:
 	rm -fr $@
 	mkdir -p $@
+	mkdir -p $@/src
 	cp -fr src/* $@
-	cp $(DIR_ROOT)/src/* $@
-	cp $(DIR_ROOT)/include/* $@
+	cp $(DIR_ROOT)/src/* $@/src
+	cp $(DIR_ROOT)/include/* $@/src
 	cp $(DIR_ROOT)/LICENSE $@
 	echo $(VERSION) > $@/version
-	sed -i '/#define LORA_PLATFORM_H/a #define LORA_TARGET_INCLUDE "platform.h"' $@/lora_platform.h
+	sed -i '/#define LORA_PLATFORM_H/a #define LORA_TARGET_INCLUDE "platform.h"' $@/src/lora_platform.h
 	sed -i '/version=/s/.*/version=$(VERSION)/' $@/library.properties
 	@ echo
 
@@ -51,7 +50,7 @@ build/arduino_ldl/examples/%: output/arduino_ldl
 	@ echo building $@:
 	rm -rf $@
 	mkdir -p $@
-	$(ARDUINO) $(TOOLS) $(FQBN) -build-path $(abspath $@) $(HARDWARE) $(LIBS) $</$(patsubst build/arduino_ldl/%,%, $@)
+	$(ARDUINO) $(TOOLS) $(FQBN) -build-path $(abspath $@) $(HARDWARE) -libraries $(abspath output) $</$(patsubst build/arduino_ldl/%,%, $@)
 	@ echo
 
 clean:

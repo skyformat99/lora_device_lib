@@ -1287,7 +1287,16 @@ uint32_t LDL_MAC_timeSinceDownlink(struct lora_mac *self)
 
 void LDL_MAC_setSendDither(struct lora_mac *self, uint8_t dither)
 {
+    LORA_PEDANTIC(self != NULL)
+    
     self->tx_dither = dither;
+}
+
+void LDL_MAC_setAggregatedDutyCycleLimit(struct lora_mac *self, uint8_t limit)
+{
+    LORA_PEDANTIC(self != NULL)
+    
+    self->ctx.maxDutyCycle = limit & 0xfU;
 }
 
 /* static functions ***************************************************/
@@ -1431,8 +1440,12 @@ static bool dataCommand(struct lora_mac *self, bool confirmed, uint8_t port, con
         _random = LDL_System_rand();
         _random <<= 8;
         _random |= LDL_System_rand();
+        _random <<= 8;
+        _random |= LDL_System_rand();
+        _random <<= 8;
+        _random |= LDL_System_rand();
         
-        send_delay = (_random % (self->tx_dither*1000UL)) * (LDL_System_tps()/1000UL);
+        send_delay = (_random % ((uint32_t)self->tx_dither*LDL_System_tps()));
         
         self->tx_dither = 0U;
     }
@@ -1924,7 +1937,7 @@ static void registerTime(struct lora_mac *self, uint32_t freq, uint32_t airTime)
     if(self->ctx.maxDutyCycle > 0U){
         
         self->band_ready &= ~(1 << (LORA_EVENT_BAND_COMBINED - LORA_EVENT_BAND1));
-        LDL_Event_setTimer(&self->events, LORA_EVENT_BAND_COMBINED, ( airTime * ( 2U << (self->ctx.maxDutyCycle & 0xf))));
+        LDL_Event_setTimer(&self->events, LORA_EVENT_BAND_COMBINED, ( airTime * ( 1U << (self->ctx.maxDutyCycle & 0xfU))));
     }
 }    
 

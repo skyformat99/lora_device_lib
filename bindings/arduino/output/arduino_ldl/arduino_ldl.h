@@ -215,36 +215,8 @@ class ArduinoLDL {
         ArduinoLDL(const ArduinoLDL&) = delete;
         void operator=(const ArduinoLDL&) = delete;
         
-        ArduinoLDL(get_identity_fn get_id, enum lora_region region, enum lora_radio_type radio_type, enum lora_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1) :
-            dio0(dio0, 0, mac), dio1(dio1, 1, mac), nreset(nreset), nselect(nselect), get_id(get_id)
-        {
-            handle_rx = NULL;
-            
-            pinMode(nreset, INPUT);
-            pinMode(nselect, OUTPUT);
-            digitalWrite(nselect, HIGH);
-            
-            arm_dio(&this->dio0);
-            arm_dio(&this->dio1);
-            
-            SPI.begin();
-            
-            LDL_Board_init(&board,
-                this, 
-                radio_select, 
-                radio_reset,
-                radio_write,
-                radio_read
-            );
-            
-            LDL_Radio_init(&radio, radio_type, &board);
-            LDL_Radio_setPA(&radio, pa);
-            LDL_MAC_init(&mac, this, region, &radio, adapter);
-            
-            /* works for AVR only */
-            PCICR |= _BV(PCIE0) |_BV(PCIE1) |_BV(PCIE2);  
-        }
-        
+        ArduinoLDL(get_identity_fn get_id, enum lora_region region, enum lora_radio_type radio_type, enum lora_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1);
+             
         static void interrupt();
         static void getIdentity(void *ptr, struct lora_system_identity *value);
         static uint32_t time();        
@@ -272,6 +244,7 @@ class ArduinoLDL {
         uint8_t getPower();
         
         void enableADR();
+        void disableADR();
         
         /* is ADR enabled? */
         bool adr();        
@@ -282,17 +255,31 @@ class ArduinoLDL {
         /* is stack joined to a network? */
         bool joined();
         
-        /* is stack ready (i.e. not busy) */
+        /* is stack ready to send */
         bool ready();
         
         enum lora_mac_operation getOP();
         enum lora_mac_state getState();
         
         /* set a callback for receiving downstream data messages */
-        void on_rx(handle_rx_fn handler);
+        void onRX(handle_rx_fn handler);
         
         /* call (repeatedly) to make stack work */
-        void process();        
+        void process();
+        
+        uint32_t ticksUntilNextEvent();        
+        uint32_t ticksUntilNextChannel();                
+        uint32_t ticksPerSecond();
+        
+        /* dither send time by (0..dither) seconds for next message 
+         * 
+         * note. setting cleared after next message is sent
+         * 
+         *  */
+        void setSendDither(uint8_t dither);
+        
+        /* limit = 1 / (2 ^ limit) */
+        void setAggregatedDutyCycleLimit(uint8_t limit);
 };
 
 #endif

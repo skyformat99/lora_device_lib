@@ -27,7 +27,7 @@ static void get_identity(struct lora_system_identity *id)
 {       
     static const struct lora_system_identity _id = {
         .appEUI = {0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U},
-        .devEUI = {0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U},
+        .devEUI = {0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x01U},
         .appKey = {0x2bU,0x7eU,0x15U,0x16U,0x28U,0xaeU,0xd2U,0xa6U,0xabU,0xf7U,0x15U,0x88U,0x09U,0xcfU,0x4fU,0x3cU}
     };
 
@@ -50,15 +50,7 @@ ArduinoLDL& get_ldl()
     return ldl;
 }
 
-bool expired(uint32_t to)
-{
-    uint32_t time = millis();    
-    uint32_t delta = (to <= time) ? (time - to) : (UINT32_MAX - to + time);
-    
-    return (delta <= INT32_MAX);
-}
-
-static void on_rx(uint32_t counter, uint8_t port, const uint8_t *data, uint8_t size)
+static void on_rx(uint16_t counter, uint8_t port, const uint8_t *data, uint8_t size)
 {
     // do something with this information
 }

@@ -26,7 +26,8 @@ endif
 
 VERSION := $(subst $(SPACE),,$(VERSION))
 
-EXAMPLES := $(patsubst src/%,build/arduino_ldl/%, $(wildcard src/examples/*))
+EXAMPLES := $(patsubst src/examples/%,staging/%, $(wildcard src/examples/*))
+BUILD_EXAMPLES := 
 
 # very awkward way to replace app_eui for quick testing
 ifneq ("$(wildcard $(DIR_ROOT)/secrets/sketch/app_eui)","")
@@ -64,24 +65,27 @@ output/arduino_ldl:
 	sed -i '/version=/s/.*/version=$(VERSION)/' $@/library.properties
 	@ echo
 
-staging/arduino_ldl: output/arduino_ldl
-	rm -rf $(notdir $@)/*
+staging/%: output/arduino_ldl
+	rm -rf $@
 	mkdir -p $@
-	cp -r $</* $@
+	cp -r $(patsubst staging/%,$</examples/%, $@)/* $@
+	mkdir -p $@/src
+	cp -r $< $@/src
+	rm -rf $@/src/arduino_ldl/examples
+	sed -i "s/{0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U}/$(APP_EUI)/g" $@/$(notdir $@).ino
+	sed -i "s/{0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x01U}/$(DEV_EUI)/g" $@/$(notdir $@).ino
+	sed -i "s/{0x2bU,0x7eU,0x15U,0x16U,0x28U,0xaeU,0xd2U,0xa6U,0xabU,0xf7U,0x15U,0x88U,0x09U,0xcfU,0x4fU,0x3cU}/$(APP_KEY)/g" $@/$(notdir $@).ino
+	sed -i "s/<arduino_ldl.h>/\"src\/arduino_ldl\/arduino_ldl.h\"/g" $@/$(notdir $@).ino
 
-build: $(EXAMPLES)
+stage: $(EXAMPLES)
 
-build/arduino_ldl/examples/%: staging/arduino_ldl
+build: $(patsubst staging/%,build/%, $(EXAMPLES))
+
+build/%: staging/%
 	@ echo building $@:
 	rm -rf $@
 	mkdir -p $@
-	
-	sed -i "s/{0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U}/$(APP_EUI)/g" $</$(patsubst build/arduino_ldl/%,%, $@)/$(notdir $@).ino
-	sed -i "s/{0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U}/$(DEV_EUI)/g" $</$(patsubst build/arduino_ldl/%,%, $@)/$(notdir $@).ino
-	sed -i "s/{0x2bU,0x7eU,0x15U,0x16U,0x28U,0xaeU,0xd2U,0xa6U,0xabU,0xf7U,0x15U,0x88U,0x09U,0xcfU,0x4fU,0x3cU}/$(APP_KEY)/g" $</$(patsubst build/arduino_ldl/%,%, $@)/$(notdir $@).ino
-	
-	$(ARDUINO) $(TOOLS) $(FQBN) -build-path $(abspath $@)  -libraries $(abspath output) $(HARDWARE)  $</$(patsubst build/arduino_ldl/%,%, $@)
-	
+	$(ARDUINO) $(TOOLS) $(FQBN) -build-path $(abspath $@) $(HARDWARE) $</$(notdir $@).ino
 	@ echo
 
 clean:
@@ -89,4 +93,10 @@ clean:
 	rm -fr build/*
 	rm -fr staging/*
 
-.PHONY: package build clean output/arduino_ldl staging/arduino_ldl
+# turns out the arduino ide is so useless you have to use avrdude yourself if you want to upload a hex file
+# 
+# avrdude -v -V -p atmega328p -c arduino -P $/dev/ttyACM1 -b 115200 -D -U flash:w:$(THE_HEX_FILE):i
+#
+# sigh
+
+.PHONY: package build clean output/arduino_ldl stage build

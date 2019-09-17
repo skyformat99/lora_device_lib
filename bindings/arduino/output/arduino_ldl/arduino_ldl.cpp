@@ -19,7 +19,7 @@
  *
  * */
 
-#include <arduino_ldl.h>
+#include "arduino_ldl.h"
 
 #include <SPI.h>
 #include <stdlib.h>
@@ -205,7 +205,7 @@ void ArduinoLDL::interrupt()
     }
 }
 
-static void ArduinoLDL::getIdentity(void *ptr, struct lora_system_identity *value)
+void ArduinoLDL::getIdentity(void *ptr, struct lora_system_identity *value)
 {
     to_obj(ptr)->get_id(value);
 }

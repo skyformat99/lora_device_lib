@@ -1937,7 +1937,7 @@ static void registerTime(struct lora_mac *self, uint32_t freq, uint32_t airTime)
     if(self->ctx.maxDutyCycle > 0U){
         
         self->band_ready &= ~(1 << (LORA_EVENT_BAND_COMBINED - LORA_EVENT_BAND1));
-        LDL_Event_setTimer(&self->events, LORA_EVENT_BAND_COMBINED, ( airTime * ( 1U << (self->ctx.maxDutyCycle & 0xfU))));
+        LDL_Event_setTimer(&self->events, LORA_EVENT_BAND_COMBINED, ( airTime * ( 1UL << (self->ctx.maxDutyCycle & 0xfU))));
     }
 }    
 

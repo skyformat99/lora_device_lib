@@ -50,11 +50,6 @@ ArduinoLDL& get_ldl()
     return ldl;
 }
 
-uint16_t counter;
-const uint32_t push_interval = 10UL*60UL*1000UL;
-bool push;
-uint32_t push_timer;
-
 bool expired(uint32_t to)
 {
     uint32_t time = millis();    
@@ -80,25 +75,16 @@ void setup()
 
 void loop() 
 { 
+    static uint8_t counter = 0U;
+    
     ArduinoLDL& ldl = get_ldl();
     
-    if(expired(push_timer)){
-    
-        push = true;
-        push_timer = millis() + push_interval;
-    }
-
     if(ldl.ready()){
     
         if(ldl.joined()){
-            
-            if(push){
-            
-                ldl.unconfirmedData(1U, &counter, sizeof(counter));
-                counter++;        
-                
-                push = false;
-            }
+        
+            ldl.unconfirmedData(1U, &counter, sizeof(counter));
+            counter++;                        
         }
         else{
          

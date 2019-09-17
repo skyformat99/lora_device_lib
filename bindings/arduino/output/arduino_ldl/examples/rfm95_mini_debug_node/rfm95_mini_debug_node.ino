@@ -19,41 +19,37 @@
  *
  * */
 
-//#define DEBUG_LEVEL 2
+#define DEBUG_LEVEL 2
+
 #include <arduino_ldl.h>
-#include "src/Grove_Temperature_And_Humidity_Sensor/DHT.h"
 
 static void get_identity(struct lora_system_identity *id)
-{
+{       
     static const struct lora_system_identity _id = {
         .appEUI = {0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U},
         .devEUI = {0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U},
         .appKey = {0x2bU,0x7eU,0x15U,0x16U,0x28U,0xaeU,0xd2U,0xa6U,0xabU,0xf7U,0x15U,0x88U,0x09U,0xcfU,0x4fU,0x3cU}
     };
-    
+
     memcpy(id, &_id, sizeof(*id));
 }
 
+/* pin assignments for the Charles Mini Adapter */
 ArduinoLDL& get_ldl()
 {
     static ArduinoLDL ldl(
-        get_identity,           /* specify name of function that returns euis and key */ 
-        EU_863_870,             /* specify region */
-        LORA_RADIO_SX1272,      /* specify radio */    
-        LORA_RADIO_PA_RFO,      /* specify radio power amplifier */    
-        A0,                     /* radio reset pin */
-        10,                     /* radio select pin */
-        2,                      /* radio dio0 pin */
-        3                       /* radio dio1 pin */
+        get_identity,       /* specify name of function that returns euis and key */
+        EU_863_870,         /* specify region */
+        LORA_RADIO_SX1276,  /* specify radio */    
+        LORA_RADIO_PA_BOOST,    /* specify radio power amplifier */
+        A0,                 /* radio reset pin */
+        10,                /* radio select pin */
+        5,                  /* radio dio0 pin */
+        7                   /* radio dio1 pin */
     );
     
     return ldl;
 }
-
-DHT dht(
-    6,                  /* pin */
-    DHT11               /* sensor type */
-);
 
 static void on_rx(uint32_t counter, uint8_t port, const uint8_t *data, uint8_t size)
 {
@@ -63,34 +59,31 @@ static void on_rx(uint32_t counter, uint8_t port, const uint8_t *data, uint8_t s
 void setup() 
 {
     Serial.begin(115200U);       
-    dht.begin();            
- 
+
     ArduinoLDL& ldl = get_ldl();
 
+    /* optionally set rx handler */
     ldl.onRX(on_rx);
 }
 
 void loop() 
-{  
+{ 
+    static uint8_t counter = 0U;
+    
     ArduinoLDL& ldl = get_ldl();
     
     if(ldl.ready()){
     
         if(ldl.joined()){
-                
-            float buf[] = {
-                dht.readTemperature(),
-                dht.readHumidity()
-            };
             
-            ldl.unconfirmedData(1U, buf, sizeof(buf));
+            ldl.unconfirmedData(1U, &counter, sizeof(counter));
+            counter++;                        
         }
         else{
-        
-            
+         
             ldl.otaa();
         }
-    }
+    }    
     
-    ldl.process();            
+    ldl.process();        
 }

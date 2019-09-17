@@ -34,10 +34,6 @@ static void get_identity(struct lora_system_identity *id)
     memcpy(id, &_id, sizeof(*id));
 }
 
-const uint32_t push_interval = 10UL*60UL*1000UL;
-bool push;
-uint32_t push_timer;
-
 ArduinoLDL& get_ldl()
 {
     static ArduinoLDL ldl(
@@ -59,14 +55,6 @@ DHT dht(
     DHT11               /* sensor type */
 );
 
-bool expired(uint32_t to)
-{
-    uint32_t time = millis();    
-    uint32_t delta = (to <= time) ? (time - to) : (UINT32_MAX - to + time);
-    
-    return (delta <= INT32_MAX);
-}
-
 static void on_rx(uint32_t counter, uint8_t port, const uint8_t *data, uint8_t size)
 {
     // do something with this information
@@ -86,27 +74,16 @@ void loop()
 {  
     ArduinoLDL& ldl = get_ldl();
     
-    if(expired(push_timer)){
-    
-        push = true;
-        push_timer = millis() + push_interval;
-    }
-    
     if(ldl.ready()){
     
         if(ldl.joined()){
+                
+            float buf[] = {
+                dht.readTemperature(),
+                dht.readHumidity()
+            };
             
-            if(push){
-                
-                float buf[] = {
-                    dht.readTemperature(),
-                    dht.readHumidity()
-                };
-                
-                ldl.unconfirmedData(1U, buf, sizeof(buf));
-                
-                push = false;
-            }
+            ldl.unconfirmedData(1U, buf, sizeof(buf));
         }
         else{
         

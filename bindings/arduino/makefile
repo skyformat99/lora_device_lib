@@ -28,33 +28,65 @@ VERSION := $(subst $(SPACE),,$(VERSION))
 
 EXAMPLES := $(patsubst src/%,build/arduino_ldl/%, $(wildcard src/examples/*))
 
+# very awkward way to replace app_eui for quick testing
+ifneq ("$(wildcard $(DIR_ROOT)/secrets/sketch/app_eui)","")
+APP_EUI := $(shell cat $(DIR_ROOT)/secrets/sketch/app_eui)
+else
+APP_EUI := {0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U}
+endif
+
+# very awkward way to replace dev_eui for quick testing
+ifneq ("$(wildcard $(DIR_ROOT)/secrets/sketch/dev_eui)","")
+DEV_EUI := $(shell cat $(DIR_ROOT)/secrets/sketch/dev_eui)
+else
+DEV_EUI := {0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U}
+endif
+
+# very awkward way to replace app_key for quick testing
+ifneq ("$(wildcard $(DIR_ROOT)/secrets/sketch/app_key)","")
+APP_KEY := $(shell cat $(DIR_ROOT)/secrets/sketch/app_key)
+else
+APP_KEY := {0x2bU,0x7eU,0x15U,0x16U,0x28U,0xaeU,0xd2U,0xa6U,0xabU,0xf7U,0x15U,0x88U,0x09U,0xcfU,0x4fU,0x3cU}
+endif
+
 package: output/arduino_ldl
 
 output/arduino_ldl:
 	@ echo packaging $@:
 	rm -fr $@
 	mkdir -p $@
-	mkdir -p $@/src
 	cp -fr src/* $@
-	cp $(DIR_ROOT)/src/* $@/src
-	cp $(DIR_ROOT)/include/* $@/src
+	cp $(DIR_ROOT)/src/* $@
+	cp $(DIR_ROOT)/include/* $@
 	cp $(DIR_ROOT)/LICENSE $@
 	echo $(VERSION) > $@/version
-	sed -i '/#define LORA_PLATFORM_H/a #define LORA_TARGET_INCLUDE "platform.h"' $@/src/lora_platform.h
+	sed -i '/#define LORA_PLATFORM_H/a #define LORA_TARGET_INCLUDE "platform.h"' $@/lora_platform.h
 	sed -i '/version=/s/.*/version=$(VERSION)/' $@/library.properties
 	@ echo
 
+staging/arduino_ldl: output/arduino_ldl
+	rm -rf $(notdir $@)/*
+	mkdir -p $@
+	cp -r $</* $@
+
 build: $(EXAMPLES)
 
-build/arduino_ldl/examples/%: output/arduino_ldl
+build/arduino_ldl/examples/%: staging/arduino_ldl
 	@ echo building $@:
 	rm -rf $@
 	mkdir -p $@
-	$(ARDUINO) $(TOOLS) $(FQBN) -build-path $(abspath $@) $(HARDWARE) -libraries $(abspath output) $</$(patsubst build/arduino_ldl/%,%, $@)
+	
+	sed -i "s/{0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U}/$(APP_EUI)/g" $</$(patsubst build/arduino_ldl/%,%, $@)/$(notdir $@).ino
+	sed -i "s/{0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U}/$(DEV_EUI)/g" $</$(patsubst build/arduino_ldl/%,%, $@)/$(notdir $@).ino
+	sed -i "s/{0x2bU,0x7eU,0x15U,0x16U,0x28U,0xaeU,0xd2U,0xa6U,0xabU,0xf7U,0x15U,0x88U,0x09U,0xcfU,0x4fU,0x3cU}/$(APP_KEY)/g" $</$(patsubst build/arduino_ldl/%,%, $@)/$(notdir $@).ino
+	
+	$(ARDUINO) $(TOOLS) $(FQBN) -build-path $(abspath $@)  -libraries $(abspath output) $(HARDWARE)  $</$(patsubst build/arduino_ldl/%,%, $@)
+	
 	@ echo
 
 clean:
 	rm -fr output/*
 	rm -fr build/*
+	rm -fr staging/*
 
-.PHONY: package build clean output/arduino_ldl
+.PHONY: package build clean output/arduino_ldl staging/arduino_ldl

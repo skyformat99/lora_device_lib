@@ -1,5 +1,5 @@
-ArduinoLDL
-==========
+arduino_ldl
+===========
 
 An Arduino library that wraps [LoraDeviceLib](https://github.com/cjhdev/lora_device_lib).
 

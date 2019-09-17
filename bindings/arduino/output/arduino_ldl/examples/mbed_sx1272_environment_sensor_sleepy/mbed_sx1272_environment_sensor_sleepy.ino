@@ -19,28 +19,32 @@
  *
  * */
 
-#define DEBUG_LEVEL 2
-
+//#define DEBUG_LEVEL 2
 #include <arduino_ldl.h>
+#include "src/Grove_Temperature_And_Humidity_Sensor/DHT.h"
+#include <avr/sleep.h>
+#include <avr/wdt.h>
+
+extern unsigned long timer0_millis;
 
 static void get_identity(struct lora_system_identity *id)
-{       
+{    
     static const struct lora_system_identity _id = {
         .appEUI = {0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U},
         .devEUI = {0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U},
         .appKey = {0x2bU,0x7eU,0x15U,0x16U,0x28U,0xaeU,0xd2U,0xa6U,0xabU,0xf7U,0x15U,0x88U,0x09U,0xcfU,0x4fU,0x3cU}
     };
-
+    
     memcpy(id, &_id, sizeof(*id));
 }
 
 ArduinoLDL& get_ldl()
 {
     static ArduinoLDL ldl(
-        get_identity,       /* specify name of function that returns euis and key */
-        EU_863_870,         /* specify region */
-        LORA_RADIO_SX1276,  /* specify radio */    
-        LORA_RADIO_PA_BOOST,    /* specify radio power amplifier */
+        get_identity,           /* specify name of function that returns euis and key */ 
+        EU_863_870,             /* specify region */
+        LORA_RADIO_SX1272,      /* specify radio */    
+        LORA_RADIO_PA_RFO,      /* specify radio power amplifier */    
         A0,                     /* radio reset pin */
         10,                     /* radio select pin */
         2,                      /* radio dio0 pin */
@@ -50,18 +54,10 @@ ArduinoLDL& get_ldl()
     return ldl;
 }
 
-uint16_t counter;
-const uint32_t push_interval = 10UL*60UL*1000UL;
-bool push;
-uint32_t push_timer;
-
-bool expired(uint32_t to)
-{
-    uint32_t time = millis();    
-    uint32_t delta = (to <= time) ? (time - to) : (UINT32_MAX - to + time);
-    
-    return (delta <= INT32_MAX);
-}
+DHT dht(
+    6,                  /* pin */
+    DHT11               /* sensor type */
+);
 
 static void on_rx(uint32_t counter, uint8_t port, const uint8_t *data, uint8_t size)
 {
@@ -71,40 +67,77 @@ static void on_rx(uint32_t counter, uint8_t port, const uint8_t *data, uint8_t s
 void setup() 
 {
     Serial.begin(115200U);       
-
+    dht.begin();            
+ 
     ArduinoLDL& ldl = get_ldl();
 
-    /* optionally set rx handler */
     ldl.onRX(on_rx);
 }
 
 void loop() 
-{ 
+{  
     ArduinoLDL& ldl = get_ldl();
     
-    if(expired(push_timer)){
-    
-        push = true;
-        push_timer = millis() + push_interval;
-    }
-
     if(ldl.ready()){
     
         if(ldl.joined()){
-            
-            if(push){
-            
-                ldl.unconfirmedData(1U, &counter, sizeof(counter));
-                counter++;        
                 
-                push = false;
-            }
+            float buf[] = {
+                dht.readTemperature(),
+                dht.readHumidity()
+            };
+            
+            ldl.unconfirmedData(1U, buf, sizeof(buf));            
         }
         else{
-         
+                
             ldl.otaa();
         }
-    }    
+    }
     
-    ldl.process();        
+    ldl.process();            
+    
+    {
+        uint32_t next_event = ldl.ticksUntilNextEvent();        
+        
+        /* power down will use the WDT to wake up approx 8s from now */
+        if((next_event != UINT32_MAX) && (next_event >= (8UL * ldl.ticksPerSecond()))){
+        
+            set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+            cli();
+            sleep_enable();
+            sleep_bod_disable();
+            
+            /* need the WDT to wake you up */
+            wdt_enable(WDTO_8S);
+            WDTCSR |= (1 << WDIE);
+            
+            sei();
+            sleep_cpu();
+            sleep_disable();
+            wdt_disable();
+            
+            /* fix millis/micros */
+            cli();
+            timer0_millis += 8000UL;
+            sei();
+        }
+        else{
+        
+            /* idle will be woken by the micros() ticker overflow in the next millisecond */
+            if(next_event >= ldl.ticksPerMilliSecond()){
+                
+                set_sleep_mode(SLEEP_MODE_IDLE);
+                cli();
+                sleep_enable();
+                sei();
+                sleep_cpu();
+                sleep_disable();
+            }
+            else{
+                
+                /* if you sleep here you might be too late to an event! */
+            }            
+        }
+    }
 }

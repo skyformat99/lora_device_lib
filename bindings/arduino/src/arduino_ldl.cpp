@@ -24,6 +24,9 @@
 #include <SPI.h>
 #include <stdlib.h>
 
+/* ticks per second (micros()) */
+#define TPS 1000000UL
+
 struct ArduinoLDL::DioInput *ArduinoLDL::dio_inputs = nullptr; 
 
 static const SPISettings spi_settings(4000000UL, MSBFIRST, SPI_MODE0);
@@ -42,8 +45,7 @@ void LDL_System_getIdentity(void *receiver, struct lora_system_identity *value)
 
 uint32_t LDL_System_tps(void)
 {
-    /* micros() */
-    return 1000000UL;
+    return TPS;    
 }
 
 uint32_t LDL_System_advance(void)
@@ -154,7 +156,7 @@ uint8_t ArduinoLDL::getPower()
     return LDL_MAC_getPower(&mac);
 }
 
-enum lora_mac_errno ArduinoLDL::get_errno()
+enum lora_mac_errno ArduinoLDL::getErrno()
 {
     return LDL_MAC_errno(&mac);
 }    
@@ -240,7 +242,12 @@ uint32_t ArduinoLDL::ticksUntilNextChannel()
 
 uint32_t ArduinoLDL::ticksPerSecond()
 {
-    return LDL_System_tps();
+    return TPS;
+}
+
+uint32_t ArduinoLDL::ticksPerMilliSecond()
+{
+    return TPS/1000UL;
 }
 
 void ArduinoLDL::setSendDither(uint8_t dither)

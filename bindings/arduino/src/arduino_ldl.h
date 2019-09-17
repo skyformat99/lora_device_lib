@@ -77,7 +77,7 @@ class ArduinoLDL {
 #ifndef DEBUG_LEVEL
 #define DEBUG_LEVEL 0
 #endif
-        
+        /* implemented in the header so that the DEBUG_LEVEL macro defined in a sketch will add/remove these features */
         static void adapter(void *receiver, enum lora_mac_response_type type, const union lora_mac_response_arg *arg)
         {
             /* need to seed rand on startup */
@@ -215,14 +215,24 @@ class ArduinoLDL {
         ArduinoLDL(const ArduinoLDL&) = delete;
         void operator=(const ArduinoLDL&) = delete;
         
-        ArduinoLDL(get_identity_fn get_id, enum lora_region region, enum lora_radio_type radio_type, enum lora_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1);
-             
         static void interrupt();
         static void getIdentity(void *ptr, struct lora_system_identity *value);
         static uint32_t time();        
-           
-        /* the API */
-           
+        
+        /* create an instance 
+         * 
+         * @param[in] get_id    this function will return the identity structure
+         * @param[in] region
+         * @param[in] radio_type
+         * @param[in] pa        which power amplifier is physically connected?
+         * @param[in] nreset    pin connected to the radio reset line
+         * @param[in] nselect   pin connected to the radio select line
+         * @param[in] dio0      pin connected to the radio dio0 line
+         * @param[in] dio1      pin connected to the radio dio0 line
+         * 
+         * */
+        ArduinoLDL(get_identity_fn get_id, enum lora_region region, enum lora_radio_type radio_type, enum lora_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1);
+             
         /* send unconfirmed data */
         bool unconfirmedData(uint8_t port, const void *data, uint8_t len);        
         
@@ -235,14 +245,15 @@ class ArduinoLDL {
         /* cancel current operation */
         void cancel();
         
-        /* note. setting a rate will disable ADR */
+        /* manage data rate setting */
         bool setRate(uint8_t rate);
         uint8_t getRate();
         
-        /* note. setting power will disable ADR */
+        /* manage power setting */
         bool setPower(uint8_t power);        
         uint8_t getPower();
         
+        /* manage ADR (note. ADR is active by default) */
         void enableADR();
         void disableADR();
         
@@ -250,7 +261,7 @@ class ArduinoLDL {
         bool adr();        
         
         /* get the last error code */
-        enum lora_mac_errno get_errno();                
+        enum lora_mac_errno getErrno();                
         
         /* is stack joined to a network? */
         bool joined();
@@ -258,7 +269,10 @@ class ArduinoLDL {
         /* is stack ready to send */
         bool ready();
         
+        /* current operation */
         enum lora_mac_operation getOP();
+        
+        /* current state */
         enum lora_mac_state getState();
         
         /* set a callback for receiving downstream data messages */
@@ -267,18 +281,35 @@ class ArduinoLDL {
         /* call (repeatedly) to make stack work */
         void process();
         
+        /* system ticks until next LDL event */
         uint32_t ticksUntilNextEvent();        
-        uint32_t ticksUntilNextChannel();                
+        
+        /* system ticks until next channel is available */
+        uint32_t ticksUntilNextChannel();              
+        
+        /* system ticks per second */  
         uint32_t ticksPerSecond();
+        
+        /* system ticks per millisecond */  
+        uint32_t ticksPerMilliSecond();
         
         /* dither send time by (0..dither) seconds for next message 
          * 
-         * note. setting cleared after next message is sent
+         * note. this applies ONLY to the next message sent
          * 
          *  */
         void setSendDither(uint8_t dither);
         
-        /* limit = 1 / (2 ^ limit) */
+        /* Have LDL limit the aggregated duty cycle
+         * 
+         * This is useful for enforcing things like fair access policies
+         * that are more restrictive than region limit.
+         * 
+         * limit = 1 / (2 ^ limit) 
+         * 
+         * This is set to 11 by default (approximately 
+         * 
+         * */
         void setAggregatedDutyCycleLimit(uint8_t limit);
 };
 

@@ -2084,6 +2084,7 @@ static void restoreDefaults(struct lora_mac *self, bool keep)
     uint8_t rate = self->ctx.rate;
     uint8_t power = self->ctx.power;
     bool adr = self->ctx.adr;
+    uint8_t max_duty = self->ctx.maxDutyCycle;
     
     (void)memset(&self->ctx, 0, sizeof(self->ctx));
     
@@ -2105,6 +2106,7 @@ static void restoreDefaults(struct lora_mac *self, bool keep)
         self->ctx.rate = rate;
         self->ctx.power = power;
         self->ctx.adr = adr;
+        self->ctx.maxDutyCycle = max_duty;
     } 
 }
 

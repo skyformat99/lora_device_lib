@@ -2081,33 +2081,27 @@ static uint32_t ticksUntilAvailable(const struct lora_mac *self, uint8_t chIndex
 
 static void restoreDefaults(struct lora_mac *self, bool keep)
 {
-    uint8_t rate = self->ctx.rate;
-    uint8_t power = self->ctx.power;
-    bool adr = self->ctx.adr;
-    uint8_t max_duty = self->ctx.maxDutyCycle;
-    
-    (void)memset(&self->ctx, 0, sizeof(self->ctx));
+    if(!keep){
+        
+        (void)memset(&self->ctx, 0, sizeof(self->ctx));
+        self->ctx.rate = LORA_DEFAULT_RATE;    
+        self->ctx.adr = true;        
+    }
+    else{
+        
+        self->ctx.up = 0U;
+        self->ctx.down = 0U;
+        (void)memset(self->ctx.chConfig, 0, sizeof(self->ctx.chConfig));
+        (void)memset(self->ctx.chMask, 0, sizeof(self->ctx.chMask));        
+        self->ctx.joined = false;        
+    }
     
     LDL_Region_getDefaultChannels(self->region, self, addDefaultChannel);    
     
-    self->ctx.rate = LORA_DEFAULT_RATE;
-    
     self->ctx.rx1DROffset = LDL_Region_getRX1Offset(self->region);
     self->ctx.rx1Delay = LDL_Region_getRX1Delay(self->region);
-    self->ctx.rx2Freq = LDL_Region_getRX2Freq(self->region);
     self->ctx.rx2DataRate = LDL_Region_getRX2Rate(self->region);
-    
-    self->ctx.adr = true;
-    
-    /* other fields are zero from the memset */
-    
-    if(keep){
-        
-        self->ctx.rate = rate;
-        self->ctx.power = power;
-        self->ctx.adr = adr;
-        self->ctx.maxDutyCycle = max_duty;
-    } 
+    self->ctx.rx2Freq = LDL_Region_getRX2Freq(self->region);    
 }
 
 static bool getChannel(const struct lora_mac_channel *self, enum lora_region region, uint8_t chIndex, uint32_t *freq, uint8_t *minRate, uint8_t *maxRate)

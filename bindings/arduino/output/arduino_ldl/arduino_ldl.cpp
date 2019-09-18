@@ -121,6 +121,11 @@ bool ArduinoLDL::unconfirmedData(uint8_t port, const void *data, uint8_t len)
     return LDL_MAC_unconfirmedData(&mac, port, data, len); 
 }
 
+bool ArduinoLDL::unconfirmedData(uint8_t port)
+{
+    return LDL_MAC_unconfirmedData(&mac, port, NULL, 0U); 
+}
+
 bool ArduinoLDL::otaa()
 {
     return LDL_MAC_otaa(&mac); 

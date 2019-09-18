@@ -235,6 +235,7 @@ class ArduinoLDL {
              
         /* send unconfirmed data */
         bool unconfirmedData(uint8_t port, const void *data, uint8_t len);        
+        bool unconfirmedData(uint8_t port);        
         
         /* initiate join */
         bool otaa();     

@@ -27,7 +27,7 @@ of these connections are required for correct operation.
 
 Join and then send an empty data message as often as the TTN fair access policy allows:
 
-~~~
+~~~ C++
 #include <arduino_ldl.h>
 
 static void get_identity(struct lora_system_identity *id)
@@ -70,7 +70,7 @@ void loop()
     
         if(ldl.joined()){
         
-            ldl.unconfirmedData(1U, NULL, 0U);                 
+            ldl.unconfirmedData(1U);                 
         }
         else{
          

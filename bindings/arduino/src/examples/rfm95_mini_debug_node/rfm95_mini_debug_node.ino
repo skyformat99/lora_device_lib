@@ -49,19 +49,14 @@ ArduinoLDL& get_ldl()
     return ldl;
 }
 
-static void on_rx(uint16_t counter, uint8_t port, const uint8_t *data, uint8_t size)
-{
-    // do something with this information
-}
-
 void setup() 
 {
     Serial.begin(115200U);       
 
     ArduinoLDL& ldl = get_ldl();
 
-    /* optionally set rx handler */
-    ldl.onRX(on_rx);
+    /* print debug information */
+    ldl.onEvent(ldl.eventDebugVerbose);
 }
 
 void loop() 

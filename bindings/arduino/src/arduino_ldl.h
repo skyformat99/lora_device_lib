@@ -32,6 +32,7 @@
 
 typedef void (*get_identity_fn)(struct lora_system_identity *id);
 typedef void (*handle_rx_fn)(uint16_t counter, uint8_t port, const uint8_t *msg, uint8_t size);
+typedef void (*handle_event_fn)(enum lora_mac_response_type type, const union lora_mac_response_arg *arg);
 
 class ArduinoLDL {
 
@@ -65,6 +66,7 @@ class ArduinoLDL {
         get_identity_fn get_id;
     
         handle_rx_fn handle_rx;
+        handle_event_fn handle_event;
         
         static void radio_select(void *reciever, bool state);
         static void radio_reset(void *reciever, bool state);
@@ -97,6 +99,12 @@ class ArduinoLDL {
          * 
          * */
         ArduinoLDL(get_identity_fn get_id, enum lora_region region, enum lora_radio_type radio_type, enum lora_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1);
+             
+        /* print event information to serial */
+        static void eventDebug(enum lora_mac_response_type type, const union lora_mac_response_arg *arg);
+        
+        /* print more event information to serial */
+        static void eventDebugVerbose(enum lora_mac_response_type type, const union lora_mac_response_arg *arg);
              
         /* send unconfirmed data */
         bool unconfirmedData(uint8_t port, const void *data, uint8_t len);        
@@ -144,6 +152,14 @@ class ArduinoLDL {
         /* set a callback for receiving downstream data messages */
         void onRX(handle_rx_fn handler);
         
+        /* set a callback for handling any event 
+         * 
+         * note if you simply want to print event information
+         * you can use the 
+         * 
+         * */
+        void onEvent(handle_event_fn handler);
+        
         /* call (repeatedly) to make stack work */
         void process();
         
@@ -177,6 +193,7 @@ class ArduinoLDL {
          * 
          * */
         void setAggregatedDutyCycleLimit(uint8_t limit);
+     
 };
 
 #endif

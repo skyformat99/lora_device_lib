@@ -75,9 +75,4 @@
 //#define LORA_DISABLE_SLOT_EVENT
 //#define LORA_DISABLE_CHECK
 
-/* turn on debug messages printed to serial */
-//#define DEBUG_LEVEL 0
-#define DEBUG_LEVEL 1
-//#define DEBUG_LEVEL 2
-
 #endif

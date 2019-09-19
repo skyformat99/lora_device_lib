@@ -22,7 +22,11 @@ Note that the dio pins make use of the pin change interrupt.
 
 ## Examples
 
-Join and then send an empty data message as often as the TTN fair access policy allows:
+In this example a node will:
+
+- attempt to join
+- once joined, send an empty data message to port 1 as often as the TTN fair access policy allows
+- manage data rate using ADR
 
 ~~~ C++
 #include <arduino_ldl.h>
@@ -56,7 +60,6 @@ ArduinoLDL& get_ldl()
 
 void setup() 
 {
-    Serial.begin(115200U);
 }
 
 void loop() 
@@ -81,9 +84,15 @@ void loop()
 
 More [examples](examples).
 
+## Hints
+
+- debug information is only printed if you configure your sketch to do it via the ArduinoLDL.onEvent() callback (see "*_debug_node" examples for how)
+- not printing debug information can save kilobytes of program space
+- if you are printing debug information, remember to init the Serial object
+- ArduinoLDL.eventDebug() uses less codespace than ArduinoLDL.eventDebugVerbose()
+- ArduinoLDL has ADR enabled by default (use ArduinoLDL.disableADR() to disable)
+- ArduinoLDL limits to approximately the TTN fair access policy by default (use ArduinoLDL.setAggregatedDutyCycleLimit() to change)
+
 ## License
 
-MIT for the wrapper, example sketches, and core LoraDeviceLib code.
-
-Some of the examples depend on third-party libraries. These libraries are 
-kept in separate folders and have their own license T&Cs.
+MIT

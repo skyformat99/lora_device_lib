@@ -67,6 +67,7 @@ void setup()
     ArduinoLDL& ldl = get_ldl();
 
     ldl.onRX(on_rx);
+    ldl.onEvent(ldl.eventDebug);
 }
 
 void loop() 

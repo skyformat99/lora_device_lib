@@ -173,7 +173,7 @@ class ArduinoLDL {
          * 
          * limit = 1 / (2 ^ limit) 
          * 
-         * This is set to 11 by default (approximately 
+         * This is set to 12 by default
          * 
          * */
         void setAggregatedDutyCycleLimit(uint8_t limit);

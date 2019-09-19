@@ -27,6 +27,10 @@
 /* ticks per second (micros()) */
 #define TPS 1000000UL
 
+#ifndef DEBUG_LEVEL
+#   define DEBUG_LEVEL 0
+#endif
+
 struct ArduinoLDL::DioInput *ArduinoLDL::dio_inputs = nullptr; 
 
 static const SPISettings spi_settings(4000000UL, MSBFIRST, SPI_MODE0);
@@ -105,10 +109,11 @@ ArduinoLDL::ArduinoLDL(get_identity_fn get_id, enum lora_region region, enum lor
      * 
      * 30 / (60*60*24)  = 0.000347222
      * 
-     * (2 ^ 11)         = 0.000488281
+     * 1 / (2 ^ 11)     = 0.000488281
+     * 1 / (2 ^ 12)     = 0.000244141
      * 
      * */
-    setAggregatedDutyCycleLimit(11U);
+    setAggregatedDutyCycleLimit(12U);
 }
 
 uint32_t ArduinoLDL::time()
@@ -349,4 +354,135 @@ void ArduinoLDL::unmask_pcint(uint8_t pin)
 ArduinoLDL *ArduinoLDL::to_obj(void *ptr)
 {
     return static_cast<ArduinoLDL *>(ptr);
+}
+
+void ArduinoLDL::adapter(void *receiver, enum lora_mac_response_type type, const union lora_mac_response_arg *arg)
+{
+    /* need to seed rand on startup */
+    if(type == LORA_MAC_STARTUP){
+
+        srand(arg->startup.entropy);                        
+    }
+
+    {
+        ArduinoLDL *self = to_obj(receiver);
+
+        if((type == LORA_MAC_RX) && (self->handle_rx != NULL)){
+            
+            self->handle_rx(arg->rx.counter, arg->rx.port, arg->rx.data, arg->rx.size);
+        }
+    }
+
+#if DEBUG_LEVEL > 0
+    
+    const char *bw125 PROGMEM = "125";
+    const char *bw250 PROGMEM = "250";
+    const char *bw500 PROGMEM = "500";
+    
+    const char *bw[] PROGMEM = {
+        bw125,
+        bw250,
+        bw500
+    };
+
+    Serial.print('[');
+    Serial.print(time());
+    Serial.print(']');
+    
+    switch(type){
+    case LORA_MAC_STARTUP:
+        Serial.print(F("STARTUP"));
+        break;            
+    case LORA_MAC_LINK_STATUS:
+        Serial.print(F("LINK_STATUS"));
+#if DEBUG_LEVEL > 1                
+        Serial.print(F(": M="));
+        Serial.print(arg->link_status.margin);
+        Serial.print(F(" GW="));
+        Serial.print(arg->link_status.gwCount);                
+#endif                
+        break;
+    case LORA_MAC_CHIP_ERROR:
+        Serial.print(F("CHIP_ERROR"));
+        break;            
+    case LORA_MAC_RESET:
+        Serial.print(F("RESET"));
+        break;            
+    case LORA_MAC_TX_BEGIN:
+        Serial.print(F("TX_BEGIN"));
+#if DEBUG_LEVEL > 1                                
+        Serial.print(F(": SZ="));
+        Serial.print(arg->tx_begin.size);
+        Serial.print(F(" F="));
+        Serial.print(arg->tx_begin.freq);
+        Serial.print(F(" SF="));
+        Serial.print((uint8_t)arg->tx_begin.sf);
+        Serial.print(F(" BW="));
+        Serial.print(bw[arg->tx_begin.bw]);                
+        Serial.print(F(" P="));
+        Serial.print(arg->tx_begin.power);
+#endif                
+        break;
+    case LORA_MAC_TX_COMPLETE:
+        Serial.print(F("TX_COMPLETE"));        
+        break;
+    case LORA_MAC_RX1_SLOT:
+    case LORA_MAC_RX2_SLOT:
+        Serial.print((type == LORA_MAC_RX1_SLOT) ? F("RX1_SLOT") : F("RX2_SLOT"));
+#if DEBUG_LEVEL > 1                
+        Serial.print(F(": F="));
+        Serial.print(arg->rx_slot.freq);
+        Serial.print(F(" SF="));
+        Serial.print((uint8_t)arg->rx_slot.sf);
+        Serial.print(F(" BW="));
+        Serial.print(bw[arg->rx_slot.bw]);                
+#endif                
+        break;
+    case LORA_MAC_DOWNSTREAM:
+        Serial.print(F("DOWNSTREAM"));
+#if DEBUG_LEVEL > 1                
+        Serial.print(F(": SZ="));
+        Serial.print(arg->downstream.size);
+        Serial.print(F(" RSSI="));
+        Serial.print(arg->downstream.rssi);
+        Serial.print(F(" SNR="));
+        Serial.print(arg->downstream.snr);                
+#endif                
+        break;
+    case LORA_MAC_JOIN_COMPLETE:
+        Serial.print(F("JOIN_COMPLETE"));
+        break;
+    case LORA_MAC_JOIN_TIMEOUT:
+        Serial.print(F("JOIN_TIMEOUT"));
+#if DEBUG_LEVEL > 1                
+        Serial.print(F(": RETRY_MS="));
+        Serial.print(arg->join_timeout.retry_ms);
+#endif                
+        break;
+    case LORA_MAC_RX:
+        Serial.print(F("RX"));
+#if DEBUG_LEVEL > 1                
+        Serial.print(F(": PORT="));
+        Serial.print(arg->rx.port);
+        Serial.print(F(" COUNT="));
+        Serial.print(arg->rx.counter);
+        Serial.print(F(" SZ="));
+        Serial.print(arg->rx.size);
+#endif                
+        break;
+    case LORA_MAC_DATA_COMPLETE:
+        Serial.print(F("DATA_COMPLETE"));
+        break;
+    case LORA_MAC_DATA_TIMEOUT:
+        Serial.print(F("DATA_TIMEOUT"));
+        break;
+    case LORA_MAC_DATA_NAK:
+        Serial.print(F("DATA_NAK"));
+        break;            
+    default:
+        break;
+    }        
+    
+    Serial.print('\n');
+#endif   
 }

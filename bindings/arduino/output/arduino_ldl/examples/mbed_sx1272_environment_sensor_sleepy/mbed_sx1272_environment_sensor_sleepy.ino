@@ -19,13 +19,15 @@
  *
  * */
 
-#define DEBUG_LEVEL 1
 #include <arduino_ldl.h>
 #include "src/Grove_Temperature_And_Humidity_Sensor/DHT.h"
 #include <avr/sleep.h>
 #include <avr/wdt.h>
 
+/* dug out of wiring */
+#define MICROSECONDS_PER_TIMER0_OVERFLOW (clockCyclesToMicroseconds(64 * 256))
 extern unsigned long timer0_millis;
+extern unsigned long timer0_overflow_count;
 
 static void get_identity(struct lora_system_identity *id)
 {    
@@ -66,6 +68,8 @@ static void on_rx(uint16_t counter, uint8_t port, const uint8_t *data, uint8_t s
 
 void setup() 
 {
+    wdt_disable();
+    
     Serial.begin(115200U);       
     dht.begin();            
  
@@ -101,26 +105,33 @@ void loop()
         uint32_t next_event = ldl.ticksUntilNextEvent();        
         
         /* power down will use the WDT to wake up approx 8s from now */
-        if((next_event != UINT32_MAX) && (next_event >= (8UL * ldl.ticksPerSecond()))){
+        if(next_event >= (8UL * ldl.ticksPerSecond())){
         
-            set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-            cli();
-            sleep_enable();
-            sleep_bod_disable();
+            /* any active serial will not continue in power down mode so flush it */
+            Serial.flush();
             
-            /* need the WDT to wake you up */
+            set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+            
+            cli();
+            
             wdt_enable(WDTO_8S);
             WDTCSR |= (1 << WDIE);
             
+            sleep_enable();
+            sleep_bod_disable();
+            
             sei();
+            
             sleep_cpu();
             sleep_disable();
+            
             wdt_disable();
             
-            /* fix millis/micros */
-            cli();
+            /* fix micros and millis */
+            cli();            
+            timer0_overflow_count += (8000000UL / MICROSECONDS_PER_TIMER0_OVERFLOW);
             timer0_millis += 8000UL;
-            sei();
+            sei();            
         }
         else{
         

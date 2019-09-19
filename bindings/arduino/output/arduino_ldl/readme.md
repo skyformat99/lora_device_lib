@@ -15,13 +15,10 @@ ArduinoLDL can be optimised and adapted by changing the definitions in [platform
 
 See [arduino_ldl.h](arduino_ldl.h).
 
-Note that `DEBUG_LEVEL` is optional.
-
-- `DEBUG_LEVEL 1` will print summary status information to Serial
-- `DEBUG_LEVEL 2` will print all status information to Serial
-
 Reset, select, and dio pins can be moved to suit your hardware. All
 of these connections are required for correct operation.
+
+Note that the dio pins make use of the pin change interrupt.
 
 ## Examples
 

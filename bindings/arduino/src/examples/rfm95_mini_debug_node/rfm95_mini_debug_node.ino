@@ -19,8 +19,6 @@
  *
  * */
 
-#define DEBUG_LEVEL 2
-
 #include <arduino_ldl.h>
 
 static void get_identity(struct lora_system_identity *id)

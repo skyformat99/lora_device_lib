@@ -19,7 +19,6 @@
  *
  * */
 
-//#define DEBUG_LEVEL 2
 #include <arduino_ldl.h>
 #include "src/Grove_Temperature_And_Humidity_Sensor/DHT.h"
 

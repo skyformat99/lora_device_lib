@@ -11,14 +11,14 @@ An Arduino library that wraps [LoraDeviceLib](https://github.com/cjhdev/lora_dev
 
 ArduinoLDL can be optimised and adapted by changing the definitions in [platform.h](platform.h).
 
+The full set of of build-time options are documented [here](https://cjhdev.github.io/lora_device_lib_api/group__ldl__optional.html).
+
 ## Interface
 
 See [arduino_ldl.h](arduino_ldl.h).
 
 Reset, select, and dio pins can be moved to suit your hardware. All
 of these connections are required for correct operation.
-
-Note that the dio pins make use of the pin change interrupt.
 
 ## Examples
 

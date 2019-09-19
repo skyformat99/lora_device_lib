@@ -60,16 +60,13 @@ void setup()
 
 void loop() 
 { 
-    static uint8_t counter = 0U;
-    
     ArduinoLDL& ldl = get_ldl();
     
     if(ldl.ready()){
     
         if(ldl.joined()){
         
-            ldl.unconfirmedData(1U, &counter, sizeof(counter));
-            counter++;                        
+            ldl.unconfirmedData(1U);
         }
         else{
          

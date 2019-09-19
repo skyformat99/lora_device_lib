@@ -57,8 +57,6 @@ ArduinoLDL& get_ldl()
 void setup() 
 {
     Serial.begin(115200U);
-    
-    ArduinoLDL& ldl = get_ldl();
 }
 
 void loop() 

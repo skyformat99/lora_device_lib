@@ -132,7 +132,7 @@ class ArduinoLDL {
         void disableADR();
         
         /* is ADR enabled? */
-        bool adr();        
+        bool adr();     
         
         /* get the last error code */
         enum lora_mac_errno getErrno();                
@@ -165,9 +165,6 @@ class ArduinoLDL {
         
         /* system ticks until next LDL event */
         uint32_t ticksUntilNextEvent();        
-        
-        /* system ticks until next channel is available */
-        uint32_t ticksUntilNextChannel();              
         
         /* system ticks per second */  
         uint32_t ticksPerSecond();

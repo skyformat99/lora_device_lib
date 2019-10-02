@@ -114,7 +114,7 @@ ArduinoLDL::ArduinoLDL(get_identity_fn get_id, enum lora_region region, enum lor
 
 uint32_t ArduinoLDL::time()
 {
-    return LDL_System_time();
+    return LDL_System_time(NULL);
 }
 
 bool ArduinoLDL::unconfirmedData(uint8_t port, const void *data, uint8_t len)
@@ -202,7 +202,7 @@ void ArduinoLDL::interrupt()
         
         if(state && !ptr->state){
 
-            LDL_MAC_interrupt(&ptr->mac, ptr->signal, LDL_System_time());
+            LDL_MAC_interrupt(&ptr->mac, ptr->signal, LDL_System_time(NULL));
         }
         
         ptr->state = state;

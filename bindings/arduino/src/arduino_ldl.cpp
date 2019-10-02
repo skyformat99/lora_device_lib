@@ -246,11 +246,6 @@ uint32_t ArduinoLDL::ticksUntilNextEvent()
     return LDL_MAC_ticksUntilNextEvent(&mac);
 }
 
-uint32_t ArduinoLDL::ticksUntilNextChannel()
-{
-    return LDL_MAC_ticksUntilNextEvent(&mac);
-}
-
 uint32_t ArduinoLDL::ticksPerSecond()
 {
     return TPS;

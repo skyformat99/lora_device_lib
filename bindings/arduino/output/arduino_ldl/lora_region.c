@@ -429,9 +429,9 @@ void LDL_Region_getDefaultChannels(enum lora_region region, struct lora_mac *rec
     }
 }
 
-uint16_t LDL_Region_getOffTimeFactor(enum lora_region region, uint8_t band)
+uint32_t LDL_Region_getOffTimeFactor(enum lora_region region, uint8_t band)
 {
-    uint16_t retval = 0U;
+    uint32_t retval = 0UL;
     
     switch(region){
     default:
@@ -443,13 +443,13 @@ uint16_t LDL_Region_getOffTimeFactor(enum lora_region region, uint8_t band)
         case 0U:
         case 1U:
         case 4U:
-            retval = 100U;      // 1.0%
+            retval = 100UL;      // 1.0%
             break;
         case 2U:
-            retval = 1000U;     // 0.1%
+            retval = 1000UL;     // 0.1%
             break;
         case 3U:        
-            retval = 10U;       // 10.0%
+            retval = 10UL;       // 10.0%
             break;                    
         default:
             break;
@@ -458,7 +458,7 @@ uint16_t LDL_Region_getOffTimeFactor(enum lora_region region, uint8_t band)
 #endif        
 #ifdef LORA_ENABLE_EU_433    
     case EU_433:        
-        retval = 100U;
+        retval = 100UL;
         break;    
 #endif
     }
@@ -677,9 +677,10 @@ uint8_t LDL_Region_getRX2Rate(enum lora_region region)
     return retval; 
 }
 
-bool LDL_Region_getTXPower(enum lora_region region, uint8_t power, int16_t *dbm)
+bool LDL_Region_validateTXPower(enum lora_region region, uint8_t power)
 {
     bool retval = false;
+    
     
     switch(region){ 
 #ifdef LORA_ENABLE_EU_863_870               
@@ -687,12 +688,7 @@ bool LDL_Region_getTXPower(enum lora_region region, uint8_t power, int16_t *dbm)
         
         if(power <= 7U){
             
-            *dbm = 1600 - (power * 200);
-            retval = true;
-        }
-        else{
-            
-            *dbm = 1600 - (7U * 200);
+            retval = true;            
         }
         break;
 #endif
@@ -701,12 +697,7 @@ bool LDL_Region_getTXPower(enum lora_region region, uint8_t power, int16_t *dbm)
     
         if(power <= 5U){
             
-            *dbm = 1215 - (power * 200);
             retval = true;
-        }
-        else{
-            
-            *dbm = 1215 - (5U * 200);
         }
         break;
 #endif            
@@ -720,12 +711,61 @@ bool LDL_Region_getTXPower(enum lora_region region, uint8_t power, int16_t *dbm)
         
         if(power <= 10U){
             
-            *dbm = 3000 - (power * 200);
             retval = true;
+        }
+        break;
+#endif    
+    default:
+        break;      
+    }
+}
+
+int16_t LDL_Region_getTXPower(enum lora_region region, uint8_t power)
+{
+    int16_t retval = 0;
+    
+    switch(region){ 
+#ifdef LORA_ENABLE_EU_863_870               
+    case EU_863_870:
+        
+        if(power <= 7U){
+            
+            retval = 1600 - (power * 200);
         }
         else{
             
-            *dbm = 3000 - (10U * 200);
+            retval = 1600 - (7U * 200);
+        }
+        break;
+#endif
+#ifdef LORA_ENABLE_EU_433        
+    case EU_433:
+    
+        if(power <= 5U){
+            
+            retval = 1215 - (power * 200);
+        }
+        else{
+            
+            retval = 1215 - (5U * 200);
+        }
+        break;
+#endif            
+#if defined(LORA_ENABLE_US_902_928)  || defined(LORA_ENABLE_AU_915_928)              
+#   ifdef LORA_ENABLE_US_902_928
+    case US_902_928:
+#   endif                 
+#   ifdef LORA_ENABLE_AU_915_928
+    case AU_915_928:
+#   endif     
+        
+        if(power <= 10U){
+            
+            retval = 3000 - (power * 200);
+        }
+        else{
+            
+            retval = 3000 - (10U * 200);
         }
         break;
 #endif    
@@ -733,7 +773,7 @@ bool LDL_Region_getTXPower(enum lora_region region, uint8_t power, int16_t *dbm)
         break;      
     }
     
-    return retval; 
+    return retval;
 }
 
 uint8_t LDL_Region_getJoinRate(enum lora_region region, uint16_t trial)

@@ -25,7 +25,7 @@
 #include <util/atomic.h>
 
 #ifndef F_CPU
-#error F_CPU is not defined
+#   error "F_CPU is not defined"
 #endif
 
 /* timing settings */
@@ -43,10 +43,6 @@
 
 /* optimisations ******************************************************/
 
-/* no need to change this */
-#define LORA_ENABLE_AVR
-#define LORA_DISABLE_FULL_CODEC
-
 /* the atmega328p is short on RAM, you probably shouldn't increase this */
 #define LORA_MAX_PACKET 64U
 
@@ -60,19 +56,39 @@
 //#define LORA_ENABLE_US_902_928
 //#define LORA_ENABLE_AU_915_928
 
-/* optionally disable the lengthy start delay */
-#define LORA_DISABLE_START_DELAY
+/* define to keep the RX buffer in mac state rather than on the stack */
+//#define LORA_ENABLE_STATIC_RX_BUFFER
 
-#define LORA_SYSTEM_ENTER_CRITICAL(APP) ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
-#define LORA_SYSTEM_LEAVE_CRITICAL(APP) }
+/* time in milliseconds until channels become available after device reset
+ * 
+ * this is a safety feature for devices stuck in a transmit-reset loop, perhaps
+ * due to an end-of-life battery .
+ * 
+ *  */
+#define LORA_STARTUP_DELAY 0UL
 
-/* optionally disable these events */
+/* optionally disable these event callbacks */
 //#define LORA_DISABLE_MAC_RESET_EVENT
 //#define LORA_DISABLE_CHIP_ERROR_EVENT
 //#define LORA_DISABLE_DOWNSTREAM_EVENT
 //#define LORA_DISABLE_TX_BEGIN_EVENT
 //#define LORA_DISABLE_TX_COMPLETE_EVENT
 //#define LORA_DISABLE_SLOT_EVENT
+//#define LORA_DISABLE_JOIN_TIMEOUT_EVENT
+//#define LORA_DISABLE_JOIN_COMPLETE_EVENT
+//#define LORA_DISABLE_DATA_TIMEOUT_EVENT
+//#define LORA_DISABLE_DATA_COMPLETE_EVENT
+//#define LORA_DISABLE_DATA_CONFIRMED_EVENT
+//#define LORA_DISABLE_RX_EVENT
+
+/* optionally disable link check */
 //#define LORA_DISABLE_CHECK
+
+/* do not change ******************************************************/
+
+#define LORA_ENABLE_AVR
+#define LORA_DISABLE_FULL_CODEC
+#define LORA_SYSTEM_ENTER_CRITICAL(APP) ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
+#define LORA_SYSTEM_LEAVE_CRITICAL(APP) }
 
 #endif

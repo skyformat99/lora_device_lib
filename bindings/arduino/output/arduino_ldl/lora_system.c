@@ -29,7 +29,7 @@ uint8_t LDL_System_getBatteryLevel(void *app) __attribute__((weak));
 bool LDL_System_restoreContext(void *app, struct lora_mac_session *value) __attribute__((weak));
 void LDL_System_saveContext(void *app, const struct lora_mac_session *value) __attribute__((weak));
 void LDL_System_getIdentity(void *app, struct lora_system_identity *value) __attribute__((weak));
-uint32_t LDL_System_time(void) __attribute__((weak));
+uint32_t LDL_System_time(void *app) __attribute__((weak));
 uint32_t LDL_System_tps(void) __attribute__((weak));
 uint32_t LDL_System_eps(void) __attribute__((weak));
 uint32_t LDL_System_advance(void) __attribute__((weak));
@@ -58,7 +58,7 @@ void LDL_System_getIdentity(void *app, struct lora_system_identity *value)
     (void)memset(value, 0, sizeof(*value));    
 }
 
-uint32_t LDL_System_time(void)
+uint32_t LDL_System_time(void *app)
 {
     return 0UL;
 }

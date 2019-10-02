@@ -156,19 +156,41 @@
     #define LORA_DISABLE_RX_EVENT
     #undef LORA_DISABLE_RX_EVENT
     
+    /**
+     * Define to remove startup event
+     * 
+     * */
     #define LORA_DISABLE_MAC_STARTUP_EVENT
     #undef LORA_DISABLE_MAC_STARTUP_EVENT
     
-    /** 
-     * Define to remove the startup delay safety feature
-     * 
-     * This feature extends the start-up delay to prevent
-     * faulty nodes from exceeding the duty cycle limit if
-     * they are stuck in a reset/transmit loop.
+    /**
+     * Define to remote join timeout event
      * 
      * */
-    #define LORA_DISABLE_START_DELAY
-    #undef LORA_DISABLE_START_DELAY
+    #define LORA_DISABLE_JOIN_TIMEOUT_EVENT
+    #undef LORA_DISABLE_JOIN_TIMEOUT_EVENT
+    
+    #define LORA_DISABLE_DATA_COMPLETE_EVENT
+    #undef LORA_DISABLE_DATA_COMPLETE_EVENT
+    
+    #define LORA_DISABLE_DATA_TIMEOUT_EVENT
+    #undef LORA_DISABLE_DATA_TIMEOUT_EVENT
+    
+    #define LORA_DISABLE_JOIN_COMPLETE_EVENT
+    #undef LORA_DISABLE_JOIN_COMPLETE_EVENT
+    
+    /** 
+     * Define to add a startup delay (in milliseconds) to when bands become
+     * available.
+     * 
+     * This is an optional safety feature to ensure a device stuck
+     * in a reset loop does transmit too often.
+     *
+     * If undefined this defaults to zero.
+     * 
+     * */
+    #define LORA_STARTUP_DELAY
+    #undef LORA_STARTUP_DELAY
     
     /**
      * Define to enable support for AU_915_928

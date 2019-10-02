@@ -48,7 +48,6 @@ extern "C" {
 #include "lora_platform.h"
 #include "lora_region.h"
 #include "lora_radio.h"
-#include "lora_event.h"
 #include "lora_stream.h"
 
 #include <stdint.h>
@@ -88,7 +87,7 @@ extern "C" {
      * factor.
      * 
      * */
-    #define LORA_DEFAULT_RATE 2U
+    #define LORA_DEFAULT_RATE 1U
 
 #endif
  
@@ -256,6 +255,48 @@ enum lora_mac_errno {
     LORA_ERRNO_INTERNAL     /**< implementation fault */
 };
 
+enum lora_input_type {
+  
+    LORA_INPUT_TX_COMPLETE,
+    LORA_INPUT_RX_READY,
+    LORA_INPUT_RX_TIMEOUT
+};
+
+struct lora_input {
+    
+    uint8_t armed;
+    uint8_t state;
+    uint32_t time;
+};
+
+enum lora_timer_inst {
+    
+    LORA_TIMER_WAITA,
+    LORA_TIMER_WAITB,
+    LORA_TIMER_BAND,
+    LORA_TIMER_HOUR,
+    LORA_TIMER_MAX
+};
+
+/* band array indices */
+enum lora_band_index {
+    
+    LORA_BAND_1,
+    LORA_BAND_2,
+    LORA_BAND_3,
+    LORA_BAND_4,
+    LORA_BAND_5,
+    LORA_BAND_GLOBAL,
+    LORA_BAND_RETRY,
+    LORA_BAND_MAX
+};
+
+struct lora_timer {
+    
+    uint32_t time;    
+    bool armed;
+};
+
 struct lora_mac_channel {
     
     uint32_t freqAndRate;
@@ -306,14 +347,21 @@ struct lora_mac {
 #endif    
     uint8_t buffer[LORA_MAX_PACKET];
     uint8_t bufferLen;
-
-    uint8_t band_ready;
-
+    
+    
+    
+    /* off-time in ms per band */    
+    uint32_t band[LORA_BAND_MAX];
+    
+    /* ticks of last bandtimer poll */
+    uint32_t last_polled;
+    
     uint16_t devNonce;
     
     int16_t margin;
 
-    uint32_t last_downlink;
+    /* time of the last valid downlink in seconds */
+    uint32_t last_valid_downlink;
     
     /* the settings currently being used to TX */
     struct {
@@ -334,7 +382,8 @@ struct lora_mac {
     struct lora_mac_session ctx;
     
     struct lora_radio *radio;
-    struct lora_event events;
+    struct lora_timer timers[LORA_TIMER_MAX];
+    struct lora_input inputs;
     enum lora_region region;
     
     lora_mac_response_fn handler;
@@ -348,12 +397,21 @@ struct lora_mac {
     uint8_t adrAckCounter;
     bool adrAckReq;
     
+    /* up time in seconds mantained by LORA_TIMER_HOUR */
     uint32_t time;
-    uint32_t firstJoinAttempt;
-    uint32_t msUntilRetry;
-    uint16_t joinTrial;
+    
+    /* time in seconds of first join attempt */
+    uint32_t first_join_attempt;    
+    
+    /* number of join attempts */
+    uint16_t join_trial;
+    
+    /* compared against nbTrans */
+    uint8_t retry_count;
     
     uint8_t tx_dither;
+    
+    
 };
 
 /** Initialise MAC 
@@ -461,15 +519,6 @@ void LDL_MAC_process(struct lora_mac *self);
  * 
  * */
 uint32_t LDL_MAC_ticksUntilNextEvent(const struct lora_mac *self);
-
-/** Get number of ticks until another channel is available
- * 
- * @param[in] self
- * 
- * @return ticks until next channel
- * 
- * */
-uint32_t LDL_MAC_ticksUntilNextChannel(const struct lora_mac *self);
 
 /** Set the transmit data rate
  * 
@@ -653,7 +702,7 @@ uint8_t LDL_MAC_mtu(const struct lora_mac *self);
  * @return seconds since last downlink
  * 
  * */
-uint32_t LDL_MAC_timeSinceDownlink(struct lora_mac *self);
+uint32_t LDL_MAC_timeSinceValidDownlink(struct lora_mac *self);
 
 /** Add (0..dither) seconds of randomisation to the time next message
  * is sent
@@ -680,6 +729,18 @@ void LDL_MAC_setSendDither(struct lora_mac *self, uint8_t dither);
  * 
  * */
 void LDL_MAC_setAggregatedDutyCycleLimit(struct lora_mac *self, uint8_t limit);
+
+/** Set upstream transmission redundancy
+ * 
+ * - confirmed and unconfirmed uplink frames are sent nbTrans times (or until acknowledgement is received)
+ * - a value of zero will leave the setting unchanged
+ * - limited to 15
+ * 
+ * @param[in] self
+ * @param[in] nbTrans redundancy setting
+ * 
+ * */
+void LDL_MAC_setRedundancy(struct lora_mac *self, uint8_t nbTrans);
 
 #ifdef __cplusplus
 }

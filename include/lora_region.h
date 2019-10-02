@@ -59,15 +59,16 @@ struct lora_mac;
 void LDL_Region_convertRate(enum lora_region region, uint8_t rate, enum lora_spreading_factor *sf, enum lora_signal_bandwidth *bw, uint8_t *mtu);
 void LDL_Region_getRX1DataRate(enum lora_region region, uint8_t tx_rate, uint8_t rx1_offset, uint8_t *rx1_rate);
 void LDL_Region_getRX1Freq(enum lora_region region, uint32_t txFreq, uint8_t chIndex, uint32_t *freq);
-bool LDL_Region_getTXPower(enum lora_region region, uint8_t power, int16_t *dbm);
 bool LDL_Region_validateFreq(enum lora_region region, uint8_t chIndex, uint32_t freq);
 bool LDL_Region_getBand(enum lora_region region, uint32_t freq, uint8_t *band);
 bool LDL_Region_getChannel(enum lora_region region, uint8_t chIndex, uint32_t *freq, uint8_t *minRate, uint8_t *maxRate);
 bool LDL_Region_validateRate(enum lora_region region, uint8_t chIndex, uint8_t minRate, uint8_t maxRate);
 bool LDL_Region_isDynamic(enum lora_region region);
+bool LDL_Region_validateTXPower(enum lora_region region, uint8_t power);
+int16_t LDL_Region_getTXPower(enum lora_region region, uint8_t power);
 uint8_t LDL_Region_numChannels(enum lora_region region);
 uint8_t LDL_Region_getJA1Delay(enum lora_region region);
-uint16_t LDL_Region_getOffTimeFactor(enum lora_region region, uint8_t band);
+uint32_t LDL_Region_getOffTimeFactor(enum lora_region region, uint8_t band);
 uint16_t LDL_Region_getMaxFCNTGap(enum lora_region region);
 uint8_t LDL_Region_getRX1Delay(enum lora_region region);
 uint8_t LDL_Region_getRX1Offset(enum lora_region region);
@@ -75,6 +76,7 @@ uint32_t LDL_Region_getRX2Freq(enum lora_region region);
 uint8_t LDL_Region_getRX2Rate(enum lora_region region);
 uint8_t LDL_Region_getJoinRate(enum lora_region region, uint16_t trial);
 void LDL_Region_getDefaultChannels(enum lora_region region, struct lora_mac *receiver, void (*handler)(struct lora_mac *reciever, uint8_t chIndex, uint32_t freq, uint8_t minRate, uint8_t maxRate));
+
 
 #ifdef __cplusplus
 }

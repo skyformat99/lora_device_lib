@@ -70,13 +70,18 @@ struct lora_system_identity {
 
 /** Get system time (ticks)
  * 
+ * THIS VALUE MUST BE >= 1000UL
+ * 
  * @note system time must increment at a rate of LDL_System_tps()
  * @warning this function must be implemented on target for correct operation
+ * @warning this value must be >= 1000UL
+ * 
+ * @param[in] app    application state
  * 
  * @return system time
  * 
  * */
-uint32_t LDL_System_time(void);
+uint32_t LDL_System_time(void *app);
 
 /** Get AppEUI, DevEUI, and DevKey
  * 

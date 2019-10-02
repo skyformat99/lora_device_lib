@@ -1063,7 +1063,6 @@ bool LDL_MAC_disableADR(struct lora_mac *self)
     
     return true;
 }
-#endif
 
 bool LDL_MAC_ready(const struct lora_mac *self)
 {

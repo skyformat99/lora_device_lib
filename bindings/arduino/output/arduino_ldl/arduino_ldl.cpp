@@ -512,9 +512,7 @@ void ArduinoLDL::eventDebugVerbose(enum lora_mac_response_type type, const union
         Serial.print(F("JOIN_COMPLETE"));
         break;
     case LORA_MAC_JOIN_TIMEOUT:
-        Serial.print(F("JOIN_TIMEOUT"));
-        Serial.print(F(": RETRY_MS="));
-        Serial.print(arg->join_timeout.retry_ms);
+        Serial.print(F("JOIN_TIMEOUT"));        
         break;
     case LORA_MAC_RX:
         Serial.print(F("RX"));

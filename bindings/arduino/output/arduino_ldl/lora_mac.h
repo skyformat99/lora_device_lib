@@ -130,13 +130,6 @@ enum lora_mac_response_type {
  *  */
 union lora_mac_response_arg {
 
-    /** #LORA_MAC_JOIN_TIMEOUT argument */
-    struct {
-        
-        uint32_t retry_ms;  /**< join will retry in this many ms */
-        
-    } join_timeout;
-    
     /** #LORA_MAC_DOWNSTREAM argument */
     struct {
         
@@ -226,6 +219,8 @@ enum lora_mac_state {
     LORA_STATE_RX1,         /**< first RX window */
     LORA_STATE_WAIT_RX2,    /**< waiting for second RX window */
     LORA_STATE_RX2,         /**< second RX window */    
+    
+    LORA_STATE_RX2_LOCKOUT, /**< used to ensure an out of range RX2 window is not clobbered */
     
     LORA_STATE_WAIT_RETRY,  /**< wait to retransmit / retry */
     
@@ -348,8 +343,6 @@ struct lora_mac {
     uint8_t buffer[LORA_MAX_PACKET];
     uint8_t bufferLen;
     
-    
-    
     /* off-time in ms per band */    
     uint32_t band[LORA_BAND_MAX];
     
@@ -403,15 +396,11 @@ struct lora_mac {
     /* time in seconds of first join attempt */
     uint32_t first_join_attempt;    
     
-    /* number of join attempts */
-    uint16_t join_trial;
+    /* number of join/upstream trials */
+    uint32_t trials;
     
-    /* compared against nbTrans */
-    uint8_t retry_count;
-    
-    uint8_t tx_dither;
-    
-    
+    uint8_t tx_dither;    
+    uint8_t rapid_limit;
 };
 
 /** Initialise MAC 
@@ -741,6 +730,16 @@ void LDL_MAC_setAggregatedDutyCycleLimit(struct lora_mac *self, uint8_t limit);
  * 
  * */
 void LDL_MAC_setRedundancy(struct lora_mac *self, uint8_t nbTrans);
+
+/** nbTrans retransmission attempts below this number will be 
+ * sent ASAP, whereas nbTrans retransmissions above will 
+ * abide by duty cycle limits.
+ * 
+ * @param[in] self
+ * @param[in] limit rapid limit
+ * 
+ * */
+void LDL_MAC_setRapidLimit(struct lora_mac *self, uint8_t limit);
 
 #ifdef __cplusplus
 }

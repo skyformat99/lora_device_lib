@@ -681,7 +681,6 @@ bool LDL_Region_validateTXPower(enum lora_region region, uint8_t power)
 {
     bool retval = false;
     
-    
     switch(region){ 
 #ifdef LORA_ENABLE_EU_863_870               
     case EU_863_870:
@@ -718,6 +717,8 @@ bool LDL_Region_validateTXPower(enum lora_region region, uint8_t power)
     default:
         break;      
     }
+    
+    return retval;
 }
 
 int16_t LDL_Region_getTXPower(enum lora_region region, uint8_t power)

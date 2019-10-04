@@ -89,9 +89,10 @@ $(DIR_BIN)/tc_frame_with_encryption: $(addprefix $(DIR_BUILD)/, tc_frame_with_en
 	@ echo linking $@
 	@ $(CC) $(LDFLAGS) $^ -o $@
 
-$(DIR_BIN)/tc_event: $(addprefix $(DIR_BUILD)/, tc_event.o lora_event.o mock_system_time.o mock_lora_system.o $(OBJ_CMOCKA))
-	@ echo linking $@
-	@ $(CC) $(LDFLAGS) $^ -o $@
+# removed separate event...need to rework this
+#$(DIR_BIN)/tc_event: $(addprefix $(DIR_BUILD)/, tc_event.o lora_event.o mock_system_time.o mock_lora_system.o $(OBJ_CMOCKA))
+#	@ echo linking $@
+#	@ $(CC) $(LDFLAGS) $^ -o $@
 
 $(DIR_BIN)/tc_mac_commands: $(addprefix $(DIR_BUILD)/, tc_mac_commands.o lora_mac_commands.o lora_stream.o $(OBJ_CMOCKA))
 	@ echo linking $@

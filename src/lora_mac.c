@@ -987,7 +987,7 @@ void LDL_MAC_process(struct lora_mac *self)
     {
         timerClear(self, LORA_TIMER_BAND);
         
-        uint32_t next = processBands(self)
+        uint32_t next = processBands(self);
         
         if(next != UINT32_MAX){
         

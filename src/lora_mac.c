@@ -41,11 +41,11 @@ static uint8_t extraSymbols(uint32_t xtal_error, uint32_t symbol_period);
 static bool externalDataCommand(struct lora_mac *self, bool confirmed, uint8_t port, const void *data, uint8_t len);
 static bool dataCommand(struct lora_mac *self, bool confirmed, uint8_t port, const void *data, uint8_t len);
 static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t len, bool inFopts, uint8_t *out, uint8_t max);
-static bool selectChannel(const struct lora_mac *self, uint8_t rate, uint8_t prevChIndex, uint8_t *chIndex, uint32_t *freq);
+static bool selectChannel(const struct lora_mac *self, uint8_t rate, uint8_t prevChIndex, bool limit, uint8_t *chIndex, uint32_t *freq);
 static void registerTime(struct lora_mac *self, uint32_t freq, uint32_t airTime);
 static void addDefaultChannel(struct lora_mac *receiver, uint8_t chIndex, uint32_t freq, uint8_t minRate, uint8_t maxRate);
 static bool getChannel(const struct lora_mac_channel *self, enum lora_region region, uint8_t chIndex, uint32_t *freq, uint8_t *minRate, uint8_t *maxRate);
-static bool isAvailable(const struct lora_mac *self, uint8_t chIndex, uint8_t rate);
+static bool isAvailable(const struct lora_mac *self, uint8_t chIndex, uint8_t rate, bool limit);
 static uint32_t transmitTime(enum lora_signal_bandwidth bw, enum lora_spreading_factor sf, uint8_t size, bool crc);
 static void restoreDefaults(struct lora_mac *self, bool keep);
 static bool setChannel(struct lora_mac_channel *self, enum lora_region region, uint8_t chIndex, uint32_t freq, uint8_t minRate, uint8_t maxRate);
@@ -105,6 +105,8 @@ void LDL_MAC_init(struct lora_mac *self, void *app, enum lora_region region, str
 #endif
     
     self->band[LORA_BAND_GLOBAL] = LORA_STARTUP_DELAY;
+    
+    self->last_polled = LDL_System_time(self);
     
     LDL_Radio_reset(self->radio, false);
 
@@ -167,13 +169,13 @@ bool LDL_MAC_otaa(struct lora_mac *self)
             LDL_MAC_forget(self);
         }
         
-        self->join_trial = 0U;
+        self->trials = 0U;
         
-        self->tx.rate = LDL_Region_getJoinRate(self->region, self->join_trial);
+        self->tx.rate = LDL_Region_getJoinRate(self->region, self->trials);
         self->band[LORA_BAND_RETRY] = 0U;
         self->tx.power = 0U;
         
-        if(selectChannel(self, self->tx.rate, self->tx.chIndex, &self->tx.chIndex, &self->tx.freq)){
+        if(selectChannel(self, self->tx.rate, self->tx.chIndex, true, &self->tx.chIndex, &self->tx.freq)){
         
             LDL_System_getIdentity(self->app, &identity);
             
@@ -273,6 +275,8 @@ void LDL_MAC_process(struct lora_mac *self)
     union lora_mac_response_arg arg;
     struct lora_system_identity identity;
     
+    (void)timeNow(self);
+    
     (void)processBands(self);
     
     switch(self->state){
@@ -362,8 +366,6 @@ void LDL_MAC_process(struct lora_mac *self)
             uint32_t tx_time;
             uint8_t mtu;
             
-            //(void)selectChannel(self, self->tx.rate, self->tx.chIndex, &self->tx.chIndex, &self->tx.freq);
-            
             LDL_Region_convertRate(self->region, self->tx.rate, &radio_setting.sf, &radio_setting.bw, &mtu);
             
             radio_setting.dbm = LDL_Region_getTXPower(self->region, self->tx.power);
@@ -376,8 +378,6 @@ void LDL_MAC_process(struct lora_mac *self)
             inputArm(self, LORA_INPUT_TX_COMPLETE);  
             
             LDL_Radio_transmit(self->radio, &radio_setting, self->buffer, self->bufferLen);
-
-            //self->tx_count = 1U;
 
             registerTime(self, self->tx.freq, tx_time);
             
@@ -842,14 +842,14 @@ void LDL_MAC_process(struct lora_mac *self)
                 if(cmd_len > 0U){
 
                     LORA_INFO("sending mac response")
+                    
+                    self->tx.rate = self->ctx.rate;
+                    self->tx.power = self->ctx.power;
+                
+                    uint32_t ms_until_next = msUntilNextChannel(self, self->tx.rate);
                 
                     /* MAC command may have masked everything... */
-                    if(msUntilNextChannel(self, self->ctx.rate) != UINT32_MAX){
-                
-                        self->band[LORA_BAND_RETRY] = 0U;
-                
-                        self->tx.rate = self->ctx.rate;
-                        self->tx.power = self->ctx.power;
+                    if(ms_until_next != UINT32_MAX){
                 
                         struct lora_frame_data f;
                         
@@ -876,11 +876,9 @@ void LDL_MAC_process(struct lora_mac *self)
                         /* LDL_Frame_putData() failed */
                         LORA_PEDANTIC(self->bufferLen > 0)
                         
-                        /* send immediately */
-                        timerSet(self, LORA_TIMER_WAITA, 0U);
-                        
-                        self->state = LORA_STATE_WAIT_RETRY;
                         self->op = LORA_OP_DATA_UNCONFIRMED;
+                        self->state = LORA_STATE_WAIT_RETRY;
+                        self->band[LORA_BAND_RETRY] = ms_until_next;                        
                     }
                     else{
                         
@@ -911,9 +909,15 @@ void LDL_MAC_process(struct lora_mac *self)
             
                 timerClear(self, LORA_TIMER_WAITB);
                 
-                downlinkMissingHandler(self);
+                uint8_t mtu;
+                enum lora_spreading_factor sf;
+                enum lora_signal_bandwidth bw;
                 
-                LDL_System_saveContext(self->app, &self->ctx); 
+                LDL_Region_convertRate(self->region, self->tx.rate, &sf, &bw, &mtu);                        
+                
+                timerSet(self, LORA_TIMER_WAITA, transmitTime(bw, sf, mtu, false));
+                
+                self->state = LORA_STATE_RX2_LOCKOUT;
             }
             else{
                 
@@ -945,14 +949,33 @@ void LDL_MAC_process(struct lora_mac *self)
         }
         break;
     
+    case LORA_STATE_RX2_LOCKOUT:
+    
+        if(timerCheck(self, LORA_TIMER_WAITA, &error)){
+            
+            downlinkMissingHandler(self);            
+            LDL_System_saveContext(self->app, &self->ctx); 
+        }
+        break;
+    
     case LORA_STATE_WAIT_RETRY:
         
         if(self->band[LORA_BAND_RETRY] == 0U){
             
-            if(selectChannel(self, self->tx.rate, self->tx.chIndex, &self->tx.chIndex, &self->tx.freq)){
-                        
-                timerSet(self, LORA_TIMER_WAITA, 0UL);
-                self->state = LORA_STATE_WAIT_TX;
+            if(msUntilNextChannel(self, self->tx.rate) != UINT32_MAX){
+            
+                if(selectChannel(self, self->tx.rate, self->tx.chIndex, true, &self->tx.chIndex, &self->tx.freq)){
+                            
+                    timerSet(self, LORA_TIMER_WAITA, 0UL);
+                    self->state = LORA_STATE_WAIT_TX;
+                }            
+            }
+            else{
+                
+                LORA_INFO("no channels for retry")
+                
+                self->op = LORA_OP_NONE;
+                self->state = LORA_STATE_IDLE;
             }
         }
         break;    
@@ -1095,7 +1118,7 @@ bool LDL_MAC_check(struct lora_mac *self, bool now)
         
             if(now){
                 
-                if(selectChannel(self, self->ctx.rate, self->tx.chIndex, &self->tx.chIndex, &self->tx.freq)){
+                if(selectChannel(self, self->ctx.rate, self->tx.chIndex, true, &self->tx.chIndex, &self->tx.freq)){
                 
                     self->linkCheckReq_pending = true; 
                     retval = dataCommand(self, false, 0U, &buf, 0U);                       
@@ -1233,6 +1256,13 @@ void LDL_MAC_setRedundancy(struct lora_mac *self, uint8_t nbTrans)
     LDL_System_saveContext(self->app, &self->ctx);      
 }
 
+void LDL_MAC_setRapidLimit(struct lora_mac *self, uint8_t limit)
+{
+    LORA_PEDANTIC(self != NULL)
+    
+    self->rapid_limit = limit;
+}
+
 /* static functions ***************************************************/
 
 static bool externalDataCommand(struct lora_mac *self, bool confirmed, uint8_t port, const void *data, uint8_t len)
@@ -1250,7 +1280,7 @@ static bool externalDataCommand(struct lora_mac *self, bool confirmed, uint8_t p
         
             if((port > 0U) && (port <= 223U)){    
                 
-                if(selectChannel(self, self->ctx.rate, self->tx.chIndex, &self->tx.chIndex, &self->tx.freq)){
+                if(selectChannel(self, self->ctx.rate, self->tx.chIndex, true, &self->tx.chIndex, &self->tx.freq)){
                  
                     LDL_Region_convertRate(self->region, self->ctx.rate, &sf, &bw, &maxPayload);
                  
@@ -1298,6 +1328,8 @@ static bool dataCommand(struct lora_mac *self, bool confirmed, uint8_t port, con
     uint8_t opts[15U];
     enum lora_signal_bandwidth bw;
     enum lora_spreading_factor sf;
+    
+    self->trials = 0U;
     
     self->tx.rate = self->ctx.rate;
     self->tx.power = self->ctx.power;
@@ -1542,7 +1574,7 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
             switch(cmd.type){
             default:
                 break;     
-#ifdef LORA_DISABLE_CHECK                                   
+#ifndef LORA_DISABLE_CHECK                                   
             case LINK_CHECK:    
             {                
                 const struct lora_link_check_ans *ans = &cmd.fields.linkCheckAns;
@@ -1899,7 +1931,7 @@ static void addDefaultChannel(struct lora_mac *receiver, uint8_t chIndex, uint32
     (void)setChannel(receiver->ctx.chConfig, receiver->region, chIndex, freq, minRate, maxRate);
 }
 
-static bool selectChannel(const struct lora_mac *self, uint8_t rate, uint8_t prevChIndex, uint8_t *chIndex, uint32_t *freq)
+static bool selectChannel(const struct lora_mac *self, uint8_t rate, uint8_t prevChIndex, bool limit, uint8_t *chIndex, uint32_t *freq)
 {
     bool retval = false;
     uint8_t i;    
@@ -1909,12 +1941,12 @@ static bool selectChannel(const struct lora_mac *self, uint8_t rate, uint8_t pre
     uint8_t maxRate;    
     uint8_t except = UINT8_MAX;
     
-    if(self->band[LORA_BAND_GLOBAL] == 0U){
+    if(!limit || (self->band[LORA_BAND_GLOBAL] == 0U)){
     
         /* count number of available channels for this rate */
         for(i=0U; i < LDL_Region_numChannels(self->region); i++){
             
-            if(isAvailable(self, i, rate)){
+            if(isAvailable(self, i, rate, limit)){
             
                 if(i == prevChIndex){
                     
@@ -1948,7 +1980,7 @@ static bool selectChannel(const struct lora_mac *self, uint8_t rate, uint8_t pre
         
         for(i=0U; i < LDL_Region_numChannels(self->region); i++){
         
-            if(isAvailable(self, i, rate)){
+            if(isAvailable(self, i, rate, limit)){
             
                 if(except != i){
             
@@ -1971,7 +2003,7 @@ static bool selectChannel(const struct lora_mac *self, uint8_t rate, uint8_t pre
     return retval;
 }
 
-static bool isAvailable(const struct lora_mac *self, uint8_t chIndex, uint8_t rate)
+static bool isAvailable(const struct lora_mac *self, uint8_t chIndex, uint8_t rate, bool limit)
 {
     bool retval = false;
     uint32_t freq;
@@ -1989,7 +2021,7 @@ static bool isAvailable(const struct lora_mac *self, uint8_t chIndex, uint8_t ra
                 
                     LORA_PEDANTIC( band < LORA_BAND_MAX )
                 
-                    if(self->band[band] == 0U){
+                    if(!limit || (self->band[band] == 0U)){
                 
                         retval = true;              
                     }
@@ -2449,46 +2481,77 @@ static void downlinkMissingHandler(struct lora_mac *self)
     default:
     case LORA_OP_NONE:
         break;
-    case LORA_OP_DATA_UNCONFIRMED:
-        
-        adaptRate(self);
-        
-        if(self->retry_count < self->ctx.nbTrans){
-            
-            self->retry_count++;
-            
-            self->state = LORA_STATE_WAIT_TX;
-            self->op = LORA_OP_DATA_UNCONFIRMED;            
-        }
-        else{
-        
-#ifndef LORA_DISABLE_DATA_COMPLETE_EVENT                    
-            self->handler(self->app, LORA_MAC_DATA_COMPLETE, NULL);
-#endif                                        
-            self->state = LORA_STATE_IDLE;
-            self->op = LORA_OP_NONE;      
-        }
-        break;
-        
     case LORA_OP_DATA_CONFIRMED:
+    case LORA_OP_DATA_UNCONFIRMED:
+    {
+        self->trials++;
         
         adaptRate(self);
          
-         if(self->retry_count < self->ctx.nbTrans){
+        self->tx.rate = self->ctx.rate;
+        self->tx.power = self->ctx.power;
+         
+        if(self->trials < self->ctx.nbTrans){
             
-            self->retry_count++;
+            /* trials below the rapid limit defer duty cycle limits */
+            if(self->trials < self->rapid_limit){
             
-            self->state = LORA_STATE_WAIT_TX;
-            self->op = LORA_OP_DATA_UNCONFIRMED;            
+                if(selectChannel(self, self->tx.rate, self->tx.chIndex, false, &self->tx.chIndex, &self->tx.freq)){
+                
+                    timerSet(self, LORA_TIMER_WAITA, 0U);
+                    self->state = LORA_STATE_WAIT_TX;
+                }
+                else{
+                    
+                    LORA_INFO("no channel available for retry")
+                    
+                    switch(self->op){
+                    default:
+                    case LORA_OP_DATA_UNCONFIRMED:                    
+#ifndef LORA_DISABLE_DATA_COMPLETE_EVENT                    
+                        self->handler(self->app, LORA_MAC_DATA_COMPLETE, NULL);
+#endif                                                        
+                        break;
+                    case LORA_OP_DATA_CONFIRMED:
+                    
+#ifndef LORA_DISABLE_DATA_CONFIRMED_EVENT                
+                        self->handler(self->app, LORA_MAC_DATA_TIMEOUT, NULL);
+#endif                            
+                        break;
+                    }
+
+                    self->state = LORA_STATE_IDLE;
+                    self->op = LORA_OP_NONE;                      
+                }
+            }
+            /* trials above the rapid limit abide by duty cycle limits */
+            else{
+                
+                self->band[LORA_BAND_RETRY] = msUntilNextChannel(self, self->tx.rate);
+                self->state = LORA_STATE_WAIT_RETRY;                
+            }
         }
         else{
                                 
+            switch(self->op){
+            default:
+            case LORA_OP_DATA_UNCONFIRMED:                    
+#ifndef LORA_DISABLE_DATA_COMPLETE_EVENT                    
+                self->handler(self->app, LORA_MAC_DATA_COMPLETE, NULL);
+#endif                                                        
+                break;
+            case LORA_OP_DATA_CONFIRMED:
+            
 #ifndef LORA_DISABLE_DATA_CONFIRMED_EVENT                
-            self->handler(self->app, LORA_MAC_DATA_TIMEOUT, NULL);
+                self->handler(self->app, LORA_MAC_DATA_TIMEOUT, NULL);
 #endif                            
+                break;
+            }
+
             self->state = LORA_STATE_IDLE;
-            self->op = LORA_OP_NONE;              
+            self->op = LORA_OP_NONE;                      
         }
+    }
         break;
 
     case LORA_OP_JOINING:
@@ -2496,11 +2559,10 @@ static void downlinkMissingHandler(struct lora_mac *self)
         updateRetryInterval(self, self->first_join_attempt);
         
         /* cycle join rate according to region */
-        self->join_trial++;
-        self->tx.rate = LDL_Region_getJoinRate(self->region, self->join_trial);
+        self->trials++;
+        self->tx.rate = LDL_Region_getJoinRate(self->region, self->trials);
         
-#ifndef LORA_DISABLE_JOIN_TIMEOUT_EVENT                    
-        arg.join_timeout.retry_ms = self->band[LORA_BAND_RETRY];                    
+#ifndef LORA_DISABLE_JOIN_TIMEOUT_EVENT                               
         self->handler(self->app, LORA_MAC_JOIN_TIMEOUT, &arg);                    
 #endif                            
         self->state = LORA_STATE_WAIT_RETRY;        

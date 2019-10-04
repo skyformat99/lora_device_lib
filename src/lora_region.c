@@ -777,7 +777,7 @@ int16_t LDL_Region_getTXPower(enum lora_region region, uint8_t power)
     return retval;
 }
 
-uint8_t LDL_Region_getJoinRate(enum lora_region region, uint16_t trial)
+uint8_t LDL_Region_getJoinRate(enum lora_region region, uint32_t trial)
 {
     uint8_t retval = 0U;
     

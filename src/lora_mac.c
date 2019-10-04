@@ -104,9 +104,9 @@ void LDL_MAC_init(struct lora_mac *self, void *app, enum lora_region region, str
 #   define LORA_STARTUP_DELAY 0UL
 #endif
     
-    self->band[LORA_BAND_GLOBAL] = LORA_STARTUP_DELAY;
+    self->band[LORA_BAND_GLOBAL] = (uint32_t)LORA_STARTUP_DELAY;
     
-    self->last_polled = LDL_System_time(self);
+    self->last_polled = LDL_System_time(self->app);
     
     LDL_Radio_reset(self->radio, false);
 
@@ -188,7 +188,7 @@ bool LDL_MAC_otaa(struct lora_mac *self)
             
             f.devNonce = self->devNonce;
 
-            self->bufferLen = LDL_Frame_putJoinRequest(identity.appKey, &f, self->buffer, sizeof(self->buffer));
+            self->bufferLen = (uint8_t)LDL_Frame_putJoinRequest(identity.appKey, &f, self->buffer, sizeof(self->buffer));
                         
             delay = LDL_System_rand();
             delay <<= 8U;
@@ -282,6 +282,7 @@ void LDL_MAC_process(struct lora_mac *self)
     switch(self->state){
     default:
     case LORA_STATE_IDLE:
+        /* do nothing */
         break;    
     case LORA_STATE_INIT:
     
@@ -676,7 +677,7 @@ void LDL_MAC_process(struct lora_mac *self)
                                     break;
                                 case FREQ_CFLIST:
                                 
-                                    for(i=0U; i < sizeof(frame.fields.joinAccept.cfList)/sizeof(*frame.fields.joinAccept.cfList); i++){
+                                    for(i=0U; i < (sizeof(frame.fields.joinAccept.cfList)/sizeof(*frame.fields.joinAccept.cfList)); i++){
                                         
                                         uint8_t chIndex = 3U + i;
                                         uint8_t band = 255U;
@@ -693,7 +694,7 @@ void LDL_MAC_process(struct lora_mac *self)
                                     break;
                                 case MASK_CFLIST:
                                 
-                                    for(i=0U; i < sizeof(frame.fields.joinAccept.cfList)/sizeof(*frame.fields.joinAccept.cfList); i++){
+                                    for(i=0U; i < (sizeof(frame.fields.joinAccept.cfList)/sizeof(*frame.fields.joinAccept.cfList)); i++){
                                         
                                         uint8_t b;
                                         
@@ -855,8 +856,10 @@ void LDL_MAC_process(struct lora_mac *self)
                         
                         (void)memset(&f, 0, sizeof(f));
                     
+                        self->ctx.up++;
+                    
                         f.devAddr = self->ctx.devAddr;
-                        f.counter = self->ctx.up++;
+                        f.counter = self->ctx.up;
                         f.adr = self->ctx.adr;
                         f.adrAckReq = self->adrAckReq;
                         
@@ -982,9 +985,11 @@ void LDL_MAC_process(struct lora_mac *self)
     }
     
     {
-        uint32_t next;
         timerClear(self, LORA_TIMER_BAND);
-        if((next = processBands(self)) != UINT32_MAX){
+        
+        uint32_t next = processBands(self)
+        
+        if(next != UINT32_MAX){
         
             timerSet(self, LORA_TIMER_BAND, next);
         }        
@@ -1223,14 +1228,14 @@ uint8_t LDL_MAC_mtu(const struct lora_mac *self)
         overhead += LDL_MAC_sizeofCommandUp(LINK_CHECK);
     }
     
-    return (overhead > max) ? 0 : max - overhead;    
+    return (overhead > max) ? 0U : (max - overhead);    
 }
 
 uint32_t LDL_MAC_timeSinceValidDownlink(struct lora_mac *self)
 {
     LORA_PEDANTIC(self != NULL)
     
-    return (self->last_valid_downlink == 0) ? UINT32_MAX : timeNow(self) - self->last_valid_downlink;
+    return (self->last_valid_downlink == 0) ? UINT32_MAX : (timeNow(self) - self->last_valid_downlink);
 }
 
 void LDL_MAC_setSendDither(struct lora_mac *self, uint8_t dither)
@@ -1368,8 +1373,10 @@ static bool dataCommand(struct lora_mac *self, bool confirmed, uint8_t port, con
     
     (void)memset(&f, 0, sizeof(f));
     
+    self->ctx.up++;
+    
     f.devAddr = self->ctx.devAddr;
-    f.counter = ++self->ctx.up;
+    f.counter = self->ctx.up;
     f.adr = self->ctx.adr;
     f.adrAckReq = self->adrAckReq;
     f.opts = opts;
@@ -1562,8 +1569,8 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
     (void)memset(&adr_ans, 0, sizeof(adr_ans));
     (void)memcpy(&shadow, &self->ctx, sizeof(shadow));
 
-    LDL_Stream_initReadOnly(&s_in, in, len);
-    LDL_Stream_init(&s_out, out, max);
+    (void)LDL_Stream_initReadOnly(&s_in, in, len);
+    (void)LDL_Stream_init(&s_out, out, max);
     
     adr_ans.channelMaskOK = true;
     
@@ -1626,7 +1633,7 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
                         case 0U:
                         
                             /* mask/unmask channels 0..15 */
-                            for(i=0U; i < sizeof(req->channelMask)*8U; i++){
+                            for(i=0U; i < (sizeof(req->channelMask)*8U); i++){
                                 
                                 if((req->channelMask & (1U << i)) > 0U){
                                     
@@ -1673,7 +1680,7 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
                             
                         default:
                             
-                            for(i=0U; i < sizeof(req->channelMask)*8U; i++){
+                            for(i=0U; i < (sizeof(req->channelMask)*8U); i++){
                                 
                                 if((req->channelMask & (1U << i)) > 0U){
                                     
@@ -1935,6 +1942,7 @@ static bool selectChannel(const struct lora_mac *self, uint8_t rate, uint8_t pre
 {
     bool retval = false;
     uint8_t i;    
+    uint8_t ii;    
     uint8_t available = 0U;
     uint8_t j = 0U;
     uint8_t minRate;
@@ -1960,8 +1968,6 @@ static bool selectChannel(const struct lora_mac *self, uint8_t rate, uint8_t pre
         
     if(available > 0U){
     
-        uint8_t index;
-    
         if(except != UINT8_MAX){
     
             if(available == 1U){
@@ -1974,9 +1980,7 @@ static bool selectChannel(const struct lora_mac *self, uint8_t rate, uint8_t pre
             }
         }
     
-        index = LDL_System_rand() % available;
-        
-        available = 0U;
+        ii = LDL_System_rand() % available;
         
         for(i=0U; i < LDL_Region_numChannels(self->region); i++){
         
@@ -1984,7 +1988,7 @@ static bool selectChannel(const struct lora_mac *self, uint8_t rate, uint8_t pre
             
                 if(except != i){
             
-                    if(index == j){
+                    if(ii == j){
                         
                         if(getChannel(self->ctx.chConfig, self->region, i, freq, &minRate, &maxRate)){
                             
@@ -2274,10 +2278,13 @@ static void inputSignal(struct lora_mac *self, enum lora_input_type type, uint32
     
     LORA_SYSTEM_ENTER_CRITICAL(self->app)
     
-    if((self->inputs.state == 0U) && (self->inputs.armed & (1U << type))){
+    if(self->inputs.state == 0U){
     
-        self->inputs.time = time;
-        self->inputs.state = (1U << type);
+        if((self->inputs.armed & (1U << type)) > 0U){
+    
+            self->inputs.time = time;
+            self->inputs.state = (1U << type);
+        }
     }
     
     LORA_SYSTEM_LEAVE_CRITICAL(self->app)
@@ -2370,7 +2377,7 @@ static uint32_t timerTicksUntilNext(const struct lora_mac *self)
     
     time = LDL_System_time(self->app);
 
-    for(i=0U; i < sizeof(self->timers)/sizeof(*self->timers); i++){
+    for(i=0U; i < (sizeof(self->timers)/sizeof(*self->timers)); i++){
 
         if(self->timers[i].armed){
             
@@ -2433,7 +2440,7 @@ static uint32_t processBands(struct lora_mac *self)
     ms_since = ticksToMS(timerDelta(self->last_polled, time));
     self->last_polled = time;
 
-    for(i=0U; i < sizeof(self->band)/sizeof(*self->band); i++){
+    for(i=0U; i < (sizeof(self->band)/sizeof(*self->band)); i++){
 
         if(self->band[i] > 0U){
         

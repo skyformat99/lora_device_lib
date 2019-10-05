@@ -493,7 +493,7 @@ void LDL_Region_getRX1DataRate(enum lora_region region, uint8_t tx_rate, uint8_t
     LORA_PEDANTIC(rx1_rate != NULL)
 
     const uint8_t *ptr = NULL;
-    uint16_t index = 0U;
+    uint16_t i = 0U;
     size_t size = 0U;
     
     switch(region){
@@ -517,7 +517,7 @@ void LDL_Region_getRX1DataRate(enum lora_region region, uint8_t tx_rate, uint8_t
             7U, 6U, 5U, 4U, 3U, 2U,
         };
 
-        index = (tx_rate * 6U) + rx1_offset;
+        i = (tx_rate * 6U) + rx1_offset;
         ptr = rates;
         size = sizeof(rates);
     }
@@ -534,7 +534,7 @@ void LDL_Region_getRX1DataRate(enum lora_region region, uint8_t tx_rate, uint8_t
             13U, 13U, 12U, 11U,
         };
         
-        index = (tx_rate * 4U) + rx1_offset;
+        i = (tx_rate * 4U) + rx1_offset;
         ptr = rates;
         size = sizeof(rates);
     }
@@ -553,7 +553,7 @@ void LDL_Region_getRX1DataRate(enum lora_region region, uint8_t tx_rate, uint8_t
             13U, 13U, 12U, 11U, 10U, 9U,
         };
         
-        index = (tx_rate * 6U) + rx1_offset;
+        i = (tx_rate * 6U) + rx1_offset;
         ptr = rates;
         size = sizeof(rates);
     }
@@ -563,9 +563,9 @@ void LDL_Region_getRX1DataRate(enum lora_region region, uint8_t tx_rate, uint8_t
     
     if(ptr != NULL){
     
-        if(index < size){
+        if(i < size){
         
-            (void)memcpy_P(rx1_rate, &ptr[index], sizeof(*rx1_rate));
+            (void)memcpy_P(rx1_rate, &ptr[i], sizeof(*rx1_rate));
         }
         else{
                         

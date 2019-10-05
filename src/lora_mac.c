@@ -60,7 +60,7 @@ static void adaptRate(struct lora_mac *self);
 static uint32_t timeNow(struct lora_mac *self);
 static void updateRetryInterval(struct lora_mac *self, uint32_t start_time);
 static void inputArm(struct lora_mac *self, enum lora_input_type type);
-static bool inputCheck(struct lora_mac *self, enum lora_input_type type, uint32_t *error);
+static bool inputCheck(const struct lora_mac *self, enum lora_input_type type, uint32_t *error);
 static void inputClear(struct lora_mac *self);
 static void inputSignal(struct lora_mac *self, enum lora_input_type type, uint32_t time);
 static bool inputPending(const struct lora_mac *self);
@@ -2312,7 +2312,7 @@ static void inputArm(struct lora_mac *self, enum lora_input_type type)
     LORA_SYSTEM_LEAVE_CRITICAL(self->app)     
 }
 
-static bool inputCheck(struct lora_mac *self, enum lora_input_type type, uint32_t *error)
+static bool inputCheck(const struct lora_mac *self, enum lora_input_type type, uint32_t *error)
 {
     bool retval = false;
     
@@ -2358,6 +2358,8 @@ static bool timerCheck(struct lora_mac *self, enum lora_timer_inst timer, uint32
 {
     bool retval = false;
     uint32_t time;
+    
+    LORA_SYSTEM_ENTER_CRITICAL(self->app)
         
     if(self->timers[timer].armed){
         
@@ -2370,6 +2372,8 @@ static bool timerCheck(struct lora_mac *self, enum lora_timer_inst timer, uint32
             retval = true;
         }
     }    
+    
+    LORA_SYSTEM_LEAVE_CRITICAL(self->app)
     
     return retval;
 }
@@ -2389,6 +2393,8 @@ static uint32_t timerTicksUntilNext(const struct lora_mac *self)
 
     for(i=0U; i < (sizeof(self->timers)/sizeof(*self->timers)); i++){
 
+        LORA_SYSTEM_ENTER_CRITICAL(self->app)
+
         if(self->timers[i].armed){
             
             if(timerDelta(self->timers[i].time, time) <= INT32_MAX){
@@ -2404,6 +2410,8 @@ static uint32_t timerTicksUntilNext(const struct lora_mac *self)
             }
         }
         
+        LORA_SYSTEM_LEAVE_CRITICAL(self->app)
+        
         if(retval == 0U){
             
             break;
@@ -2418,6 +2426,8 @@ static uint32_t timerTicksUntil(const struct lora_mac *self, enum lora_timer_ins
     uint32_t retval = UINT32_MAX;
     uint32_t time;
     
+    LORA_SYSTEM_ENTER_CRITICAL(self->app)
+    
     if(self->timers[timer].armed){
         
         time = LDL_System_time(self->app);
@@ -2431,6 +2441,8 @@ static uint32_t timerTicksUntil(const struct lora_mac *self, enum lora_timer_ins
             retval = timerDelta(time, self->timers[timer].time);
         }
     }
+    
+    LORA_SYSTEM_LEAVE_CRITICAL(self->app)
     
     return retval;
 }

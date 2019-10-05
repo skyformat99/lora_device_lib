@@ -114,7 +114,7 @@ void LDL_MAC_init(struct lora_mac *self, void *app, enum lora_region region, str
     timerSet(self, LORA_TIMER_WAITA, (LDL_System_tps() + LDL_System_eps())/100UL);
     
     /* one hour timer */
-    timerSet(self, LORA_TIMER_HOUR, LDL_System_tps()*60UL*60UL);
+    timerSet(self, LORA_TIMER_MINUTE, LDL_System_tps()*60UL);
     
     /* self->state is LORA_STATE_INIT */
 }
@@ -405,6 +405,8 @@ void LDL_MAC_process(struct lora_mac *self)
     
         if(inputCheck(self, LORA_INPUT_TX_COMPLETE, &error)){
         
+            inputClear(self);
+        
             uint32_t waitSeconds;
             uint32_t waitTicks;    
             uint32_t advance;
@@ -610,6 +612,8 @@ void LDL_MAC_process(struct lora_mac *self)
     case LORA_STATE_RX2:
 
         if(inputCheck(self, LORA_INPUT_RX_READY, &error)){
+        
+            inputClear(self);
     
             struct lora_frame frame;
 #ifdef LORA_ENABLE_STATIC_RX_BUFFER         
@@ -905,7 +909,9 @@ void LDL_MAC_process(struct lora_mac *self)
             LDL_System_saveContext(self->app, &self->ctx);             
         }
         else if(inputCheck(self, LORA_INPUT_RX_TIMEOUT, &error)){
-                
+            
+            inputClear(self);
+            
             LDL_Radio_clearInterrupt(self->radio);
             
             if(self->state == LORA_STATE_RX2){
@@ -993,7 +999,15 @@ void LDL_MAC_process(struct lora_mac *self)
         
             timerSet(self, LORA_TIMER_BAND, next);
         }        
-    }    
+    }
+    
+    LORA_DEBUG("WAITA=%"PRIu32, timerTicksUntil(self, LORA_TIMER_WAITA));
+    LORA_DEBUG("WAITB=%"PRIu32, timerTicksUntil(self, LORA_TIMER_WAITB));
+    LORA_DEBUG("BAND=%"PRIu32, timerTicksUntil(self, LORA_TIMER_BAND));
+    LORA_DEBUG("MINUTE=%"PRIu32, timerTicksUntil(self, LORA_TIMER_MINUTE));
+    LORA_DEBUG("LORA_INPUT_TX_COMPLETE=%s", inputCheck(self, LORA_INPUT_TX_COMPLETE, &error) ? "true" : "false")
+    LORA_DEBUG("LORA_INPUT_RX_READY=%s", inputCheck(self, LORA_INPUT_RX_READY, &error) ? "true" : "false")
+    LORA_DEBUG("LORA_INPUT_RX_TIMEOUT=%s", inputCheck(self, LORA_INPUT_RX_TIMEOUT, &error) ? "true" : "false")
 }
 
 uint32_t LDL_MAC_ticksUntilNextEvent(const struct lora_mac *self)
@@ -1176,6 +1190,8 @@ uint32_t LDL_MAC_bwToNumber(enum lora_signal_bandwidth bw)
 void LDL_MAC_interrupt(struct lora_mac *self, uint8_t n, uint32_t time)
 {
     LORA_PEDANTIC(self != NULL)
+    
+    LORA_DEBUG("n=%u", n)
     
     switch(LDL_Radio_signal(self->radio, n)){
     case LORA_RADIO_EVENT_TX_COMPLETE:
@@ -2199,16 +2215,16 @@ static uint32_t timeNow(struct lora_mac *self)
     uint32_t retval;
     uint32_t error;
     
-    const uint32_t one_hour = LDL_System_tps()*60UL*60UL;
+    const uint32_t one_hour = LDL_System_tps()*60UL;
     
-    until = timerTicksUntil(self, LORA_TIMER_HOUR);
+    until = timerTicksUntil(self, LORA_TIMER_MINUTE);
     
     if(until == 0UL){
         
-        if(timerCheck(self, LORA_TIMER_HOUR, &error)){
+        if(timerCheck(self, LORA_TIMER_MINUTE, &error)){
             
             self->time += one_hour;
-            timerSet(self, LORA_TIMER_HOUR, one_hour - error);
+            timerSet(self, LORA_TIMER_MINUTE, one_hour - error);
         }    
         
         retval = self->time;
@@ -2235,7 +2251,6 @@ static void updateRetryInterval(struct lora_mac *self, uint32_t start_time)
     
     delta = timeNow(self) - start_time;
     
-    LORA_DEBUG("start_time = %"PRIu32"", start_time)
     LORA_DEBUG("%"PRIu32"s since join initiated", delta)
     
     dither = LDL_System_rand();
@@ -2274,8 +2289,6 @@ static void updateRetryInterval(struct lora_mac *self, uint32_t start_time)
 
 static void inputSignal(struct lora_mac *self, enum lora_input_type type, uint32_t time)
 {
-    LORA_PEDANTIC(self != NULL)
-    
     LORA_SYSTEM_ENTER_CRITICAL(self->app)
     
     if(self->inputs.state == 0U){
@@ -2292,8 +2305,6 @@ static void inputSignal(struct lora_mac *self, enum lora_input_type type, uint32
 
 static void inputArm(struct lora_mac *self, enum lora_input_type type)
 {
-    LORA_PEDANTIC(self != NULL)    
-    
     LORA_SYSTEM_ENTER_CRITICAL(self->app) 
     
     self->inputs.armed |= (1U << type);
@@ -2307,9 +2318,8 @@ static bool inputCheck(struct lora_mac *self, enum lora_input_type type, uint32_
     
     LORA_SYSTEM_ENTER_CRITICAL(self->app)     
     
-    if((self->state & (1U << type)) > 0U){
+    if((self->inputs.state & (1U << type)) > 0U){
         
-        self->inputs.state = 0U;
         *error = timerDelta(self->inputs.time, LDL_System_time(self->app));
         retval = true;
     }
@@ -2337,8 +2347,8 @@ static bool inputPending(const struct lora_mac *self)
 static void timerSet(struct lora_mac *self, enum lora_timer_inst timer, uint32_t timeout)
 {
     LORA_SYSTEM_ENTER_CRITICAL(self->app)
-    
-    self->timers[timer].time = LDL_System_time(self->app) + timeout;
+   
+    self->timers[timer].time = LDL_System_time(self->app) + (timeout & INT32_MAX);
     self->timers[timer].armed = true;
     
     LORA_SYSTEM_LEAVE_CRITICAL(self->app)
@@ -2434,36 +2444,42 @@ static uint32_t processBands(struct lora_mac *self)
 {
     uint32_t time = LDL_System_time(self->app);
     uint32_t min = UINT32_MAX;
+    uint32_t ticks_since;
     uint32_t ms_since;
     uint8_t i;
     
-    ms_since = ticksToMS(timerDelta(self->last_polled, time));
-    self->last_polled = time;
-
-    for(i=0U; i < (sizeof(self->band)/sizeof(*self->band)); i++){
-
-        if(self->band[i] > 0U){
-        
-            if(self->band[i] < ms_since){
-               
-              self->band[i] = 0U;  
-              min = 0U;
-            }
-            else{
-               
-               self->band[i] -= ms_since;
-               
-               if(self->band[i] < min){
-                   
-                   min = self->band[i];
-               }
-            }                                    
-        }
-    }        
+    ticks_since = timerDelta(self->last_polled, time);
+    ms_since = ticksToMS(ticks_since);
     
-    if(min < UINT32_MAX){
+    if(ms_since > 0U){
+    
+        self->last_polled = time;
+
+        for(i=0U; i < (sizeof(self->band)/sizeof(*self->band)); i++){
+
+            if(self->band[i] > 0U){
+            
+                if(self->band[i] < ms_since){
+                   
+                  self->band[i] = 0U;  
+                  min = 0U;
+                }
+                else{
+                   
+                   self->band[i] -= ms_since;
+                   
+                   if(self->band[i] < min){
+                       
+                       min = self->band[i];
+                   }
+                }                                    
+            }
+        }        
         
-        min = msToTicks(min);
+        if(min < UINT32_MAX){
+            
+            min = msToTicks(min);
+        }
     }
     
     return min;

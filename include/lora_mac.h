@@ -269,7 +269,7 @@ enum lora_timer_inst {
     LORA_TIMER_WAITA,
     LORA_TIMER_WAITB,
     LORA_TIMER_BAND,
-    LORA_TIMER_HOUR,
+    LORA_TIMER_MINUTE,
     LORA_TIMER_MAX
 };
 
@@ -375,8 +375,9 @@ struct lora_mac {
     struct lora_mac_session ctx;
     
     struct lora_radio *radio;
-    struct lora_timer timers[LORA_TIMER_MAX];
     struct lora_input inputs;
+    struct lora_timer timers[LORA_TIMER_MAX];
+    
     enum lora_region region;
     
     lora_mac_response_fn handler;

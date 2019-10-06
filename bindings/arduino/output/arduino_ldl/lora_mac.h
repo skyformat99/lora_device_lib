@@ -90,6 +90,14 @@ extern "C" {
     #define LORA_DEFAULT_RATE 1U
 
 #endif
+
+#ifndef LORA_REDUNDANCY_MAX
+    #define LORA_REDUNDANCY_MAX 0xfU
+#endif
+
+#ifndef LORA_REDUNANCY_OFFTIME_LIMIT
+    #define LORA_REDUNANCY_OFFTIME_LIMIT (60UL*60UL*1000UL)
+#endif
  
 struct lora_mac;
 
@@ -269,7 +277,7 @@ enum lora_timer_inst {
     LORA_TIMER_WAITA,
     LORA_TIMER_WAITB,
     LORA_TIMER_BAND,
-    LORA_TIMER_HOUR,
+    LORA_TIMER_MINUTE,
     LORA_TIMER_MAX
 };
 
@@ -375,8 +383,9 @@ struct lora_mac {
     struct lora_mac_session ctx;
     
     struct lora_radio *radio;
-    struct lora_timer timers[LORA_TIMER_MAX];
     struct lora_input inputs;
+    struct lora_timer timers[LORA_TIMER_MAX];
+    
     enum lora_region region;
     
     lora_mac_response_fn handler;
@@ -390,7 +399,7 @@ struct lora_mac {
     uint8_t adrAckCounter;
     bool adrAckReq;
     
-    /* up time in seconds mantained by LORA_TIMER_HOUR */
+    /* up time in seconds mantained by LORA_TIMER_MINUTE */
     uint32_t time;
     
     /* time in seconds of first join attempt */
@@ -399,8 +408,8 @@ struct lora_mac {
     /* number of join/upstream trials */
     uint32_t trials;
     
-    uint8_t tx_dither;    
-    uint8_t rapid_limit;
+    uint8_t tx_dither;
+    uint8_t next_nb_trans;    
 };
 
 /** Initialise MAC 
@@ -429,6 +438,22 @@ void LDL_MAC_init(struct lora_mac *self, void *app, enum lora_region region, str
  * */
 bool LDL_MAC_unconfirmedData(struct lora_mac *self, uint8_t port, const void *data, uint8_t len);
 
+/** Send data upstream with redundacy and without confirmation
+ * 
+ * @param[in] self
+ * @param[in] port 
+ * @param[in] data pointer to message to send (will be cached by MAC)
+ * @param[in] len byte length of data
+ * @param[in] nbTrans number of redundant frames (limited to 15 or LORA_REDUNDANCY_MAX)
+ * 
+ * @return request result
+ * 
+ * @retval true upstream data pending pending
+ * @retval false error, LDL_MAC_errno() will give reason
+ * 
+ * */
+bool LDL_MAC_redundantUnconfirmedData(struct lora_mac *self, uint8_t port, const void *data, uint8_t len, uint8_t nbTrans);
+
 /** Send data upstream with confirmation
  * 
  * @param[in] self
@@ -443,6 +468,22 @@ bool LDL_MAC_unconfirmedData(struct lora_mac *self, uint8_t port, const void *da
  * 
  * */
 bool LDL_MAC_confirmedData(struct lora_mac *self, uint8_t port, const void *data, uint8_t len);
+
+/** Send data upstream with redundancy and confirmation
+ * 
+ * @param[in] self
+ * @param[in] port 
+ * @param[in] data pointer to message to send (will be cached by MAC)
+ * @param[in] len byte length of data
+ * @param[in] nbTrans number of redundant frames (limited to 15 or LORA_REDUNDANCY_MAX)
+ * 
+ * @return request result
+ * 
+ * @retval true upstream data pending pending
+ * @retval false error, LDL_MAC_errno() will give reason
+ * 
+ * */
+bool LDL_MAC_redundantConfirmedData(struct lora_mac *self, uint8_t port, const void *data, uint8_t len, uint8_t nbTrans);
 
 /** Initiate over the air join procedure (or re-join if already joined)
  * 
@@ -685,10 +726,12 @@ void LDL_MAC_interrupt(struct lora_mac *self, uint8_t n, uint32_t time);
  * */
 uint8_t LDL_MAC_mtu(const struct lora_mac *self);
 
-/** Seconds since last downlink message
+/** Seconds since last valid downlink message
  * 
  * @param[in] self
  * @return seconds since last downlink
+ * 
+ * @retval UINT32_MAX no valid downlink received
  * 
  * */
 uint32_t LDL_MAC_timeSinceValidDownlink(struct lora_mac *self);
@@ -723,23 +766,13 @@ void LDL_MAC_setAggregatedDutyCycleLimit(struct lora_mac *self, uint8_t limit);
  * 
  * - confirmed and unconfirmed uplink frames are sent nbTrans times (or until acknowledgement is received)
  * - a value of zero will leave the setting unchanged
- * - limited to 15
+ * - limited to 15 or LORA_REDUNDANCY_MAX (whichever is lower)
  * 
  * @param[in] self
  * @param[in] nbTrans redundancy setting
  * 
  * */
 void LDL_MAC_setRedundancy(struct lora_mac *self, uint8_t nbTrans);
-
-/** nbTrans retransmission attempts below this number will be 
- * sent ASAP, whereas nbTrans retransmissions above will 
- * abide by duty cycle limits.
- * 
- * @param[in] self
- * @param[in] limit rapid limit
- * 
- * */
-void LDL_MAC_setRapidLimit(struct lora_mac *self, uint8_t limit);
 
 #ifdef __cplusplus
 }

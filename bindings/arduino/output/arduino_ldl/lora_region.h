@@ -74,7 +74,7 @@ uint8_t LDL_Region_getRX1Delay(enum lora_region region);
 uint8_t LDL_Region_getRX1Offset(enum lora_region region);
 uint32_t LDL_Region_getRX2Freq(enum lora_region region);
 uint8_t LDL_Region_getRX2Rate(enum lora_region region);
-uint8_t LDL_Region_getJoinRate(enum lora_region region, uint16_t trial);
+uint8_t LDL_Region_getJoinRate(enum lora_region region, uint32_t trial);
 void LDL_Region_getDefaultChannels(enum lora_region region, struct lora_mac *receiver, void (*handler)(struct lora_mac *reciever, uint8_t chIndex, uint32_t freq, uint8_t minRate, uint8_t maxRate));
 
 

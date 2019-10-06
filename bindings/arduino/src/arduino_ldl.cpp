@@ -127,6 +127,16 @@ bool ArduinoLDL::unconfirmedData(uint8_t port)
     return LDL_MAC_unconfirmedData(&mac, port, NULL, 0U); 
 }
 
+bool ArduinoLDL::unconfirmedData(uint8_t port, const void *data, uint8_t len, uint8_t nbTrans)
+{
+    return LDL_MAC_redundantUnconfirmedData(&mac, port, data, len, nbTrans); 
+}
+
+bool ArduinoLDL::unconfirmedData(uint8_t port, uint8_t nbTrans)
+{
+    return LDL_MAC_redundantUnconfirmedData(&mac, port, NULL, 0U, nbTrans); 
+}
+
 bool ArduinoLDL::otaa()
 {
     return LDL_MAC_otaa(&mac); 
@@ -258,12 +268,17 @@ uint32_t ArduinoLDL::ticksPerMilliSecond()
 
 void ArduinoLDL::setSendDither(uint8_t dither)
 {
-    return LDL_MAC_setSendDither(&mac, dither);
+    LDL_MAC_setSendDither(&mac, dither);
 }
 
 void ArduinoLDL::setAggregatedDutyCycleLimit(uint8_t limit)
 {
-    return LDL_MAC_setAggregatedDutyCycleLimit(&mac, limit);
+    LDL_MAC_setAggregatedDutyCycleLimit(&mac, limit);
+}
+
+void ArduinoLDL::setRedundancy(uint8_t nbTrans)
+{
+    LDL_MAC_setRedundancy(&mac, nbTrans);
 }
 
 /* protected methods **************************************************/

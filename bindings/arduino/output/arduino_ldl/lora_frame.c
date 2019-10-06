@@ -137,7 +137,7 @@ size_t LDL_Frame_putJoinAccept(const void *key, const struct lora_frame_join_acc
             break;
         case FREQ_CFLIST:
         
-            for(i=0U; i < sizeof(f->cfList)/sizeof(*f->cfList); i++){
+            for(i=0U; i < (sizeof(f->cfList)/sizeof(*f->cfList)); i++){
                 
                 pos += putU24(&ptr[pos], max - pos, f->cfList[i] / 100U);
             }            
@@ -147,7 +147,7 @@ size_t LDL_Frame_putJoinAccept(const void *key, const struct lora_frame_join_acc
         
         case MASK_CFLIST:
         
-            for(i=0U; i < sizeof(f->cfList)/sizeof(*f->cfList); i++){
+            for(i=0U; i < (sizeof(f->cfList)/sizeof(*f->cfList)); i++){
                 
                 pos += putU16(&ptr[pos], max - pos, (uint16_t)f->cfList[i]);
             }            
@@ -274,7 +274,7 @@ bool LDL_Frame_decode(const void *appKey, const void *nwkSKey, const void *appSK
                         switch(ptr[pos + 15]){
                         case 0U:
                         
-                            for(i=0U; i < sizeof(f->fields.joinAccept.cfList)/sizeof(*f->fields.joinAccept.cfList); i++){
+                            for(i=0U; i < (sizeof(f->fields.joinAccept.cfList)/sizeof(*f->fields.joinAccept.cfList)); i++){
                             
                                 pos += getU24(&ptr[pos], len - pos, &f->fields.joinAccept.cfList[i]);
                                 f->fields.joinAccept.cfList[i] *= 100U;
@@ -285,7 +285,7 @@ bool LDL_Frame_decode(const void *appKey, const void *nwkSKey, const void *appSK
                         
                         case 1U:
                         
-                            for(i=0U; i < sizeof(f->fields.joinAccept.cfList)/sizeof(*f->fields.joinAccept.cfList); i++){
+                            for(i=0U; i < (sizeof(f->fields.joinAccept.cfList)/sizeof(*f->fields.joinAccept.cfList)); i++){
                             
                                 uint16_t mask = 0U;
                             

@@ -110,6 +110,10 @@ class ArduinoLDL {
         bool unconfirmedData(uint8_t port, const void *data, uint8_t len);        
         bool unconfirmedData(uint8_t port);        
         
+        /* send unconfirmed data with redundancy */
+        bool unconfirmedData(uint8_t port, const void *data, uint8_t len, uint8_t nbTrans);                
+        bool unconfirmedData(uint8_t port, uint8_t nbTrans);        
+        
         /* initiate join */
         bool otaa();     
         
@@ -190,7 +194,11 @@ class ArduinoLDL {
          * 
          * */
         void setAggregatedDutyCycleLimit(uint8_t limit);
-     
+        
+        /* transmission redundancy to apply to all upstream messages
+         * 
+         * */        
+        void setRedundancy(uint8_t nbTrans);
 };
 
 #endif

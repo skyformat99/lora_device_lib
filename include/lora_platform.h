@@ -227,6 +227,27 @@
      * */
     #define LORA_ENABLE_STATIC_RX_BUFFER
     #undef LORA_ENABLE_STATIC_RX_BUFFER
+
+    /**
+     * The network can set redundancy to as high as 15 retransmissions
+     * per message. This setting can be defined to limit that 
+     * number to something lower.
+     * 
+     * */
+    #define LORA_REDUNDANCY_MAX
+    #undef LORA_REDUNDANCY_MAX
+    
+    /**
+     * The accumulated offtime which the redundancy retransmission 
+     * limit will not exceed.
+     * 
+     * For example, ETSI duty cycle limits are evalulated over one hour
+     * therefore the milliseconds until the next available channel
+     * should not be allowed to exceed one hour.
+     * 
+     * */
+    #define LORA_REDUNANCY_OFFTIME_LIMIT
+    #undef
     
 #endif
 

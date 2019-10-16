@@ -1038,6 +1038,12 @@ void LDL_MAC_process(struct lora_mac *self)
     LORA_DEBUG("LORA_INPUT_TX_COMPLETE=%s", inputCheck(self, LORA_INPUT_TX_COMPLETE, &error) ? "true" : "false")
     LORA_DEBUG("LORA_INPUT_RX_READY=%s", inputCheck(self, LORA_INPUT_RX_READY, &error) ? "true" : "false")
     LORA_DEBUG("LORA_INPUT_RX_TIMEOUT=%s", inputCheck(self, LORA_INPUT_RX_TIMEOUT, &error) ? "true" : "false")
+
+    LORA_DEBUG("BAND1=%"PRIu32, self->band[0]) 
+    LORA_DEBUG("BAND2=%"PRIu32, self->band[1]) 
+    LORA_DEBUG("BAND3=%"PRIu32, self->band[2]) 
+    LORA_DEBUG("BAND4=%"PRIu32, self->band[3]) 
+    LORA_DEBUG("BAND5=%"PRIu32, self->band[4]) 
 }
 
 uint32_t LDL_MAC_ticksUntilNextEvent(const struct lora_mac *self)

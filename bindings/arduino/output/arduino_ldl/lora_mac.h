@@ -354,8 +354,8 @@ struct lora_mac {
     /* off-time in ms per band */    
     uint32_t band[LORA_BAND_MAX];
     
-    /* ticks of last bandtimer poll */
-    uint32_t last_polled;
+    /* millis of last bandtimer poll */
+    uint32_t band_ms;
     
     uint16_t devNonce;
     
@@ -399,8 +399,8 @@ struct lora_mac {
     uint8_t adrAckCounter;
     bool adrAckReq;
     
-    /* up time in seconds mantained by LORA_TIMER_MINUTE */
     uint32_t time;
+    uint32_t time_ms;
     
     /* time in seconds of first join attempt */
     uint32_t first_join_attempt;    

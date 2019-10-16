@@ -33,9 +33,14 @@ static const SPISettings spi_settings(4000000UL, MSBFIRST, SPI_MODE0);
 
 /* functions **********************************************************/
 
-uint32_t LDL_System_time(void)
+uint32_t LDL_System_ticks(void *app)
 {
     return micros();
+}
+
+uint32_t LDL_System_millis(void *app)
+{
+    return millis();
 }
 
 void LDL_System_getIdentity(void *receiver, struct lora_system_identity *value)
@@ -55,7 +60,6 @@ uint32_t LDL_System_advance(void)
 
 uint32_t LDL_System_eps(void)
 {
-    /* since time source is 1MHz */
     return XTAL_PPM;    
 }
 
@@ -114,7 +118,7 @@ ArduinoLDL::ArduinoLDL(get_identity_fn get_id, enum lora_region region, enum lor
 
 uint32_t ArduinoLDL::time()
 {
-    return LDL_System_time(NULL);
+    return LDL_System_ticks(NULL);
 }
 
 bool ArduinoLDL::unconfirmedData(uint8_t port, const void *data, uint8_t len)
@@ -212,7 +216,7 @@ void ArduinoLDL::interrupt()
         
         if(state && !ptr->state){
 
-            LDL_MAC_interrupt(&ptr->mac, ptr->signal, LDL_System_time(NULL));
+            LDL_MAC_interrupt(&ptr->mac, ptr->signal, LDL_System_ticks(NULL));
         }
         
         ptr->state = state;

@@ -81,7 +81,18 @@ struct lora_system_identity {
  * @return system time
  * 
  * */
-uint32_t LDL_System_time(void *app);
+uint32_t LDL_System_ticks(void *app);
+
+/** Get time in milliseconds
+ * 
+ * @note this is used as a base for long term timing and so the system
+ * should perform error compensation behind the scenes.
+ * 
+ * @param[in] app 
+ * @return milliseconds
+ * 
+ * */
+uint32_t LDL_System_millis(void *app);
 
 /** Get AppEUI, DevEUI, and DevKey
  * 

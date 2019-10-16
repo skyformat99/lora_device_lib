@@ -106,14 +106,15 @@ void LDL_MAC_init(struct lora_mac *self, void *app, enum lora_region region, str
     
     self->band[LORA_BAND_GLOBAL] = (uint32_t)LORA_STARTUP_DELAY;
     
-    self->last_polled = LDL_System_time(self->app);
+    self->band_ms = LDL_System_millis(self->app);
+    self->time_ms = self->band_ms;
     
     LDL_Radio_reset(self->radio, false);
 
     /* leave reset line alone for 10ms */
     timerSet(self, LORA_TIMER_WAITA, (LDL_System_tps() + LDL_System_eps())/100UL);
     
-    /* one hour timer */
+    /* this timer ensures idle stack will be processed every 60 seconds */
     timerSet(self, LORA_TIMER_MINUTE, LDL_System_tps()*60UL);
     
     /* self->state is LORA_STATE_INIT */
@@ -291,6 +292,13 @@ void LDL_MAC_process(struct lora_mac *self)
     uint32_t error;    
     union lora_mac_response_arg arg;
     struct lora_system_identity identity;
+    
+    /* the purpose of this timer is to ensure the stack is processed at 
+     * least once per minute */
+    if(timerCheck(self, LORA_TIMER_MINUTE, &error)){
+        
+        timerSet(self, LORA_TIMER_MINUTE, 60UL*LDL_System_tps());
+    }
     
     (void)timeNow(self);
     
@@ -2234,30 +2242,24 @@ static bool rateSettingIsValid(enum lora_region region, uint8_t rate)
 
 static uint32_t timeNow(struct lora_mac *self)
 {
-    uint32_t until;
-    uint32_t retval;
-    uint32_t error;
+    uint32_t ms;
+    uint32_t since;
+    uint32_t fractions;
+    uint32_t seconds;
     
-    const uint32_t one_hour = LDL_System_tps()*60UL;
+    ms = LDL_System_millis(self->app);
+    since = timerDelta(self->time_ms, ms);
     
-    until = timerTicksUntil(self, LORA_TIMER_MINUTE);
+    if(since > 0U){
     
-    if(until == 0UL){
-        
-        if(timerCheck(self, LORA_TIMER_MINUTE, &error)){
-            
-            self->time += one_hour;
-            timerSet(self, LORA_TIMER_MINUTE, one_hour - error);
-        }    
-        
-        retval = self->time;
+        seconds = since / 1000UL;
+        fractions = since % 1000UL;
+    
+        self->time += seconds;
+        self->time_ms = (ms - fractions);
     }
-    else{
         
-        retval = self->time + ((one_hour - until)/LDL_System_tps());
-    }
-    
-    return retval;
+    return self->time;
 }
 
 /* calculate a retry interval based on V1.1 chapter 7 */
@@ -2343,7 +2345,7 @@ static bool inputCheck(const struct lora_mac *self, enum lora_input_type type, u
     
     if((self->inputs.state & (1U << type)) > 0U){
         
-        *error = timerDelta(self->inputs.time, LDL_System_time(self->app));
+        *error = timerDelta(self->inputs.time, LDL_System_ticks(self->app));
         retval = true;
     }
     
@@ -2371,7 +2373,7 @@ static void timerSet(struct lora_mac *self, enum lora_timer_inst timer, uint32_t
 {
     LORA_SYSTEM_ENTER_CRITICAL(self->app)
    
-    self->timers[timer].time = LDL_System_time(self->app) + (timeout & INT32_MAX);
+    self->timers[timer].time = LDL_System_ticks(self->app) + (timeout & INT32_MAX);
     self->timers[timer].armed = true;
     
     LORA_SYSTEM_LEAVE_CRITICAL(self->app)
@@ -2386,7 +2388,7 @@ static bool timerCheck(struct lora_mac *self, enum lora_timer_inst timer, uint32
         
     if(self->timers[timer].armed){
         
-        time = LDL_System_time(self->app);
+        time = LDL_System_ticks(self->app);
         
         if(timerDelta(self->timers[timer].time, time) < INT32_MAX){
     
@@ -2412,7 +2414,7 @@ static uint32_t timerTicksUntilNext(const struct lora_mac *self)
     uint32_t retval = UINT32_MAX;
     uint32_t time;
     
-    time = LDL_System_time(self->app);
+    time = LDL_System_ticks(self->app);
 
     for(i=0U; i < (sizeof(self->timers)/sizeof(*self->timers)); i++){
 
@@ -2453,7 +2455,7 @@ static uint32_t timerTicksUntil(const struct lora_mac *self, enum lora_timer_ins
     
     if(self->timers[timer].armed){
         
-        time = LDL_System_time(self->app);
+        time = LDL_System_ticks(self->app);
         
         if(timerDelta(self->timers[timer].time, time) <= INT32_MAX){
             
@@ -2477,31 +2479,30 @@ static uint32_t timerDelta(uint32_t timeout, uint32_t time)
 
 static uint32_t processBands(struct lora_mac *self)
 {
-    uint32_t time = LDL_System_time(self->app);
+    uint32_t since;
+    uint32_t ms;
     uint32_t min = UINT32_MAX;
-    uint32_t ticks_since;
-    uint32_t ms_since;
     uint8_t i;
     
-    ticks_since = timerDelta(self->last_polled, time);
-    ms_since = ticksToMS(ticks_since);
+    ms = LDL_System_millis(self->app);
+    since = timerDelta(self->band_ms, ms);
     
-    if(ms_since > 0U){
+    if(since > 0U){
     
-        self->last_polled = time;
+        self->band_ms = ms;
 
         for(i=0U; i < (sizeof(self->band)/sizeof(*self->band)); i++){
 
             if(self->band[i] > 0U){
             
-                if(self->band[i] < ms_since){
+                if(self->band[i] < since){
                    
                   self->band[i] = 0U;  
                   min = 0U;
                 }
                 else{
                    
-                   self->band[i] -= ms_since;
+                   self->band[i] -= since;
                    
                    if(self->band[i] < min){
                        
@@ -2622,7 +2623,7 @@ static void downlinkMissingHandler(struct lora_mac *self)
 
 static uint32_t msToTicks(uint32_t ms)
 {
-    uint32_t retval = LDL_System_tps() / 1000UL * ms;
+    uint32_t retval = LDL_System_tps() * ms / 1000UL;
     
     if((retval < ms) || (retval > INT32_MAX)){
         

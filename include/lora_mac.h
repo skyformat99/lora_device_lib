@@ -277,7 +277,6 @@ enum lora_timer_inst {
     LORA_TIMER_WAITA,
     LORA_TIMER_WAITB,
     LORA_TIMER_BAND,
-    LORA_TIMER_MINUTE,
     LORA_TIMER_MAX
 };
 
@@ -354,8 +353,7 @@ struct lora_mac {
     /* off-time in ms per band */    
     uint32_t band[LORA_BAND_MAX];
     
-    /* millis of last bandtimer poll */
-    uint32_t band_ms;
+    uint32_t polled_band_ticks;
     
     uint16_t devNonce;
     
@@ -400,7 +398,7 @@ struct lora_mac {
     bool adrAckReq;
     
     uint32_t time;
-    uint32_t time_ms;
+    uint32_t polled_time_ticks;
     
     /* time in seconds of first join attempt */
     uint32_t first_join_attempt;    

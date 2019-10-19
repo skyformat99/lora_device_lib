@@ -38,11 +38,6 @@ uint32_t LDL_System_ticks(void *app)
     return micros();
 }
 
-uint32_t LDL_System_millis(void *app)
-{
-    return millis();
-}
-
 void LDL_System_getIdentity(void *receiver, struct lora_system_identity *value)
 {
     ArduinoLDL::getIdentity(receiver, value);    

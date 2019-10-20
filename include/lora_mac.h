@@ -408,6 +408,8 @@ struct lora_mac {
     
     uint8_t tx_dither;
     uint8_t next_nb_trans;    
+    
+    bool timing_updated;
 };
 
 /** Initialise MAC 
@@ -771,6 +773,8 @@ void LDL_MAC_setAggregatedDutyCycleLimit(struct lora_mac *self, uint8_t limit);
  * 
  * */
 void LDL_MAC_setRedundancy(struct lora_mac *self, uint8_t nbTrans);
+
+bool LDL_MAC_timingUpdated(const struct lora_mac *self);
 
 #ifdef __cplusplus
 }

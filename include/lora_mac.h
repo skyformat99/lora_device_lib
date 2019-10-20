@@ -277,6 +277,7 @@ enum lora_timer_inst {
     LORA_TIMER_WAITA,
     LORA_TIMER_WAITB,
     LORA_TIMER_BAND,
+    LORA_TIMER_MINUTE,
     LORA_TIMER_MAX
 };
 

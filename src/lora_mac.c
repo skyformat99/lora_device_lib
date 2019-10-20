@@ -115,9 +115,8 @@ void LDL_MAC_init(struct lora_mac *self, void *app, enum lora_region region, str
     /* leave reset line alone for 10ms */
     timerSet(self, LORA_TIMER_WAITA, (LDL_System_tps() + LDL_System_eps())/100UL);
 
-    /* tracks ms registers */
-    timerSet(self, LORA_TIMER_BAND, LDL_System_tps() * 60UL);
-        
+    timerSet(self, LORA_TIMER_MINUTE, LDL_System_tps() * 60UL);
+    
     /* self->state is LORA_STATE_INIT */
 }
 
@@ -294,8 +293,15 @@ void LDL_MAC_process(struct lora_mac *self)
     union lora_mac_response_arg arg;
     struct lora_system_identity identity;
 
+    self->timing_updated = false;
+
     (void)timeNow(self);    
     (void)processBands(self);
+    
+    if(timerCheck(self, LORA_TIMER_MINUTE, &error)){
+        
+        timerSet(self, LORA_TIMER_MINUTE, 60UL * LDL_System_tps());
+    }
     
     switch(self->state){
     default:
@@ -1029,13 +1035,12 @@ void LDL_MAC_process(struct lora_mac *self)
         uint32_t next = processBands(self);
         
         if(next != UINT32_MAX){
-        
-            timerSet(self, LORA_TIMER_BAND, next);
-        }   
-        else{
             
-            timerSet(self, LORA_TIMER_BAND, 60*LDL_System_tps());
-        }     
+            if(timerTicksUntil(self, LORA_TIMER_BAND, &error) > next){
+                
+                timerSet(self, LORA_TIMER_BAND, next);
+            }
+        }        
     }
     
     LORA_DEBUG("WAITA=%"PRIu32, timerTicksUntil(self, LORA_TIMER_WAITA, &error));

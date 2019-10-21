@@ -775,6 +775,22 @@ void LDL_MAC_setAggregatedDutyCycleLimit(struct lora_mac *self, uint8_t limit);
  * */
 void LDL_MAC_setRedundancy(struct lora_mac *self, uint8_t nbTrans);
 
+/** Indicates that the time of the next scheduled event has changed since
+ * the last interaction with LDL.
+ * 
+ * This is useful for working out if the host timer system needs to be updated,
+ * or wether the previous setting can be kept. 
+ * 
+ * In situations where LDL_MAC_process() is polled opportunistically from
+ * the mainloop, this function can ensure the system timer system is only
+ * updated when the timing situation has changed.
+ *  
+ * @param[in] self
+ * 
+ * @retval true timer system should be updated
+ * @retval false no need to update timer system
+ * 
+ * */
 bool LDL_MAC_timingUpdated(const struct lora_mac *self);
 
 #ifdef __cplusplus

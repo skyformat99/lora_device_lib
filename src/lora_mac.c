@@ -2431,7 +2431,6 @@ static bool timerCheck(struct lora_mac *self, enum lora_timer_inst timer, uint32
     
             self->timers[timer].armed = false;            
             *error = timerDelta(self->timers[timer].time, time);
-            self->timing_updated = true;
             retval = true;
         }
     }    
@@ -2444,7 +2443,6 @@ static bool timerCheck(struct lora_mac *self, enum lora_timer_inst timer, uint32
 static void timerClear(struct lora_mac *self, enum lora_timer_inst timer)
 {
     self->timers[timer].armed = false;
-    self->timing_updated = true;
 }
 
 static uint32_t timerTicksUntilNext(const struct lora_mac *self)

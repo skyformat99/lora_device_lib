@@ -71,7 +71,6 @@ void LDL_System_getIdentity(void *app, struct lora_system_identity *value)
 
 uint32_t LDL_System_ticks(void *app)
 {
-    #warning "LDL_Sytem_ticks() should be defined"
     return 0UL;
 }
 

@@ -2514,32 +2514,32 @@ static uint32_t processBands(struct lora_mac *self)
     if(ms > 0U){
     
         self->polled_band_ticks = (ticks - (since - msToTicks(ms)));
+    }
 
-        for(i=0U; i < (sizeof(self->band)/sizeof(*self->band)); i++){
+    for(i=0U; i < (sizeof(self->band)/sizeof(*self->band)); i++){
 
-            if(self->band[i] > 0U){
-            
-                if(self->band[i] < ms){
-                   
-                  self->band[i] = 0U;  
-                  min = 0U;
-                }
-                else{
-                   
-                   self->band[i] -= ms;
-                   
-                   if(self->band[i] < min){
-                       
-                       min = self->band[i];
-                   }
-                }                                    
-            }            
-        }        
+        if(self->band[i] > 0U){
         
-        if(min < UINT32_MAX){
-            
-            min = msToTicks(min);
-        }
+            if(self->band[i] < ms){
+               
+              self->band[i] = 0U;  
+              min = 0U;
+            }
+            else{
+               
+               self->band[i] -= ms;
+               
+               if(self->band[i] < min){
+                   
+                   min = self->band[i];
+               }
+            }                                    
+        }            
+    }        
+        
+    if(min < UINT32_MAX){
+        
+        min = msToTicks(min);
     }
     
     return min;

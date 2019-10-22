@@ -2515,9 +2515,7 @@ static uint32_t processBands(struct lora_mac *self)
     uint32_t ticks;
     uint32_t min = UINT32_MAX;
     uint8_t i;
-    
     uint32_t ms;
-    uint32_t part;
     
     ticks = LDL_System_ticks(self->app);
     since = timerDelta(self->polled_band_ticks, ticks);
@@ -2526,8 +2524,7 @@ static uint32_t processBands(struct lora_mac *self)
     
     if(ms > 0U){
     
-        part = (since * 1000UL) % LDL_System_tps();
-        self->polled_band_ticks = (ticks - part);
+        self->polled_band_ticks = (ticks - (since - msToTicks(ms)));
 
         for(i=0U; i < (sizeof(self->band)/sizeof(*self->band)); i++){
 

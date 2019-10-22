@@ -427,12 +427,6 @@ void LDL_MAC_process(struct lora_mac *self)
     
         if(inputCheck(self, LORA_INPUT_TX_COMPLETE, &error)){
         
-#ifdef LORA_ENABLE_MEASUREMENT_BASED_ACCOUNTING            
-            {
-                uint32_t until = timerTicksUntil(self, LORA_TIMER_WAITA, &error);                
-                registerTime(self, self->tx.freq, ((10UL*LDL_System_tps()) - until));                
-            }
-#endif            
             inputClear(self);
         
             uint32_t waitSeconds;
@@ -524,13 +518,6 @@ void LDL_MAC_process(struct lora_mac *self)
         else{
             
             if(timerCheck(self, LORA_TIMER_WAITA, &error)){
-                
-#ifdef LORA_ENABLE_MEASUREMENT_BASED_ACCOUNTING            
-            {
-                registerTime(self, self->tx.freq, 10UL*LDL_System_tps());                
-            }
-#endif            
-                
                 
 #ifndef LORA_DISABLE_CHIP_ERROR_EVENT                
                 self->handler(self->app, LORA_MAC_CHIP_ERROR, NULL);                
@@ -1970,9 +1957,7 @@ static void registerTime(struct lora_mac *self, uint32_t freq, uint32_t airTime)
         
             LORA_PEDANTIC( band < LORA_BAND_MAX )
             
-            offtime = (airTime * offtime);
-            
-            offtime = ticksToMS(offtime);
+            offtime = ticksToMS(airTime) * offtime;
             
             if((self->band[band] + offtime) < self->band[band]){
                 
@@ -1987,7 +1972,7 @@ static void registerTime(struct lora_mac *self, uint32_t freq, uint32_t airTime)
     
     if(self->ctx.maxDutyCycle > 0U){
         
-        offtime = airTime * ( 1UL << (self->ctx.maxDutyCycle & 0xfU));
+        offtime = ticksToMS(airTime) * ( 1UL << (self->ctx.maxDutyCycle & 0xfU));
         
         if((self->band[LORA_BAND_GLOBAL] + offtime) < self->band[LORA_BAND_GLOBAL]){
             

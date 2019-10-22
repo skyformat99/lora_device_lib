@@ -1058,6 +1058,8 @@ void LDL_MAC_process(struct lora_mac *self)
     LORA_DEBUG("BAND5=%"PRIu32, self->band[4]) 
     LORA_DEBUG("BAND_GLOBAL=%"PRIu32, self->band[5]) 
     LORA_DEBUG("BAND_RETRY=%"PRIu32, self->band[6]) 
+    
+    LORA_DEBUG("next event=%"PRIu32, LDL_MAC_ticksUntilNextEvent(self))
 }
 
 uint32_t LDL_MAC_ticksUntilNextEvent(const struct lora_mac *self)

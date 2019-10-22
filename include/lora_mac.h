@@ -409,8 +409,6 @@ struct lora_mac {
     
     uint8_t tx_dither;
     uint8_t next_nb_trans;    
-    
-    bool timing_updated;
 };
 
 /** Initialise MAC 
@@ -774,21 +772,6 @@ void LDL_MAC_setAggregatedDutyCycleLimit(struct lora_mac *self, uint8_t limit);
  * 
  * */
 void LDL_MAC_setRedundancy(struct lora_mac *self, uint8_t nbTrans);
-
-/** Indicates that the time of the next scheduled event has changed since
- * the last interaction with LDL.
- * 
- * This is useful for working out if the host timer system needs to be updated or not. 
- * Having this information can minimize timer queue "thrashing" on hosts where 
- * LDL_MAC_process() is polled opportunistically from the mainloop.
- * 
- * @param[in] self
- * 
- * @retval true host timer system should be updated
- * @retval false
- * 
- * */
-bool LDL_MAC_timingUpdated(const struct lora_mac *self);
 
 #ifdef __cplusplus
 }

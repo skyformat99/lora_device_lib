@@ -293,8 +293,6 @@ void LDL_MAC_process(struct lora_mac *self)
     union lora_mac_response_arg arg;
     struct lora_system_identity identity;
 
-    self->timing_updated = false;
-
     (void)timeNow(self);    
     (void)processBands(self);
     
@@ -1332,11 +1330,6 @@ void LDL_MAC_setRedundancy(struct lora_mac *self, uint8_t nbTrans)
     LDL_System_saveContext(self->app, &self->ctx);      
 }
 
-bool LDL_MAC_timingUpdated(const struct lora_mac *self)
-{
-    return self->timing_updated;
-}
-
 /* static functions ***************************************************/
 
 static bool externalDataCommand(struct lora_mac *self, bool confirmed, uint8_t port, const void *data, uint8_t len, uint8_t nbTrans)
@@ -2347,7 +2340,6 @@ static void inputSignal(struct lora_mac *self, enum lora_input_type type, uint32
     
             self->inputs.time = time;
             self->inputs.state = (1U << type);
-            self->timing_updated = true;
         }
     }
     
@@ -2386,7 +2378,6 @@ static void inputClear(struct lora_mac *self)
     
     self->inputs.state = 0U;
     self->inputs.armed = 0U;
-    self->timing_updated = true;
     
     LORA_SYSTEM_LEAVE_CRITICAL(self->app)   
 }
@@ -2402,7 +2393,6 @@ static void timerSet(struct lora_mac *self, enum lora_timer_inst timer, uint32_t
    
     self->timers[timer].time = LDL_System_ticks(self->app) + (timeout & INT32_MAX);
     self->timers[timer].armed = true;
-    self->timing_updated = true;
     
     LORA_SYSTEM_LEAVE_CRITICAL(self->app)
 }

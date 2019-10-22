@@ -2530,14 +2530,14 @@ static uint32_t processBands(struct lora_mac *self)
 
             if(self->band[i] > 0U){
             
-                if(self->band[i] < since){
+                if(self->band[i] < ms){
                    
                   self->band[i] = 0U;  
                   min = 0U;
                 }
                 else{
                    
-                   self->band[i] -= since;
+                   self->band[i] -= ms;
                    
                    if(self->band[i] < min){
                        

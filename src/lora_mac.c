@@ -435,7 +435,6 @@ void LDL_MAC_process(struct lora_mac *self)
                 registerTime(self, self->tx.freq, ((10UL*LDL_System_tps()) - until));                
             }
 #endif            
-        
             inputClear(self);
         
             uint32_t waitSeconds;
@@ -1040,6 +1039,10 @@ void LDL_MAC_process(struct lora_mac *self)
                 
                 timerSet(self, LORA_TIMER_BAND, next);
             }
+        }
+        else{
+            
+            timerClear(self, LORA_TIMER_BAND);
         }        
     }
     

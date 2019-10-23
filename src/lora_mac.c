@@ -69,7 +69,7 @@ static void timerSet(struct lora_mac *self, enum lora_timer_inst timer, uint32_t
 static bool timerCheck(struct lora_mac *self, enum lora_timer_inst timer, uint32_t *error);
 static void timerClear(struct lora_mac *self, enum lora_timer_inst timer);
 static uint32_t timerTicksUntilNext(const struct lora_mac *self);
-static uint32_t timerTicksUntil(const struct lora_mac *self, enum lora_timer_inst timer, uint32_t *error);
+//static uint32_t timerTicksUntil(const struct lora_mac *self, enum lora_timer_inst timer, uint32_t *error);
 static uint32_t timerDelta(uint32_t timeout, uint32_t time);
 static void processBands(struct lora_mac *self);
 static uint32_t nextBandEvent(const struct lora_mac *self);
@@ -1011,24 +1011,9 @@ void LDL_MAC_process(struct lora_mac *self)
     }
     
     {
-        uint32_t next = nextBandEvent(self);
-        
-        if(next != UINT32_MAX){
-            
-            timerSet(self, LORA_TIMER_BAND, next);            
-        }
-        else{
-            
-            timerSet(self, LORA_TIMER_BAND, 60UL*LDL_System_tps());            
-        }        
-    }
-    
-    LORA_DEBUG("WAITA=%"PRIu32, timerTicksUntil(self, LORA_TIMER_WAITA, &error));
-    LORA_DEBUG("WAITB=%"PRIu32, timerTicksUntil(self, LORA_TIMER_WAITB, &error));
-    LORA_DEBUG("BAND=%"PRIu32, timerTicksUntil(self, LORA_TIMER_BAND, &error));
-    LORA_DEBUG("LORA_INPUT_TX_COMPLETE=%s", inputCheck(self, LORA_INPUT_TX_COMPLETE, &error) ? "true" : "false")
-    LORA_DEBUG("LORA_INPUT_RX_READY=%s", inputCheck(self, LORA_INPUT_RX_READY, &error) ? "true" : "false")
-    LORA_DEBUG("LORA_INPUT_RX_TIMEOUT=%s", inputCheck(self, LORA_INPUT_RX_TIMEOUT, &error) ? "true" : "false")
+        uint32_t next = nextBandEvent(self);        
+        timerSet(self, LORA_TIMER_BAND, (next < 60UL*LDL_System_tps()) ? next : 60UL*LDL_System_tps());                    
+    }    
 }
 
 uint32_t LDL_MAC_ticksUntilNextEvent(const struct lora_mac *self)
@@ -2414,6 +2399,7 @@ static uint32_t timerTicksUntilNext(const struct lora_mac *self)
     size_t i;
     uint32_t retval = UINT32_MAX;
     uint32_t time;
+    uint32_t error;
     
     time = LDL_System_ticks(self->app);
 
@@ -2447,6 +2433,7 @@ static uint32_t timerTicksUntilNext(const struct lora_mac *self)
     return retval;
 }
 
+#if 0
 static uint32_t timerTicksUntil(const struct lora_mac *self, enum lora_timer_inst timer, uint32_t *error)
 {
     uint32_t retval = UINT32_MAX;
@@ -2474,6 +2461,7 @@ static uint32_t timerTicksUntil(const struct lora_mac *self, enum lora_timer_ins
     
     return retval;
 }
+#endif
 
 static uint32_t timerDelta(uint32_t timeout, uint32_t time)
 {

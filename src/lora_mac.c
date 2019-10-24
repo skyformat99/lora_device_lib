@@ -75,7 +75,6 @@ static void processBands(struct lora_mac *self);
 static uint32_t nextBandEvent(const struct lora_mac *self);
 static void registerDownlink(struct lora_mac *self);
 static void downlinkMissingHandler(struct lora_mac *self);
-static uint32_t msToTicks(uint32_t ms);
 static uint32_t ticksToMS(uint32_t ticks);
 static uint32_t msUntilNextChannel(const struct lora_mac *self, uint8_t rate);
 
@@ -2419,7 +2418,6 @@ static uint32_t timerTicksUntilNext(const struct lora_mac *self)
     size_t i;
     uint32_t retval = UINT32_MAX;
     uint32_t time;
-    uint32_t error;
     
     time = LDL_System_ticks(self->app);
 
@@ -2640,18 +2638,6 @@ static void downlinkMissingHandler(struct lora_mac *self)
         self->state = LORA_STATE_WAIT_RETRY;        
         break;                    
     }        
-}
-
-static uint32_t msToTicks(uint32_t ms)
-{
-    uint32_t retval = LDL_System_tps() * ms / 1000UL;
-    
-    if((retval < ms) || (retval > INT32_MAX)){
-        
-        retval = INT32_MAX;
-    }
-    
-    return retval;
 }
 
 static uint32_t ticksToMS(uint32_t ticks)

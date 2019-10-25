@@ -206,6 +206,8 @@ bool LDL_MAC_otaa(struct lora_mac *self)
                 delay |= LDL_System_rand();
                 delay <<= 8U;
                 delay |= LDL_System_rand();
+                delay <<= 8U;
+                delay |= LDL_System_rand();
                 
                 delay = delay % (60UL*LDL_System_tps());
                 

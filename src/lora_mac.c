@@ -2279,19 +2279,19 @@ static void updateRetryInterval(struct lora_mac *self, uint32_t start_time)
     if(delta < (60UL*60UL)){
         
         self->band[LORA_BAND_RETRY] = (50UL + (dither % 100UL)) * tx_time;                                                
-        LORA_DEBUG(self->app, "0.01 retry duty: %"PRIu32m" ms", self->band[LORA_BAND_RETRY])
+        LORA_DEBUG(self->app, "0.01 retry duty: %"PRIu32" ms", self->band[LORA_BAND_RETRY])
     }
     /* 36/36000 (0.001) */
     else if(delta < (11UL*60UL*60UL)){
      
         self->band[LORA_BAND_RETRY] = (500UL + (dither % 1000UL)) * tx_time;                     
-        LORA_DEBUG(self->app, "0.001 retry duty: %"PRIu32m" ms", self->band[LORA_BAND_RETRY])
+        LORA_DEBUG(self->app, "0.001 retry duty: %"PRIu32" ms", self->band[LORA_BAND_RETRY])
     }
     /* 8.7/86400 (0.0001) */
     else{
         
         self->band[LORA_BAND_RETRY] = (5000UL + (dither % 10000UL)) * tx_time;                             
-        LORA_DEBUG(self->app, "0.0001 retry duty: %"PRIu32m" ms", self->band[LORA_BAND_RETRY])
+        LORA_DEBUG(self->app, "0.0001 retry duty: %"PRIu32" ms", self->band[LORA_BAND_RETRY])
     }
 }
 

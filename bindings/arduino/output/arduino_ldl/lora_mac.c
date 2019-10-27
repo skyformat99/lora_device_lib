@@ -76,6 +76,7 @@ static uint32_t nextBandEvent(const struct lora_mac *self);
 static void registerDownlink(struct lora_mac *self);
 static void downlinkMissingHandler(struct lora_mac *self);
 static uint32_t ticksToMS(uint32_t ticks);
+static uint32_t ticksToMSCoarse(uint32_t ticks);
 static uint32_t msUntilNextChannel(const struct lora_mac *self, uint8_t rate);
 
 /* functions **********************************************************/
@@ -211,7 +212,7 @@ bool LDL_MAC_otaa(struct lora_mac *self)
                 
                 delay = delay % (60UL*LDL_System_tps());
                 
-                LORA_DEBUG("sending join in %"PRIu32" ticks", delay)
+                LORA_DEBUG(self->app, "sending join in %"PRIu32" ticks", delay)
                             
                 timerSet(self, LORA_TIMER_WAITA, delay);
                 
@@ -710,7 +711,7 @@ void LDL_MAC_process(struct lora_mac *self)
                                         }
                                         else{
                                             
-                                            LORA_INFO("cflist channel is invalid for the region")
+                                            LORA_DEBUG(self->app, "cflist channel is invalid for the region")
                                         }
                                     }
                                     break;
@@ -759,7 +760,7 @@ void LDL_MAC_process(struct lora_mac *self)
                         }
                         else{
 
-                            LORA_INFO("unexpected join-accept frame")
+                            LORA_DEBUG(self->app, "unexpected join-accept frame")
                         }
                         break;
                     
@@ -805,17 +806,17 @@ void LDL_MAC_process(struct lora_mac *self)
                                 }
                                 else{
                                     
-                                    LORA_INFO("counter mismatch")
+                                    LORA_DEBUG(self->app, "counter mismatch")
                                 }
                             }
                             else{
                                 
-                                LORA_INFO("devaddr mismatch")        
+                                LORA_DEBUG(self->app, "devaddr mismatch")        
                             }
                         }
                         else{
                             
-                            LORA_INFO("unexpected data frame")
+                            LORA_DEBUG(self->app, "unexpected data frame")
                         }
                         break;
                     
@@ -823,18 +824,18 @@ void LDL_MAC_process(struct lora_mac *self)
                     case FRAME_TYPE_DATA_UNCONFIRMED_UP:
                     case FRAME_TYPE_DATA_CONFIRMED_UP:            
                     default:
-                        LORA_INFO("unexpected frame")
+                        LORA_DEBUG(self->app, "unexpected frame")
                         break;                    
                     }
                 }
                 else{
                     
-                    LORA_INFO("invalid mic")
+                    LORA_DEBUG(self->app, "invalid mic")
                 }
             }
             else{
                 
-                LORA_INFO("unknown frame")                
+                LORA_DEBUG(self->app, "unknown frame")                
             }
             
             if(downlink_registered){
@@ -864,7 +865,7 @@ void LDL_MAC_process(struct lora_mac *self)
                 /* respond to MAC command */
                 if(cmd_len > 0U){
 
-                    LORA_INFO("sending mac response")
+                    LORA_DEBUG(self->app, "sending mac response")
                     
                     self->tx.rate = self->ctx.rate;
                     self->tx.power = self->ctx.power;
@@ -907,7 +908,7 @@ void LDL_MAC_process(struct lora_mac *self)
                     }
                     else{
                         
-                        LORA_INFO("cannot send, all channels are masked!")
+                        LORA_DEBUG(self->app, "cannot send, all channels are masked!")
                         
                         self->state = LORA_STATE_IDLE;           
                         self->op = LORA_OP_NONE;
@@ -1002,7 +1003,7 @@ void LDL_MAC_process(struct lora_mac *self)
             }
             else{
                 
-                LORA_INFO("no channels for retry")
+                LORA_DEBUG(self->app, "no channels for retry")
                 
                 self->op = LORA_OP_NONE;
                 self->state = LORA_STATE_IDLE;
@@ -1013,24 +1014,12 @@ void LDL_MAC_process(struct lora_mac *self)
     
     {
         uint32_t next = nextBandEvent(self);     
-        
-        LORA_DEBUG("band[LORA_BAND_1]=%"PRIu32, self->band[LORA_BAND_1])   
-        LORA_DEBUG("band[LORA_BAND_2]=%"PRIu32, self->band[LORA_BAND_2])   
-        LORA_DEBUG("band[LORA_BAND_3]=%"PRIu32, self->band[LORA_BAND_3])   
-        LORA_DEBUG("band[LORA_BAND_4]=%"PRIu32, self->band[LORA_BAND_4])   
-        LORA_DEBUG("band[LORA_BAND_5]=%"PRIu32, self->band[LORA_BAND_5])   
-        LORA_DEBUG("band[LORA_BAND_GLOBAL]=%"PRIu32, self->band[LORA_BAND_GLOBAL])   
-        LORA_DEBUG("band[LORA_BAND_RETRY]=%"PRIu32, self->band[LORA_BAND_RETRY])   
-        
-        if(next < (60UL*LDL_System_tps())){
             
-            LORA_DEBUG("next band event in %"PRIu32"ticks", next)
+        if(next < ticksToMSCoarse(60UL*LDL_System_tps())){
             
             timerSet(self, LORA_TIMER_BAND, LDL_System_tps() / 1000UL * (next+1U));                    
         }
         else{
-        
-            LORA_DEBUG("no immediate next band event")
         
             timerSet(self, LORA_TIMER_BAND, 60UL*LDL_System_tps());                    
         }
@@ -1496,7 +1485,7 @@ static void adaptRate(struct lora_mac *self)
                 
                 self->adrAckReq = true;
             
-                LORA_DEBUG("adr: adrAckCounter=%u (past ADRAckLimit)", self->adrAckCounter)
+                LORA_DEBUG(self->app, "adr: adrAckCounter=%u (past ADRAckLimit)", self->adrAckCounter)
             
                 if(self->adrAckCounter >= (ADRAckLimit + ADRAckDelay)){
                 
@@ -1507,11 +1496,11 @@ static void adaptRate(struct lora_mac *self)
                             if(self->ctx.rate > LORA_DEFAULT_RATE){
                                                             
                                 self->ctx.rate--;
-                                LORA_DEBUG("adr: rate reduced to %u", self->ctx.rate)
+                                LORA_DEBUG(self->app, "adr: rate reduced to %u", self->ctx.rate)
                             }
                             else{
                                 
-                                LORA_DEBUG("adr: all channels unmasked")
+                                LORA_DEBUG(self->app, "adr: all channels unmasked")
                                 
                                 unmaskAllChannels(self->ctx.chMask, self->region);
                                 
@@ -1520,7 +1509,7 @@ static void adaptRate(struct lora_mac *self)
                         }
                         else{
                             
-                            LORA_DEBUG("adr: full power enabled")
+                            LORA_DEBUG(self->app, "adr: full power enabled")
                             self->ctx.power = 0U;
                         }
                     }
@@ -1645,7 +1634,7 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
                 arg.link_status.margin = ans->margin;
                 arg.link_status.gwCount = ans->gwCount;            
                 
-                LORA_DEBUG("link_check_ans: margin=%u gwCount=%u", 
+                LORA_DEBUG(self->app, "link_check_ans: margin=%u gwCount=%u", 
                     ans->margin,
                     ans->gwCount             
                 )
@@ -1659,7 +1648,7 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
             {
                 const struct lora_link_adr_req *req = &cmd.fields.linkADRReq;
                 
-                LORA_DEBUG("link_adr_req: dataRate=%u txPower=%u chMask=%04x chMaskCntl=%u nbTrans=%u",
+                LORA_DEBUG(self->app, "link_adr_req: dataRate=%u txPower=%u chMask=%04x chMaskCntl=%u nbTrans=%u",
                     req->dataRate, req->txPower, req->channelMask, req->channelMaskControl, req->nbTrans)
                 
                 uint8_t i;
@@ -1789,13 +1778,13 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
                     /* if we are not ADRing then any ADR is bad! */
                     else{
                         
-                        LORA_DEBUG("ignoring ADR since not in ADR mode")
+                        LORA_DEBUG(self->app, "ignoring ADR since not in ADR mode")
                         
                         (void)memset(&adr_ans, 0, sizeof(adr_ans));                            
                         adr_state = _ADR_BAD;                            
                     }
                  
-                    LORA_DEBUG("link_adr_ans: powerOK=%s dataRateOK=%s channelMaskOK=%s",
+                    LORA_DEBUG(self->app, "link_adr_ans: powerOK=%s dataRateOK=%s channelMaskOK=%s",
                         adr_ans.dataRateOK ? "true" : "false", 
                         adr_ans.powerOK ? "true" : "false", 
                         adr_ans.channelMaskOK ? "true" : "false"
@@ -1811,7 +1800,7 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
             {    
                 const struct lora_duty_cycle_req *req = &cmd.fields.dutyCycleReq;
                 
-                LORA_DEBUG("duty_cycle_req: %u", req->maxDutyCycle)
+                LORA_DEBUG(self->app, "duty_cycle_req: %u", req->maxDutyCycle)
                 
                 shadow.maxDutyCycle = req->maxDutyCycle;                        
                 (void)LDL_MAC_putDutyCycleAns(&s_out);
@@ -1823,7 +1812,7 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
                 const struct lora_rx_param_setup_req *req = &cmd.fields.rxParamSetupReq;
                 struct lora_rx_param_setup_ans ans;
              
-                LORA_DEBUG("rx_param_setup: rx1DROffset=%u rx2DataRate=%u freq=%"PRIu32,
+                LORA_DEBUG(self->app, "rx_param_setup: rx1DROffset=%u rx2DataRate=%u freq=%"PRIu32,
                     req->rx1DROffset,
                     req->rx2DataRate,
                     req->freq
@@ -1845,7 +1834,7 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
             
             case DEV_STATUS:
             {
-                LORA_DEBUG("dev_status_req")
+                LORA_DEBUG(self->app, "dev_status_req")
                 struct lora_dev_status_ans ans;        
                 
                 ans.battery = LDL_System_getBatteryLevel(self->app);
@@ -1857,7 +1846,7 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
                 
             case NEW_CHANNEL:    
             
-                LORA_DEBUG("new_channel_req: ")
+                LORA_DEBUG(self->app, "new_channel_req:")
                 
                 if(LDL_Region_isDynamic(self->region)){
                 
@@ -1877,7 +1866,7 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
                        
             case DL_CHANNEL:            
                 
-                LORA_INFO("handing dl_channel")
+                LORA_DEBUG(self->app, "dl_channel:")
                 
                 if(LDL_Region_isDynamic(self->region)){
                     
@@ -1892,7 +1881,7 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
             
             case RX_TIMING_SETUP:
             {        
-                LORA_INFO("handing rx_timing_setup")
+                LORA_DEBUG(self->app, "handing rx_timing_setup")
                 
                 shadow.rx1Delay = cmd.fields.rxTimingSetupReq.delay;
                 
@@ -1902,7 +1891,7 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
             
             case TX_PARAM_SETUP:        
                 
-                LORA_INFO("handing tx_param_setup")    
+                LORA_DEBUG(self->app, "handing tx_param_setup")    
                 break;
             }
             
@@ -1917,7 +1906,7 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
     /* roll back ADR request if not successful */
     if(adr_state == _ADR_BAD){
         
-        LORA_DEBUG("bad ADR setting; rollback")
+        LORA_DEBUG(self->app, "bad ADR setting; rollback")
         
         (void)memcpy(shadow.chMask, self->ctx.chMask, sizeof(shadow.chMask));
         
@@ -1958,7 +1947,7 @@ static void registerTime(struct lora_mac *self, uint32_t freq, uint32_t airTime)
         }
     }
     
-    if(self->ctx.maxDutyCycle > 0U){
+    if((self->op != LORA_OP_JOINING) && (self->ctx.maxDutyCycle > 0U)){
         
         offtime = ticksToMS(airTime) * ( 1UL << (self->ctx.maxDutyCycle & 0xfU));
         
@@ -2252,6 +2241,8 @@ static uint32_t timeNow(struct lora_mac *self)
         part = since % LDL_System_tps();        
         self->polled_time_ticks = (ticks - part);    
         self->time += seconds;
+        
+        LORA_DEBUG(self->app, "%"PRIu32" ticks since last updated", LDL_System_tps() / 1000U * since)
     }
     
     return self->time;        
@@ -2271,7 +2262,7 @@ static void updateRetryInterval(struct lora_mac *self, uint32_t start_time)
     
     delta = timeNow(self) - start_time;
     
-    LORA_DEBUG("%"PRIu32"s since join initiated", delta)
+    LORA_DEBUG(self->app, "%"PRIu32"s since join initiated", delta)
     
     dither = LDL_System_rand();
     dither <<= 8;
@@ -2287,23 +2278,20 @@ static void updateRetryInterval(struct lora_mac *self, uint32_t start_time)
     /* 36/3600 (0.01) */
     if(delta < (60UL*60UL)){
         
-        LORA_DEBUG("0.01 retry duty")
-        
         self->band[LORA_BAND_RETRY] = (50UL + (dither % 100UL)) * tx_time;                                                
+        LORA_DEBUG(self->app, "0.01 retry duty: %"PRIu32m" ms", self->band[LORA_BAND_RETRY])
     }
     /* 36/36000 (0.001) */
     else if(delta < (11UL*60UL*60UL)){
      
-        LORA_DEBUG("0.001 retry duty")
-     
         self->band[LORA_BAND_RETRY] = (500UL + (dither % 1000UL)) * tx_time;                     
+        LORA_DEBUG(self->app, "0.001 retry duty: %"PRIu32m" ms", self->band[LORA_BAND_RETRY])
     }
     /* 8.7/86400 (0.0001) */
     else{
         
-        LORA_DEBUG("0.0001 retry duty")
-        
-        self->band[LORA_BAND_RETRY] = (5000UL + (dither % 10000UL)) * tx_time;                     
+        self->band[LORA_BAND_RETRY] = (5000UL + (dither % 10000UL)) * tx_time;                             
+        LORA_DEBUG(self->app, "0.0001 retry duty: %"PRIu32m" ms", self->band[LORA_BAND_RETRY])
     }
 }
 
@@ -2499,12 +2487,10 @@ static void processBands(struct lora_mac *self)
     diff = timerDelta(self->polled_band_ticks, ticks);    
     since = diff / LDL_System_tps() * 1000UL;
     
-    LORA_DEBUG("%"PRIu32"ms have passed", since)
-    
     if(since > 0U){
     
-        LORA_DEBUG("advanced polled record by %"PRIu32" ticks", LDL_System_tps() / 1000U * since) 
         self->polled_band_ticks += LDL_System_tps() / 1000U * since;
+        LORA_DEBUG(self->app, "%"PRIu32" ms since last updated", since) 
         
         for(i=0U; i < (sizeof(self->band)/sizeof(*self->band)); i++){
 
@@ -2577,7 +2563,7 @@ static void downlinkMissingHandler(struct lora_mac *self)
             }
             else{
                 
-                LORA_INFO("no channel available for retry")
+                LORA_DEBUG(self->app, "no channel available for retry")
                 
                 switch(self->op){
                 default:
@@ -2645,6 +2631,11 @@ static void downlinkMissingHandler(struct lora_mac *self)
 static uint32_t ticksToMS(uint32_t ticks)
 {
     return ticks * 1000UL / LDL_System_tps();
+}
+
+static uint32_t ticksToMSCoarse(uint32_t ticks)
+{
+    return ticks / LDL_System_tps() * 1000UL;
 }
 
 static uint32_t msUntilNextChannel(const struct lora_mac *self, uint8_t rate)

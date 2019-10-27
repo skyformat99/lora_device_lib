@@ -497,10 +497,6 @@ bool LDL_MAC_getDownCommand(struct lora_stream *s, struct lora_downstream_cmd *c
                 break;
             }
         }
-        else{
-            
-            LORA_INFO("cannot recognise MAC command")
-        }
     }
     
     return retval;
@@ -551,11 +547,7 @@ bool LDL_MAC_getUpCommand(struct lora_stream *s, struct lora_upstream_cmd *cmd)
                 retval = getDLChannelAns(s, &cmd->fields.dlChannelAns);
                 break;            
             }
-        }
-        else{
-            
-            LORA_INFO("cannot recognise MAC command")
-        }    
+        }        
     }
     
     return retval;

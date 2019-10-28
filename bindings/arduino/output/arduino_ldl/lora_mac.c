@@ -2490,7 +2490,7 @@ static void downlinkMissingHandler(struct lora_mac *self)
     
         if(self->trials < nbTrans){
             
-            if(selectChannel(self, self->tx.rate, self->tx.chIndex, LORA_REDUNANCY_OFFTIME_LIMIT, &self->tx.chIndex, &self->tx.freq)){
+            if((self->band[LORA_BAND_GLOBAL] < LORA_REDUNANCY_OFFTIME_LIMIT) && selectChannel(self, self->tx.rate, self->tx.chIndex, LORA_REDUNANCY_OFFTIME_LIMIT, &self->tx.chIndex, &self->tx.freq)){
             
                 timerSet(self, LORA_TIMER_WAITA, 0U);
                 self->state = LORA_STATE_WAIT_TX;

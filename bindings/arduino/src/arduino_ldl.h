@@ -107,12 +107,8 @@ class ArduinoLDL {
         static void eventDebugVerbose(enum lora_mac_response_type type, const union lora_mac_response_arg *arg);
              
         /* send unconfirmed data */
-        bool unconfirmedData(uint8_t port, const void *data, uint8_t len);        
-        bool unconfirmedData(uint8_t port);        
-        
-        /* send unconfirmed data with redundancy */
-        bool unconfirmedData(uint8_t port, const void *data, uint8_t len, uint8_t nbTrans);                
-        bool unconfirmedData(uint8_t port, uint8_t nbTrans);        
+        bool unconfirmedData(uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts = NULL);        
+        bool unconfirmedData(uint8_t port, const struct lora_mac_data_opts *opts = NULL);        
         
         /* initiate join */
         bool otaa();     
@@ -195,10 +191,14 @@ class ArduinoLDL {
          * */
         void setAggregatedDutyCycleLimit(uint8_t limit);
         
+        uint8_t getAggregatedDutyCycleLimit();
+        
         /* transmission redundancy to apply to all upstream messages
          * 
          * */        
         void setRedundancy(uint8_t nbTrans);
+        
+        uint8_t getRedundancy();
 };
 
 #endif

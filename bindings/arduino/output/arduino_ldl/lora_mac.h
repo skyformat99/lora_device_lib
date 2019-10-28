@@ -337,6 +337,15 @@ struct lora_mac_session {
     bool adr;
 };
 
+/** data service options */
+struct lora_mac_data_opts {
+    
+    uint8_t nbTrans;        /**< redundancy (0..LORA_REDUNDANCY_MAX) */
+    
+    bool check;             /**< piggy-back a check link MAC command */
+    uint8_t dither;         /**< seconds of dither to add to the transmit schedule (0..60) */
+};
+
 /** MAC layer data */
 struct lora_mac {
 
@@ -405,10 +414,11 @@ struct lora_mac {
     
     /* number of join/upstream trials */
     uint32_t trials;
-    
-    uint8_t tx_dither;
-    uint8_t next_nb_trans;    
+  
+    /* options and overrides applicable to current data service */
+    struct lora_mac_data_opts opts;
 };
+
 
 /** Initialise MAC 
  * 
@@ -427,6 +437,7 @@ void LDL_MAC_init(struct lora_mac *self, void *app, enum lora_region region, str
  * @param[in] port 
  * @param[in] data pointer to message to send (will be cached by MAC)
  * @param[in] len byte length of data
+ * @param[in] opts options (may be NULL)
  * 
  * @return request result
  * 
@@ -434,23 +445,7 @@ void LDL_MAC_init(struct lora_mac *self, void *app, enum lora_region region, str
  * @retval false error, LDL_MAC_errno() will give reason
  * 
  * */
-bool LDL_MAC_unconfirmedData(struct lora_mac *self, uint8_t port, const void *data, uint8_t len);
-
-/** Send data upstream with redundacy and without confirmation
- * 
- * @param[in] self
- * @param[in] port 
- * @param[in] data pointer to message to send (will be cached by MAC)
- * @param[in] len byte length of data
- * @param[in] nbTrans number of redundant frames (limited to 15 or LORA_REDUNDANCY_MAX)
- * 
- * @return request result
- * 
- * @retval true upstream data pending pending
- * @retval false error, LDL_MAC_errno() will give reason
- * 
- * */
-bool LDL_MAC_redundantUnconfirmedData(struct lora_mac *self, uint8_t port, const void *data, uint8_t len, uint8_t nbTrans);
+bool LDL_MAC_unconfirmedData(struct lora_mac *self, uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts);
 
 /** Send data upstream with confirmation
  * 
@@ -458,6 +453,7 @@ bool LDL_MAC_redundantUnconfirmedData(struct lora_mac *self, uint8_t port, const
  * @param[in] port 
  * @param[in] data pointer to message to send (will be cached by MAC)
  * @param[in] len byte length of data
+ * @param[in] opts options (may be NULL)
  * 
  * @return request result
  * 
@@ -465,23 +461,7 @@ bool LDL_MAC_redundantUnconfirmedData(struct lora_mac *self, uint8_t port, const
  * @retval false error, LDL_MAC_errno() will give reason
  * 
  * */
-bool LDL_MAC_confirmedData(struct lora_mac *self, uint8_t port, const void *data, uint8_t len);
-
-/** Send data upstream with redundancy and confirmation
- * 
- * @param[in] self
- * @param[in] port 
- * @param[in] data pointer to message to send (will be cached by MAC)
- * @param[in] len byte length of data
- * @param[in] nbTrans number of redundant frames (limited to 15 or LORA_REDUNDANCY_MAX)
- * 
- * @return request result
- * 
- * @retval true upstream data pending pending
- * @retval false error, LDL_MAC_errno() will give reason
- * 
- * */
-bool LDL_MAC_redundantConfirmedData(struct lora_mac *self, uint8_t port, const void *data, uint8_t len, uint8_t nbTrans);
+bool LDL_MAC_confirmedData(struct lora_mac *self, uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts);
 
 /** Initiate over the air join procedure (or re-join if already joined)
  * 
@@ -504,19 +484,6 @@ bool LDL_MAC_otaa(struct lora_mac *self);
  * 
  * */
 void LDL_MAC_forget(struct lora_mac *self);
-
-/** Perform a link check either now (as own message) or in future (as piggy-back)
- * 
- * @param[in] self 
- * @param[in] now `true` to send as message now (`false` to piggy back at next opportunity)
- * 
- * @return request result
- * 
- * @retval true check link request pending
- * @retval false error, LDL_MAC_errno() will give reason
- * 
- * */
-bool LDL_MAC_check(struct lora_mac *self, bool now);
 
 /** Return state to IDLE
  * 
@@ -734,20 +701,6 @@ uint8_t LDL_MAC_mtu(const struct lora_mac *self);
  * */
 uint32_t LDL_MAC_timeSinceValidDownlink(struct lora_mac *self);
 
-/** Add (0..dither) seconds of randomisation to the time next message
- * is sent
- * 
- * @note useful for ensuring devices that transmit periodically do
- * not always transmit at the same time
- * 
- * @warning applies only to the next message sent
- * 
- * @param[in] self
- * @param[in] dither (0..dither) seconds
- * 
- * */
-void LDL_MAC_setSendDither(struct lora_mac *self, uint8_t dither);
-
 /** Set the aggregated duty cycle limit
  * 
  * duty cycle limit = 1 / (2 ^ limit)
@@ -760,6 +713,15 @@ void LDL_MAC_setSendDither(struct lora_mac *self, uint8_t dither);
  * */
 void LDL_MAC_setAggregatedDutyCycleLimit(struct lora_mac *self, uint8_t limit);
 
+/** Get upstream aggregated duty cycle limit
+ * 
+ * @param[in] self
+ * 
+ * @return aggregated duty cycle limit
+ * 
+ * */
+uint8_t LDL_MAC_getAggregatedDutyCycleLimit(const struct lora_mac *self);
+
 /** Set upstream transmission redundancy
  * 
  * - confirmed and unconfirmed uplink frames are sent nbTrans times (or until acknowledgement is received)
@@ -771,6 +733,15 @@ void LDL_MAC_setAggregatedDutyCycleLimit(struct lora_mac *self, uint8_t limit);
  * 
  * */
 void LDL_MAC_setRedundancy(struct lora_mac *self, uint8_t nbTrans);
+
+/** Get upstream transmission redundancy
+ * 
+ * @param[in] self
+ * 
+ * @return nbTrans
+ * 
+ * */
+uint8_t LDL_MAC_getRedundancy(const struct lora_mac *self);
 
 #ifdef __cplusplus
 }

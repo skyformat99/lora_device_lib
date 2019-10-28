@@ -110,6 +110,10 @@ class ArduinoLDL {
         bool unconfirmedData(uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts = NULL);        
         bool unconfirmedData(uint8_t port, const struct lora_mac_data_opts *opts = NULL);        
         
+        /* send confirmed data */
+        bool confirmedData(uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts = NULL);        
+        bool confirmedData(uint8_t port, const struct lora_mac_data_opts *opts = NULL);        
+        
         /* initiate join */
         bool otaa();     
         
@@ -171,13 +175,6 @@ class ArduinoLDL {
         
         /* system ticks per millisecond */  
         uint32_t ticksPerMilliSecond();
-        
-        /* dither send time by (0..dither) seconds for next message 
-         * 
-         * note. this applies ONLY to the next message sent
-         * 
-         *  */
-        void setSendDither(uint8_t dither);
         
         /* Have LDL limit the aggregated duty cycle
          * 

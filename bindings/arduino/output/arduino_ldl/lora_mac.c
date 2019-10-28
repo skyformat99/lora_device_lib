@@ -1270,7 +1270,7 @@ static bool externalDataCommand(struct lora_mac *self, bool confirmed, uint8_t p
                             (void)memcpy(&self->opts, opts, sizeof(self->opts));
                         }
 
-                        self->opts.nbTrans = ((opts->nbTrans > LORA_REDUNDANCY_MAX) ? LORA_REDUNDANCY_MAX : opts->nbTrans) & 0xfU;
+                        self->opts.nbTrans = self->opts.nbTrans & 0xfU;
                         
                         if(len <= (maxPayload - LDL_Frame_dataOverhead() - (opts->check ? 1U : 0))){
                  

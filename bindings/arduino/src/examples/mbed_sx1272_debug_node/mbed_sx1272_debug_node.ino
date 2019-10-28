@@ -55,7 +55,7 @@ void setup()
     ArduinoLDL& ldl = get_ldl();
 
     /* print debug information */
-    ldl.onEvent(ldl.eventDebugVerbose);
+    ldl.onEvent(ldl.eventDebugVerbose);    
 }
 
 void loop() 
@@ -66,7 +66,7 @@ void loop()
     
         if(ldl.joined()){
         
-            ldl.unconfirmedData(1U);
+            ldl.unconfirmedData(1U, "hello", 5U);
         }
         else{
          

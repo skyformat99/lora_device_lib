@@ -116,14 +116,24 @@ uint32_t ArduinoLDL::time()
     return LDL_System_ticks(NULL);
 }
 
-bool ArduinoLDL::unconfirmedData(uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts = NULL)
+bool ArduinoLDL::unconfirmedData(uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts)
 {
     return LDL_MAC_unconfirmedData(&mac, port, data, len, opts); 
 }
 
-bool ArduinoLDL::unconfirmedData(uint8_t port, const struct lora_mac_data_opts *opts = NULL)
+bool ArduinoLDL::unconfirmedData(uint8_t port, const struct lora_mac_data_opts *opts)
 {
     return LDL_MAC_unconfirmedData(&mac, port, NULL, 0U, opts); 
+}
+
+bool ArduinoLDL::confirmedData(uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts)
+{
+    return LDL_MAC_confirmedData(&mac, port, data, len, opts); 
+}
+
+bool ArduinoLDL::confirmedData(uint8_t port, const struct lora_mac_data_opts *opts)
+{
+    return LDL_MAC_confirmedData(&mac, port, NULL, 0U, opts); 
 }
 
 bool ArduinoLDL::otaa()

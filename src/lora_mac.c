@@ -979,7 +979,11 @@ void LDL_MAC_process(struct lora_mac *self)
             
                     if(selectChannel(self, self->tx.rate, self->tx.chIndex, 0UL, &self->tx.chIndex, &self->tx.freq)){
                                 
-                        timerSet(self, LORA_TIMER_WAITA, rand32() % (LDL_System_tps()*60UL));
+                        uint32_t delay = rand32() % (LDL_System_tps()*60UL);
+                                
+                        LORA_DEBUG(self->app, "dither retry by %"PRIu32" ticks", delay)
+                                
+                        timerSet(self, LORA_TIMER_WAITA, delay);
                         self->state = LORA_STATE_WAIT_TX;
                     }            
                 }

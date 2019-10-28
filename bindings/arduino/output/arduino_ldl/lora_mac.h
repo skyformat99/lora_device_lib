@@ -409,8 +409,7 @@ struct lora_mac {
     uint32_t time;
     uint32_t polled_time_ticks;
     
-    /* time in seconds of first join attempt */
-    uint32_t first_join_attempt;    
+    uint32_t service_start_time;
     
     /* number of join/upstream trials */
     uint32_t trials;

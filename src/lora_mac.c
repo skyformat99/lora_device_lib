@@ -58,7 +58,6 @@ static bool msUntilAvailable(const struct lora_mac *self, uint8_t chIndex, uint8
 static bool rateSettingIsValid(enum lora_region region, uint8_t rate);
 static void adaptRate(struct lora_mac *self);
 static uint32_t timeNow(struct lora_mac *self);
-static uint32_t updateRetryInterval(struct lora_mac *self, uint32_t start_time);
 static void inputArm(struct lora_mac *self, enum lora_input_type type);
 static bool inputCheck(const struct lora_mac *self, enum lora_input_type type, uint32_t *error);
 static void inputClear(struct lora_mac *self);
@@ -78,6 +77,8 @@ static void downlinkMissingHandler(struct lora_mac *self);
 static uint32_t ticksToMS(uint32_t ticks);
 static uint32_t ticksToMSCoarse(uint32_t ticks);
 static uint32_t msUntilNextChannel(const struct lora_mac *self, uint8_t rate);
+static uint32_t rand32(void);
+static uint32_t getRetryDuty(uint32_t seconds_since);
 
 /* functions **********************************************************/
 
@@ -191,16 +192,8 @@ bool LDL_MAC_otaa(struct lora_mac *self)
                 f.devNonce = self->devNonce;
 
                 self->bufferLen = (uint8_t)LDL_Frame_putJoinRequest(identity.appKey, &f, self->buffer, sizeof(self->buffer));
-                            
-                delay = LDL_System_rand();
-                delay <<= 8U;
-                delay |= LDL_System_rand();
-                delay <<= 8U;
-                delay |= LDL_System_rand();
-                delay <<= 8U;
-                delay |= LDL_System_rand();
                 
-                delay = delay % (60UL*LDL_System_tps());
+                delay = rand32() % (60UL*LDL_System_tps());
                 
                 LORA_DEBUG(self->app, "sending join in %"PRIu32" ticks", delay)
                             
@@ -208,7 +201,7 @@ bool LDL_MAC_otaa(struct lora_mac *self)
                 
                 self->state = LORA_STATE_WAIT_TX;
                 self->op = LORA_OP_JOINING;            
-                self->first_join_attempt = timeNow(self) + (delay / LDL_System_tps());            
+                self->service_start_time = timeNow(self) + (delay / LDL_System_tps());            
                 retval = true;        
             }
             else{
@@ -986,7 +979,7 @@ void LDL_MAC_process(struct lora_mac *self)
             
                     if(selectChannel(self, self->tx.rate, self->tx.chIndex, 0UL, &self->tx.chIndex, &self->tx.freq)){
                                 
-                        timerSet(self, LORA_TIMER_WAITA, 0UL);
+                        timerSet(self, LORA_TIMER_WAITA, rand32() % (LDL_System_tps()*60UL));
                         self->state = LORA_STATE_WAIT_TX;
                     }            
                 }
@@ -1398,20 +1391,10 @@ static bool dataCommand(struct lora_mac *self, bool confirmed, uint8_t port, con
     
     if(self->opts.dither > 0U){
         
-        uint32_t _random; 
-        
-        _random = LDL_System_rand();
-        _random <<= 8;
-        _random |= LDL_System_rand();
-        _random <<= 8;
-        _random |= LDL_System_rand();
-        _random <<= 8;
-        _random |= LDL_System_rand();
-        
-        send_delay = (_random % ((uint32_t)self->opts.dither * LDL_System_tps()));
+        send_delay = (rand32() % ((uint32_t)self->opts.dither * LDL_System_tps()));
     }
     
-    self->first_join_attempt = timeNow(self) + (send_delay / LDL_System_tps());            
+    self->service_start_time = timeNow(self) + (send_delay / LDL_System_tps());            
                 
     timerSet(self, LORA_TIMER_WAITA, send_delay);
     
@@ -2181,50 +2164,26 @@ static uint32_t timeNow(struct lora_mac *self)
     return self->time;        
 }
 
-/* calculate a retry interval based on V1.1 chapter 7 */
-static uint32_t updateRetryInterval(struct lora_mac *self, uint32_t start_time)
+static uint32_t getRetryDuty(uint32_t seconds_since)
 {
-    enum lora_spreading_factor sf;
-    enum lora_signal_bandwidth bw;
-    uint32_t delta;
-    uint32_t tx_time;
-    uint16_t dither;
-    uint8_t mtu;
-    uint32_t retval;
+    /* reset after one day */
+    uint32_t delta = seconds_since % (60UL*60UL*24UL);
     
-    LORA_PEDANTIC(start_time <= timeNow(self))
-    
-    delta = timeNow(self) - start_time;
-    
-    dither = LDL_System_rand();
-    dither <<= 8;
-    dither |= LDL_System_rand();
-    
-    LDL_Region_convertRate(self->region, self->tx.rate, &sf, &bw, &mtu);
-    
-    tx_time = transmitTime(bw, sf, self->bufferLen, true);
-    
-    /* convert to ms */
-    tx_time /= (LDL_System_tps() / 1000UL);
-        
     /* 36/3600 (0.01) */
     if(delta < (60UL*60UL)){
         
-        retval = (50UL + (dither % 100UL)) * tx_time;                                                
+        return 100UL;
     }
     /* 36/36000 (0.001) */
     else if(delta < (11UL*60UL*60UL)){
      
-        retval = self->band[LORA_BAND_RETRY] = (500UL + (dither % 1000UL)) * tx_time;                     
-        LORA_DEBUG(self->app, "0.001 retry duty: %"PRIu32" ms", self->band[LORA_BAND_RETRY])
+        return 1000UL;
     }
     /* 8.7/86400 (0.0001) */
     else{
         
-        retval = (5000UL + (dither % 10000UL)) * tx_time;                             
+        return 10000UL;    
     }
-    
-    return retval;
 }
 
 static void inputSignal(struct lora_mac *self, enum lora_input_type type, uint32_t time)
@@ -2474,6 +2433,11 @@ static void downlinkMissingHandler(struct lora_mac *self)
 {
     union lora_mac_response_arg arg;
     uint8_t nbTrans;
+    enum lora_spreading_factor sf;
+    enum lora_signal_bandwidth bw;
+    uint32_t delta;
+    uint32_t tx_time;
+    uint8_t mtu;
     
     if(self->opts.nbTrans > 0U){
         
@@ -2485,6 +2449,12 @@ static void downlinkMissingHandler(struct lora_mac *self)
     }
     
     self->trials++;
+    
+    delta = (timeNow(self) - self->service_start_time);
+    
+    LDL_Region_convertRate(self->region, self->tx.rate, &sf, &bw, &mtu);
+    
+    tx_time = ticksToMS(transmitTime(bw, sf, self->bufferLen, true));
         
     switch(self->op){
     default:
@@ -2494,7 +2464,7 @@ static void downlinkMissingHandler(struct lora_mac *self)
 
         if(self->trials < nbTrans){
 
-            self->band[LORA_BAND_RETRY] = updateRetryInterval(self, self->first_join_attempt);
+            self->band[LORA_BAND_RETRY] = tx_time * getRetryDuty(delta);
             self->state = LORA_STATE_WAIT_RETRY;            
         }
         else{
@@ -2549,7 +2519,7 @@ static void downlinkMissingHandler(struct lora_mac *self)
 
     case LORA_OP_JOINING:
         
-        self->band[LORA_BAND_RETRY] = updateRetryInterval(self, self->first_join_attempt);
+        self->band[LORA_BAND_RETRY] = tx_time * getRetryDuty(delta);
         
         self->tx.rate = LDL_Region_getJoinRate(self->region, self->trials);
         
@@ -2589,4 +2559,19 @@ static uint32_t msUntilNextChannel(const struct lora_mac *self, uint8_t rate)
     }
     
     return min;
+}
+
+static uint32_t rand32(void)
+{
+    uint32_t retval;
+    
+    retval = LDL_System_rand();
+    retval <<= 8;
+    retval |= LDL_System_rand();
+    retval <<= 8;
+    retval |= LDL_System_rand();
+    retval <<= 8;
+    retval |= LDL_System_rand();
+    
+    return retval;
 }

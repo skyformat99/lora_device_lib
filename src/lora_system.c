@@ -33,8 +33,6 @@ uint32_t LDL_System_ticks(void *app) __attribute__((weak));
 uint32_t LDL_System_tps(void) __attribute__((weak));
 uint32_t LDL_System_eps(void) __attribute__((weak));
 uint32_t LDL_System_advance(void) __attribute__((weak));
-bool LDL_System_restoreBandLimits(void *app, uint32_t *bands, uint8_t numBands) __attribute__((weak));
-void LDL_System_saveBandLimits(void *app, const uint32_t *bands, uint8_t numBands) __attribute__((weak));
 
 uint8_t LDL_System_rand(void)
 {
@@ -52,15 +50,6 @@ bool LDL_System_restoreContext(void *app, struct lora_mac_session *value)
 }
 
 void LDL_System_saveContext(void *app, const struct lora_mac_session *value)
-{
-}
-
-bool LDL_System_restoreBandLimits(void *app, uint32_t *bands, uint8_t numBands)
-{
-    return false;
-}
-
-void LDL_System_saveBandLimits(void *app, const uint32_t *bands, uint8_t numBands)
 {
 }
 

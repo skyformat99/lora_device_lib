@@ -58,7 +58,6 @@ extern "C" {
 #include <stddef.h>
 
 struct lora_mac_session;
-struct on_timeout;
 
 /** identifiers and application key */
 struct lora_system_identity {
@@ -167,31 +166,6 @@ bool LDL_System_restoreContext(void *app, struct lora_mac_session *value);
  * 
  * */
 void LDL_System_saveContext(void *app, const struct lora_mac_session *value);
-
-/** Restore band-offime counters
- * 
- * @note Called once by MAC during #LDL_MAC_init
- * 
- * @param[in] app
- * @param[in] bands array of band timers
- * @param[in] numBands number of band timers in array
- * 
- * @retval true bands restored
- * @retval false no information available
- * 
- * */
-bool LDL_System_restoreBandLimits(void *app, uint32_t *bands, uint8_t numBands);
-
-/** Save band-offime counters
- * 
- * @note Called by MAC everytime bands are updated
- * 
- * @param[in] app
- * @param[in] bands array of band timers
- * @param[in] numBands number of band timers in array
- * 
- * */
-void LDL_System_saveBandLimits(void *app, const uint32_t *bands, uint8_t numBands);
 
 #ifndef LORA_SYSTEM_ENTER_CRITICAL
 

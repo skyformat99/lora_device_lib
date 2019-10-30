@@ -3,6 +3,8 @@ LoraDeviceLib
 
 An experimental LoRaWAN device implementation.
 
+For the latest changes see the [history file](history.md).
+
 [![Build Status](https://travis-ci.org/cjhdev/lora_device_lib.svg?branch=master)](https://travis-ci.org/cjhdev/lora_device_lib)
 
 ## Highlights

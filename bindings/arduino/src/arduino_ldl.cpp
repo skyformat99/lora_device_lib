@@ -58,6 +58,26 @@ uint32_t LDL_System_eps(void)
     return XTAL_PPM;    
 }
 
+void LDL_SPI_select(void *self, bool state)
+{
+    ArduinoLDL::radioSelect(self, state);               
+}
+
+void LDL_SPI_reset(void *self, bool state)
+{    
+    ArduinoLDL::radioReset(self, state);
+}
+
+void LDL_SPI_write(void *self, uint8_t data)
+{
+    SPI.transfer(data);
+}
+
+uint8_t LDL_SPI_read(void *self)
+{
+    return SPI.transfer(0U);
+}
+
 /* interrupt handlers *************************************************/
 
 ISR(PCINT0_vect){
@@ -68,6 +88,25 @@ ISR(PCINT1_vect, ISR_ALIASOF(PCINT0_vect));
 ISR(PCINT2_vect, ISR_ALIASOF(PCINT0_vect));
 
 /* public methods *****************************************************/
+
+void ArduinoLDL::radioSelect(void *self, bool state)
+{
+    if(state){
+
+        SPI.beginTransaction(spi_settings); 
+        digitalWrite(to_obj(self)->nselect, LOW);        
+    }   
+    else{
+        
+        digitalWrite(to_obj(self)->nselect, HIGH);
+        SPI.endTransaction();        
+    } 
+}
+
+static void ArduinoLDL::radioReset(void *self, bool state)
+{
+     pinMode(to_obj(self)->nreset, state ? OUTPUT : INPUT);
+}
 
 ArduinoLDL::ArduinoLDL(get_identity_fn get_id, enum lora_region region, enum lora_radio_type radio_type, enum lora_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1) : 
     dio0(dio0, 0, mac), dio1(dio1, 1, mac), nreset(nreset), nselect(nselect), get_id(get_id)
@@ -83,15 +122,7 @@ ArduinoLDL::ArduinoLDL(get_identity_fn get_id, enum lora_region region, enum lor
     
     SPI.begin();
     
-    LDL_Board_init(&board,
-        this, 
-        radio_select, 
-        radio_reset,
-        radio_write,
-        radio_read
-    );
-    
-    LDL_Radio_init(&radio, radio_type, &board);
+    LDL_Radio_init(&radio, radio_type, this);
     LDL_Radio_setPA(&radio, pa);
     LDL_MAC_init(&mac, this, region, &radio, adapter);
     
@@ -309,34 +340,7 @@ void ArduinoLDL::arm_dio(struct DioInput *dio)
     }
 }
 
-void ArduinoLDL::radio_select(void *receiver, bool state)
-{
-    if(state){
 
-        SPI.beginTransaction(spi_settings); 
-        digitalWrite(to_obj(receiver)->nselect, LOW);        
-    }   
-    else{
-        
-        digitalWrite(to_obj(receiver)->nselect, HIGH);
-        SPI.endTransaction();        
-    } 
-}
-
-void ArduinoLDL::radio_reset(void *receiver, bool state)
-{    
-    pinMode(to_obj(receiver)->nreset, state ? OUTPUT : INPUT);                
-}
-
-void ArduinoLDL::radio_write(void *receiver, uint8_t data)
-{
-    SPI.transfer(data);
-}
-
-uint8_t ArduinoLDL::radio_read(void *receiver)
-{
-    return SPI.transfer(0U);
-}
 
 /* works for AVR only */
 void ArduinoLDL::unmask_pcint(uint8_t pin)

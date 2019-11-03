@@ -19,31 +19,72 @@
  *
  * */
 
-#include "lora_board.h"
-#include "lora_debug.h"
+#ifndef LORA_SPI_H
+#define LORA_SPI_H
 
-#include <string.h>
+/** @file */
 
-void LDL_Board_init(struct lora_board *self, 
-    void *receiver, 
-    void (*select)(void *receiver, bool state),
-    void (*reset)(void *receiver, bool state),
-    void (*write)(void *receiver, uint8_t data),
-    uint8_t (*read)(void *receiver)
-){    
-    LORA_PEDANTIC(self != NULL)
-    
-    // the following are mandatory
-    LORA_PEDANTIC(select != NULL)
-    LORA_PEDANTIC(reset != NULL)
-    LORA_PEDANTIC(write != NULL)
-    LORA_PEDANTIC(read != NULL)
-    
-    (void)memset(self, 0, sizeof(*self));
-    
-    self->receiver = receiver;
-    self->select = select;
-    self->reset = reset;
-    self->write = write;
-    self->read = read;
+/**
+ * @defgroup ldl_spi SPI
+ * @ingroup ldl
+ * 
+ * SPI interface to radio.
+ * 
+ * @{
+ * */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "lora_platform.h"
+#include <stdint.h>
+#include <stdbool.h>
+
+/** Operate select line
+ * 
+ * @warning mandatory
+ * 
+ * @param[in] self
+ * @param[in] state **TRUE** for hold, **FALSE** for release
+ * 
+ * */
+void LDL_SPI_select(void *self, bool state);
+
+/** Operate reset line
+ * 
+ * @warning mandatory
+ * 
+ * @param[in] board
+ * @param[in] state **TRUE** for hold, **FALSE** for release
+ * 
+ * */
+void LDL_SPI_reset(void *self, bool state);
+
+/** Write byte
+ * 
+ * @warning mandatory
+ * 
+ * @param[in] board
+ * @param[in] data
+ * 
+ * */
+void LDL_SPI_write(void *self, uint8_t data);
+
+/** Read byte
+ * 
+ * @warning mandatory
+ * 
+ * @param[in] board
+ * @return data
+ * 
+ * */
+uint8_t LDL_SPI_read(void *self);
+
+/** @} */
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif

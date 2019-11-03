@@ -42,8 +42,6 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 
-struct lora_board;
-
 enum lora_radio_event {    
     LORA_RADIO_EVENT_TX_COMPLETE,
     LORA_RADIO_EVENT_RX_READY,
@@ -98,7 +96,7 @@ enum lora_radio_pa {
 /** Radio data */
 struct lora_radio {
     
-    const struct lora_board *board;
+    void *board;
     enum lora_radio_pa pa;
     uint8_t dio_mapping1;    
     enum lora_radio_type type;
@@ -110,7 +108,7 @@ struct lora_radio {
  * @param[in] board board specific connections see @ref ldl_board
  * 
  * */
-void LDL_Radio_init(struct lora_radio *self, enum lora_radio_type type, const struct lora_board *board);
+void LDL_Radio_init(struct lora_radio *self, enum lora_radio_type type, void *board);
 
 /** Which PA is connected?
  * 
@@ -119,6 +117,10 @@ void LDL_Radio_init(struct lora_radio *self, enum lora_radio_type type, const st
  * 
  * */
 void LDL_Radio_setPA(struct lora_radio *self, enum lora_radio_pa pa);
+
+
+
+
 
 void LDL_Radio_entropyBegin(struct lora_radio *self);
 unsigned int LDL_Radio_entropyEnd(struct lora_radio *self);

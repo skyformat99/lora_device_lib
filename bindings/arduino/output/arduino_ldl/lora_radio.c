@@ -24,7 +24,7 @@
 #include "lora_debug.h"
 #include "lora_radio.h"
 #include "lora_system.h"
-#include "lora_board.h"
+#include "lora_spi.h"
 
 #if defined(LORA_ENABLE_SX1272) || defined(LORA_ENABLE_SX1276)
 
@@ -147,10 +147,10 @@ static void writeFIFO(struct lora_radio *self, const uint8_t *data, uint8_t len)
 static void setFreq(struct lora_radio *self, uint32_t freq);
 static void setModemConfig(struct lora_radio *self, enum lora_signal_bandwidth bw, enum lora_spreading_factor sf);
 static void setPower(struct lora_radio *self, int16_t dbm);
-static uint8_t readReg(const struct lora_board *self, uint8_t reg);
-static void writeReg(const struct lora_board *self, uint8_t reg, uint8_t data);
-static void burstRead(const struct lora_board *self, uint8_t reg, uint8_t *data, uint8_t len);
-static void burstWrite(const struct lora_board *self, uint8_t reg, const uint8_t *data, uint8_t len);
+static uint8_t readReg(struct lora_radio *self, uint8_t reg);
+static void writeReg(struct lora_radio *self, uint8_t reg, uint8_t data);
+static void burstRead(struct lora_radio *self, uint8_t reg, uint8_t *data, uint8_t len);
+static void burstWrite(struct lora_radio *self, uint8_t reg, const uint8_t *data, uint8_t len);
 static void setOpRX(struct lora_radio *self);
 static void setOpTX(struct lora_radio *self);
 static void setOpRXContinuous(struct lora_radio *self);
@@ -164,16 +164,9 @@ static uint8_t sfSetting(const struct lora_radio *self, enum lora_spreading_fact
 
 /* functions **********************************************************/
 
-void LDL_Radio_init(struct lora_radio *self, enum lora_radio_type type, const struct lora_board *board)
+void LDL_Radio_init(struct lora_radio *self, enum lora_radio_type type, void *board)
 {
     LORA_PEDANTIC(self != NULL)
-    LORA_PEDANTIC(board != NULL)
-    
-    /* the following are mandatory functions */
-    LORA_ASSERT(board->select != NULL)
-    LORA_ASSERT(board->write != NULL)
-    LORA_ASSERT(board->read != NULL)
-    LORA_ASSERT(board->reset != NULL)
     
     (void)memset(self, 0, sizeof(*self));
     self->board = board;
@@ -192,7 +185,7 @@ void LDL_Radio_reset(struct lora_radio *self, bool state)
 {
     LORA_PEDANTIC(self != NULL)
     
-    self->board->reset(self->board->receiver, state);
+    LDL_SPI_reset(self->board, state);
 }
 
 void LDL_Radio_transmit(struct lora_radio *self, const struct lora_radio_tx_setting *settings, const void *data, uint8_t len)
@@ -211,12 +204,12 @@ void LDL_Radio_transmit(struct lora_radio *self, const struct lora_radio_tx_sett
     setFreq(self, settings->freq);
     setPower(self, settings->dbm);
     
-    writeReg(self->board, RegSyncWord, 0x34);                                               // set sync word
-    writeReg(self->board, RegPaRamp, (readReg(self->board, RegPaRamp) & 0xf0U) | 0x08U);    // 50us PA ramp
-    writeReg(self->board, RegInvertIQ, readReg(self->board, RegInvertIQ) & ~(0x40U));       // non-invert IQ    
-    writeReg(self->board, RegDioMapping1, self->dio_mapping1);                              // DIO0 (TX_COMPLETE) DIO1 (RX_DONE)
-    writeReg(self->board, RegIrqFlags, 0xff);                                               // clear all interrupts
-    writeReg(self->board, RegIrqFlagsMask, 0xf7U);                                          // unmask TX_DONE interrupt                    
+    writeReg(self, RegSyncWord, 0x34);                                               // set sync word
+    writeReg(self, RegPaRamp, (readReg(self, RegPaRamp) & 0xf0U) | 0x08U);    // 50us PA ramp
+    writeReg(self, RegInvertIQ, readReg(self, RegInvertIQ) & ~(0x40U));       // non-invert IQ    
+    writeReg(self, RegDioMapping1, self->dio_mapping1);                              // DIO0 (TX_COMPLETE) DIO1 (RX_DONE)
+    writeReg(self, RegIrqFlags, 0xff);                                               // clear all interrupts
+    writeReg(self, RegIrqFlagsMask, 0xf7U);                                          // unmask TX_DONE interrupt                    
     
     writeFIFO(self, data, len);
     
@@ -237,14 +230,14 @@ void LDL_Radio_receive(struct lora_radio *self, const struct lora_radio_rx_setti
     
     setFreq(self, settings->freq);                                                  // set carrier frequency        
     
-    writeReg(self->board, RegSymbTimeoutLsb, settings->timeout);                    // set symbol timeout
-    writeReg(self->board, RegSyncWord, 0x34);                                       // set sync word
-    writeReg(self->board, RegLna, 0x23U);                                           // LNA gain to max, LNA boost enable    
-    writeReg(self->board, RegPayloadMaxLength, settings->max);                      // max payload
-    writeReg(self->board, RegInvertIQ, readReg(self->board, RegInvertIQ) | 0x40U);  // invert IQ    
-    writeReg(self->board, RegDioMapping1, self->dio_mapping1);                      // DIO0 (RX_TIMEOUT) DIO1 (RX_DONE)    
-    writeReg(self->board, RegIrqFlags, 0xff);                                       // clear all interrupts
-    writeReg(self->board, RegIrqFlagsMask, 0x3fU);                                  // unmask RX_TIMEOUT and RX_DONE interrupt                    
+    writeReg(self, RegSymbTimeoutLsb, settings->timeout);                    // set symbol timeout
+    writeReg(self, RegSyncWord, 0x34);                                       // set sync word
+    writeReg(self, RegLna, 0x23U);                                           // LNA gain to max, LNA boost enable    
+    writeReg(self, RegPayloadMaxLength, settings->max);                      // max payload
+    writeReg(self, RegInvertIQ, readReg(self, RegInvertIQ) | 0x40U);  // invert IQ    
+    writeReg(self, RegDioMapping1, self->dio_mapping1);                      // DIO0 (RX_TIMEOUT) DIO1 (RX_DONE)    
+    writeReg(self, RegIrqFlags, 0xff);                                       // clear all interrupts
+    writeReg(self, RegIrqFlagsMask, 0x3fU);                                  // unmask RX_TIMEOUT and RX_DONE interrupt                    
     
     setOpRX(self);
 }
@@ -260,8 +253,8 @@ uint8_t LDL_Radio_collect(struct lora_radio *self, struct lora_radio_packet_meta
     
     retval = readFIFO(self, data, max);
     
-    meta->rssi = (int16_t)readReg(self->board, RegPktRssiValue) - 157;
-    meta->snr = (int8_t)(readReg(self->board, RegPktSnrValue) / 4);
+    meta->rssi = (int16_t)readReg(self, RegPktRssiValue) - 157;
+    meta->snr = (int8_t)(readReg(self, RegPktSnrValue) / 4);
     
     return retval;
 }
@@ -313,8 +306,8 @@ void LDL_Radio_entropyBegin(struct lora_radio *self)
     enableLora(self);
     setOpStandby(self);
     
-    writeReg(self->board, RegIrqFlags, 0xff);         // clear all interrupts
-    writeReg(self->board, RegIrqFlagsMask, 0xffU);    // mask all interrupts
+    writeReg(self, RegIrqFlags, 0xff);         // clear all interrupts
+    writeReg(self, RegIrqFlagsMask, 0xffU);    // mask all interrupts
     
     /* application note instructions */
     switch(self->type){
@@ -322,14 +315,14 @@ void LDL_Radio_entropyBegin(struct lora_radio *self)
         break;
 #ifdef LORA_ENABLE_SX1272        
     case LORA_RADIO_SX1272:
-        writeReg(self->board, RegModemConfig1, 0x0aU);
-        writeReg(self->board, RegModemConfig2, 0x74U);    
+        writeReg(self, RegModemConfig1, 0x0aU);
+        writeReg(self, RegModemConfig2, 0x74U);    
         break;
 #endif    
 #ifdef LORA_ENABLE_SX1276
     case LORA_RADIO_SX1276:
-        writeReg(self->board, RegModemConfig1, 0x72U);
-        writeReg(self->board, RegModemConfig2, 0x70U);
+        writeReg(self, RegModemConfig1, 0x72U);
+        writeReg(self, RegModemConfig2, 0x70U);
         break;
 #endif    
     }   
@@ -345,7 +338,7 @@ unsigned int LDL_Radio_entropyEnd(struct lora_radio *self)
     for(i=0U; i < (sizeof(unsigned int)*8U); i++){
         
         retval <<= 1;
-        retval |= readReg(self->board, RegRssiWideband) & 0x1U;
+        retval |= readReg(self, RegRssiWideband) & 0x1U;
     }
     
     setOpSleep(self);
@@ -364,8 +357,8 @@ void LDL_Radio_clearInterrupt(struct lora_radio *self)
 {
     LORA_PEDANTIC(self != NULL)
     
-    writeReg(self->board, RegIrqFlags, 0xff);         // clear all interrupts
-    writeReg(self->board, RegIrqFlagsMask, 0xffU);    // mask all interrupts
+    writeReg(self, RegIrqFlags, 0xff);         // clear all interrupts
+    writeReg(self, RegIrqFlagsMask, 0xffU);    // mask all interrupts
     
     setOpSleep(self);
 }
@@ -397,12 +390,12 @@ void LDL_Radio_enableLora(struct lora_radio *self)
 static void enableLora(struct lora_radio *self)
 {
     setOpSleep(self);    
-    writeReg(self->board, RegOpMode, readReg(self->board, RegOpMode) | 0x80U);      
+    writeReg(self, RegOpMode, readReg(self, RegOpMode) | 0x80U);      
 }
 
 static void setOp(struct lora_radio *self, uint8_t op)
 {
-    writeReg(self->board, RegOpMode, (readReg(self->board, RegOpMode) & ~(0x7U)) | (op & 0x7U));    
+    writeReg(self, RegOpMode, (readReg(self, RegOpMode) & ~(0x7U)) | (op & 0x7U));    
 }
 
 static void setOpSleep(struct lora_radio *self)
@@ -444,13 +437,13 @@ static void setModemConfig(struct lora_radio *self, enum lora_signal_bandwidth b
          * implicitHeaderModeOn (1bit) (0)
          * rxPayloadCrcOn       (1bit) (1)
          * lowDataRateOptimize  (1bit)      */
-        writeReg(self->board, RegModemConfig1, bwSetting(self, bw) | crSetting(self, CR_5) | 0U | 2U | (low_rate ? 1U : 0U));
+        writeReg(self, RegModemConfig1, bwSetting(self, bw) | crSetting(self, CR_5) | 0U | 2U | (low_rate ? 1U : 0U));
         
         /* spreadingFactor      (4bit)
          * txContinuousMode     (1bit) (0)
          * agcAutoOn            (1bit) (1)
          * symbTimeout(9:8)     (2bit) (0)  */
-        writeReg(self->board, RegModemConfig2, sfSetting(self, sf) | 0U | 4U | 0U);    
+        writeReg(self, RegModemConfig2, sfSetting(self, sf) | 0U | 4U | 0U);    
         break;
 #endif
 #ifdef LORA_ENABLE_SX1276
@@ -458,19 +451,19 @@ static void setModemConfig(struct lora_radio *self, enum lora_signal_bandwidth b
         /* bandwidth            (4bit)
          * codingRate           (3bit)
          * implicitHeaderModeOn (1bit) (0)  */
-        writeReg(self->board, RegModemConfig1, bwSetting(self, bw) | crSetting(self, CR_5) | 0U);
+        writeReg(self, RegModemConfig1, bwSetting(self, bw) | crSetting(self, CR_5) | 0U);
         
         /* spreadingFactor      (4bit)
          * txContinuousMode     (1bit) (0)
          * rxPayloadCrcOn       (1bit) (1)
          * symbTimeout(9:8)     (2bit) (0)  */
-        writeReg(self->board, RegModemConfig2, sfSetting(self, sf) | 0U | 4U | 0U);
+        writeReg(self, RegModemConfig2, sfSetting(self, sf) | 0U | 4U | 0U);
         
         /* unused               (4bit) (0)
          * lowDataRateOptimize  (1bit) 
          * agcAutoOn            (1bit) (1)
          * unused               (2bit) (0)  */
-        writeReg(self->board, RegModemConfig3, 0U | (low_rate ? 8U : 0U) | 4U | 0U);        
+        writeReg(self, RegModemConfig3, 0U | (low_rate ? 8U : 0U) | 4U | 0U);        
         break;
 #endif    
     }
@@ -494,7 +487,7 @@ static void setPower(struct lora_radio *self, int16_t dbm)
         uint8_t paConfig;
         uint8_t paDac;    
         
-        paConfig = readReg(self->board, RegPaConfig);         
+        paConfig = readReg(self, RegPaConfig);         
         paConfig &= ~(0xfU);
 
         switch(self->pa){
@@ -504,12 +497,12 @@ static void setPower(struct lora_radio *self, int16_t dbm)
             paConfig &= ~(0x80U);
             paConfig |= (dbm > 14) ? 0xfU : (uint8_t)( (dbm < -1) ? 0U : (dbm + 1) );
             
-            writeReg(self->board, RegPaConfig, paConfig);            
+            writeReg(self, RegPaConfig, paConfig);            
             break;
         
         case LORA_RADIO_PA_BOOST:
         
-            paDac = readReg(self->board, RegPaDac); 
+            paDac = readReg(self, RegPaDac); 
                 
             paConfig |= 0x80U;
             paDac &= ~(7U);
@@ -527,8 +520,8 @@ static void setPower(struct lora_radio *self, int16_t dbm)
                 paConfig |= (dbm > 17) ? 0xfU : ( (dbm < 2) ? 0U : (dbm - 2) ); 
             }
             
-            writeReg(self->board, RegPaDac, paDac);
-            writeReg(self->board, RegPaConfig, paConfig);            
+            writeReg(self, RegPaDac, paDac);
+            writeReg(self, RegPaConfig, paConfig);            
             break;
         default:
             break;        
@@ -542,7 +535,7 @@ static void setPower(struct lora_radio *self, int16_t dbm)
         uint8_t paConfig;
         uint8_t paDac;    
         
-        paConfig = readReg(self->board, RegPaConfig);         
+        paConfig = readReg(self, RegPaConfig);         
         paConfig &= ~(0xfU);
     
         switch(self->pa){
@@ -550,13 +543,13 @@ static void setPower(struct lora_radio *self, int16_t dbm)
         
             /* todo */
             paConfig |= 0x7eU;
-            writeReg(self->board, RegPaConfig, paConfig);            
+            writeReg(self, RegPaConfig, paConfig);            
             break;
         
         case LORA_RADIO_PA_BOOST:
         
             /* regpadac address == 0x4d */
-            paDac = readReg(self->board, 0x4d); 
+            paDac = readReg(self, 0x4d); 
                 
             paConfig |= 0x80U;
             paConfig &= ~0x70U;
@@ -576,8 +569,8 @@ static void setPower(struct lora_radio *self, int16_t dbm)
             }
             
             /* regpadac address == 0x4d */
-            writeReg(self->board, 0x4d, paDac);
-            writeReg(self->board, RegPaConfig, paConfig);   
+            writeReg(self, 0x4d, paDac);
+            writeReg(self, RegPaConfig, paConfig);   
             break;
         default:
             break;        
@@ -687,22 +680,22 @@ static void setFreq(struct lora_radio *self, uint32_t freq)
 {
     uint32_t f = (uint32_t)(((uint64_t)freq << 19U) / 32000000U);
         
-    writeReg(self->board, RegFrfMsb, f >> 16);
-    writeReg(self->board, RegFrfMid, f >> 8);
-    writeReg(self->board, RegFrfLsb, f);    
+    writeReg(self, RegFrfMsb, f >> 16);
+    writeReg(self, RegFrfMid, f >> 8);
+    writeReg(self, RegFrfLsb, f);    
 }
 
 static uint8_t readFIFO(struct lora_radio *self, uint8_t *data, uint8_t max)
 {
-    uint8_t size = readReg(self->board, RegRxNbBytes);
+    uint8_t size = readReg(self, RegRxNbBytes);
     
     size = (size > max) ? max : size;
     
     if(size > 0U){
     
-        writeReg(self->board, RegFifoAddrPtr, readReg(self->board, RegFifoRxCurrentAddr));
+        writeReg(self, RegFifoAddrPtr, readReg(self, RegFifoRxCurrentAddr));
         
-        burstRead(self->board, RegFifo, data, size);
+        burstRead(self, RegFifo, data, size);
     }
 
     return size;
@@ -710,59 +703,59 @@ static uint8_t readFIFO(struct lora_radio *self, uint8_t *data, uint8_t max)
 
 static void writeFIFO(struct lora_radio *self, const uint8_t *data, uint8_t len)
 {
-    writeReg(self->board, RegFifoTxBaseAddr, 0x00U);    // set tx base
-    writeReg(self->board, RegFifoAddrPtr, 0x00U);       // set address pointer
-    writeReg(self->board, LoraRegPayloadLength, len);
-    burstWrite(self->board, RegFifo, data, len);        // write into fifo
+    writeReg(self, RegFifoTxBaseAddr, 0x00U);    // set tx base
+    writeReg(self, RegFifoAddrPtr, 0x00U);       // set address pointer
+    writeReg(self, LoraRegPayloadLength, len);
+    burstWrite(self, RegFifo, data, len);        // write into fifo
 }
 
-static uint8_t readReg(const struct lora_board *self, uint8_t reg)
+static uint8_t readReg(struct lora_radio *self, uint8_t reg)
 {
     uint8_t data;
     burstRead(self, reg, &data, sizeof(data));
     return data;
 }
 
-static void writeReg(const struct lora_board *self, uint8_t reg, uint8_t data)
+static void writeReg(struct lora_radio *self, uint8_t reg, uint8_t data)
 {
     burstWrite(self, reg, &data, sizeof(data));
 }
 
-static void burstWrite(const struct lora_board *self, uint8_t reg, const uint8_t *data, uint8_t len)
+static void burstWrite(struct lora_radio *self, uint8_t reg, const uint8_t *data, uint8_t len)
 {
     uint8_t i;
 
     if(len > 0U){
 
-        self->select(self->receiver, true);
-
-        self->write(self->receiver, reg | 0x80U);
+        LDL_SPI_select(self->board, true);
+        
+        LDL_SPI_write(self->board, reg | 0x80U);
 
         for(i=0; i < len; i++){
 
-            self->write(self->receiver, data[i]);
+            LDL_SPI_write(self->board, data[i]);
         }
 
-        self->select(self->receiver, false);
+        LDL_SPI_select(self->board, false);
     }
 }
 
-static void burstRead(const struct lora_board *self, uint8_t reg, uint8_t *data, uint8_t len)
+static void burstRead(struct lora_radio *self, uint8_t reg, uint8_t *data, uint8_t len)
 {
     uint8_t i;
 
     if(len > 0U){
 
-        self->select(self->receiver, true);
+        LDL_SPI_select(self->board, true);
 
-        self->write(self->receiver, reg & 0x7fU);
+        LDL_SPI_write(self->board, reg & 0x7fU);
 
         for(i=0U; i < len; i++){
 
-            data[i] = self->read(self->receiver);
+            data[i] = LDL_SPI_read(self->board);
         }
 
-        self->select(self->receiver, false);
+        LDL_SPI_select(self->board, false);
     }
 }
 

@@ -67,48 +67,37 @@ struct lora_system_identity {
     uint8_t appKey[16U];    /**< application key */
 };
 
-/** Get system time (ticks)
+/** Get AppEUI, DevEUI, and DevKey
+ *
+ * @warning mandatory
  * 
- * THIS VALUE MUST BE >= 1000UL
+ * A device must have these values before it can join a LoRaWAN network. 
  * 
- * @note system time must increment at a rate of LDL_System_tps()
- * @warning this function must be implemented on target for correct operation
- * @warning this value must be >= 1000UL
+ * @param[in]   app
+ * @param[out]  value
  * 
- * @param[in] app    application state
+ * */
+void LDL_System_getIdentity(void *app, struct lora_system_identity *value);
+
+/** This function returns a 32 bit counter which is expected to increment
+ * at a rate of LDL_System_tps() ticks per second.
+ * 
+ * This is used by LDL to track the passage of time.
+ * 
+ * @warning mandatory
+ * 
+ * @param[in]   app
  * 
  * @return system time
  * 
  * */
 uint32_t LDL_System_ticks(void *app);
 
-/** Get AppEUI, DevEUI, and DevKey
+/** The rate (ticks per second) at which the value returned by 
+ * LDL_System_ticks() increments.
  * 
- * @warning this function must be implemented on target for correct operation
- * 
- * @param[in] app   application state
- * @param[out] value
- * 
- * */
-void LDL_System_getIdentity(void *app, struct lora_system_identity *value);
-
-/** Get battery level
- *  
- * @param[in] app   application state
- * @return battery level
- * @retval 255 not implemented
- * 
- * */
-uint8_t LDL_System_getBatteryLevel(void *app);
-
-/** Get a random number in range 0..255
- * 
- * @return random number in range 0..255
- * 
- * */
-uint8_t LDL_System_rand(void);
-
-/** The number of ticks in one second
+ * @warning mandatory
+ * @warning 1000 <= LDL_System_tps() <= 1000000
  * 
  * @return ticks per second
  * 
@@ -116,6 +105,8 @@ uint8_t LDL_System_rand(void);
 uint32_t LDL_System_tps(void);
 
 /** XTAL error per second in ticks
+ * 
+ * @warning mandatory
  * 
  * For example, if an oscillator is accurate to +/1% of nominal:
  * 
@@ -135,20 +126,42 @@ uint32_t LDL_System_tps(void);
  * */
 uint32_t LDL_System_eps(void);
 
+/** Get a random number in range 0..255
+ * 
+ * @warning has weak implementation
+ * 
+ * @retval (0..255)
+ * 
+ * */
+uint8_t LDL_System_rand(void);
+
+/** Get battery level
+ * 
+ * @warning has weak implementation
+ *  
+ * @param[in]   app
+ * @return      battery level
+ * @retval      255 not implemented
+ * 
+ * */
+uint8_t LDL_System_getBatteryLevel(void *app);
 
 /** Advance schedule by this many ticks to compensate for delay
- * in processing an interrupt
+ * between detecting an event and processing an event.
  * 
- * - advances RX1 and RX2 window schedule by so many system time ticks
+ * @warning has weak implementation
+ * 
+ * @retval ticks
  * 
  * */
 uint32_t LDL_System_advance(void);
 
 /** Restore saved context
  * 
- * @note called only once during #LDL_MAC_init
+ * @warning has weak implementation
+ * @note called once during #LDL_MAC_init
  * 
- * @param[in] app    application state
+ * @param[in] app
  * @param[out] value
  * 
  * @retval true if context was restored
@@ -159,6 +172,7 @@ bool LDL_System_restoreContext(void *app, struct lora_mac_session *value);
 
 /** Save context
  * 
+ * @warning has weak implementation
  * @note This will be called by MAC every time a member in lora_mac_session changes
  * 
  * @param[in] app

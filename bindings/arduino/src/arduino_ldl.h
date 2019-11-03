@@ -27,8 +27,8 @@
 #include <SPI.h>
 
 #include "lora_mac.h"
-#include "lora_board.h"
 #include "lora_system.h"
+#include "lora_spi.h"
 
 typedef void (*get_identity_fn)(struct lora_system_identity *id);
 typedef void (*handle_rx_fn)(uint16_t counter, uint8_t port, const uint8_t *msg, uint8_t size);
@@ -61,17 +61,12 @@ class ArduinoLDL {
         
         struct lora_mac mac;
         struct lora_radio radio;
-        struct lora_board board;
         
         get_identity_fn get_id;
     
         handle_rx_fn handle_rx;
         handle_event_fn handle_event;
         
-        static void radio_select(void *reciever, bool state);
-        static void radio_reset(void *reciever, bool state);
-        static void radio_write(void *reciever, uint8_t data);
-        static uint8_t radio_read(void *reciever);        
         void arm_dio(struct DioInput *dio);
         void unmask_pcint(uint8_t pin);        
         static ArduinoLDL *to_obj(void *ptr);
@@ -81,6 +76,9 @@ class ArduinoLDL {
 
         ArduinoLDL(const ArduinoLDL&) = delete;
         void operator=(const ArduinoLDL&) = delete;
+        
+        static void radioSelect(void *self, bool state);
+        static void radioReset(void *self, bool state);
         
         static void interrupt();
         static void getIdentity(void *ptr, struct lora_system_identity *value);

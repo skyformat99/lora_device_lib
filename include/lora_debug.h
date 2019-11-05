@@ -25,7 +25,7 @@
 /** @file */
 
 /**
- * @addtogroup ldl_optional
+ * @addtogroup ldl_build_options
  * 
  * @{
  * */
@@ -35,67 +35,63 @@
 #ifndef LORA_ERROR
     /** A printf-like function that captures run-time error level messages 
      * 
-     * Example (defined from a makefile):
+     * Example:
      * 
      * @code
-     * -DLORA_ERROR(...)='do{printf(__VA_ARGS__);printf("\n");}while(0);'
+     * #define LORA_ERROR(...) do{printf(__VA_ARGS__);printf("\n");}while(0);
      * @endcode
-     * 
-     * This could also be defined within the file included by #LORA_TARGET_INCLUDE.
      * 
      * If not defined, all LORA_ERROR() messages will be left out of the build.
      * 
+     * @param[in] APP app from LDL_MAC_init() or NULL if not available
+     * 
      * */
-    #define LORA_ERROR(...)
+    #define LORA_ERROR(APP,...)
 #endif
 
 #ifndef LORA_INFO
     /** A printf-like function that captures run-time info level messages 
      * 
-     * Example (defined from a makefile):
+     * Example:
      * 
      * @code
-     * -DLORA_INFO(...)='do{printf(__VA_ARGS__);printf("\n");}while(0);'
+     * #define LORA_INFO(...) do{printf(__VA_ARGS__);printf("\n");}while(0);
      * @endcode
-     * 
-     * This could also be defined within the file included by #LORA_TARGET_INCLUDE.
      * 
      * If not defined, all LORA_INFO() messages will be left out of the build.
      * 
+     * @param[in] APP app from LDL_MAC_init() or NULL if not available
+     * 
      * */
-    #define LORA_INFO(...)
+    #define LORA_INFO(APP,...)
 #endif
 
 #ifndef LORA_DEBUG
     /** A printf-like function that captures run-time debug level messages with 
      * varaidic arguments 
      * 
-     * Example (defined from a makefile):
+     * Example:
      * 
      * @code
-     * -DLORA_DEBUG(...)='do{printf(__VA_ARGS__);printf("\n");}while(0);'
+     * #define LORA_DEBUG(APP, ...) do{printf(__VA_ARGS__);printf("\n");}while(0);
      * @endcode
-     * 
-     * This could also be defined within the file included by #LORA_TARGET_INCLUDE.
      * 
      * If not defined, all LORA_DEBUG() messages will be left out of the build.
      * 
+     * @param[in] APP app from LDL_MAC_init() or NULL if not available
+     * 
      * */
-    #define LORA_DEBUG(...)
+    #define LORA_DEBUG(APP, ...)
 #endif
 
 #ifndef LORA_ASSERT
     /** An assert-like function that performs run-time assertions on 'X' 
      * 
-     * @note Regular assertions are recommended for production
-     * 
-     * Example (defined from a makefile):
+     * Example:
      * 
      * @code
-     * -DLORA_ASSERT(X)='assert(X);'
+     * #define LORA_ASSERT(X) assert(X);
      * @endcode
-     * 
-     * This could also be defined within the file included by #LORA_TARGET_INCLUDE.
      * 
      * If not defined, all LORA_ASSERT() checks will be left out of the build.
      * 
@@ -106,15 +102,14 @@
 #ifndef LORA_PEDANTIC
     /** A assert-like function that performs run-time assertions on 'X' 
      * 
-     * @note Pedantic assertions are not required for production
+     * These assertions are considered pedantic. They are useful for development
+     * but excessive for production.
      * 
-     * Example (defined from a makefile):
+     * Example:
      * 
      * @code
-     * -DLORA_PEDANTIC(X)='assert(X);'
+     * #define LORA_PEDANTIC(X) assert(X);
      * @endcode
-     * 
-     * This could also be defined within the file included by #LORA_TARGET_INCLUDE.
      * 
      * If not defined, all LORA_PEDANTIC() checks will be left out of the build.
      * 

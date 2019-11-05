@@ -25,10 +25,22 @@
 /** @file */
 
 /**
- * @defgroup ldl_spi SPI
+ * @defgroup ldl_radio_connector Radio Connector
  * @ingroup ldl
+ * @ingroup ldl_radio_connector
  * 
- * SPI interface to radio.
+ * The Radio Connector connects the @ref ldl_radio to the radio chip.
+ * 
+ * The following interfaces MUST be implemented:
+ * 
+ * - LDL_SPI_read()
+ * - LDL_SPI_write()
+ * - LDL_SPI_select()
+ * - LDL_SPI_reset()
+ * 
+ * The following interface MUST be called when the radio signals an interrupt:
+ * 
+ * - LDL_MAC_interrupt()
  * 
  * @{
  * */
@@ -43,29 +55,23 @@ extern "C" {
 
 /** Operate select line
  * 
- * @warning mandatory
- * 
- * @param[in] self
- * @param[in] state **TRUE** for hold, **FALSE** for release
+ * @param[in] self      board from LDL_Radio_init()
+ * @param[in] state     **true** for hold, **false** for release
  * 
  * */
 void LDL_SPI_select(void *self, bool state);
 
 /** Operate reset line
  * 
- * @warning mandatory
- * 
- * @param[in] board
- * @param[in] state **TRUE** for hold, **FALSE** for release
+ * @param[in] self      board from LDL_Radio_init()
+ * @param[in] state     **true** for hold, **true** for release
  * 
  * */
 void LDL_SPI_reset(void *self, bool state);
 
 /** Write byte
  * 
- * @warning mandatory
- * 
- * @param[in] board
+ * @param[in] self      board from LDL_Radio_init()
  * @param[in] data
  * 
  * */
@@ -73,9 +79,7 @@ void LDL_SPI_write(void *self, uint8_t data);
 
 /** Read byte
  * 
- * @warning mandatory
- * 
- * @param[in] board
+ * @param[in] self      board from LDL_Radio_init()
  * @return data
  * 
  * */

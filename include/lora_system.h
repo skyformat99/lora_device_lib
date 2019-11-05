@@ -24,29 +24,37 @@
 
 /** @file */
 
-/** 
- * @defgroup ldl_optional Optional
- * @ingroup ldl
- * 
- * Functions and macros which LDL depends on. 
- * 
- * These interfaces and macros have default implementations
- * and definitions. They are in the optional group because they are
- * designed to be redefined to suit the target.
- * 
- * */
-
 /**
  * @defgroup ldl_system System
  * @ingroup ldl
- *
- * System interfaces.
  * 
- * LDL includes weak implementations for each of these functions. 
- * Different targets may or may not need to implement their own versions.
+ * System interfaces connect LDL to the underlying system. 
+ * 
+ * The following MUST be implemented:
+ * 
+ * - LDL_System_getIdentity()
+ * - LDL_System_ticks()
+ * - LDL_System_tps()
+ * - LDL_System_eps()
+ * 
+ * The following have weak implementations which MAY be
+ * re-implemented:
+ * 
+ * - LDL_System_advance()
+ * - LDL_System_getBatteryLevel()
+ * - LDL_System_rand()
+ * - LDL_System_saveContext()
+ * - LDL_System_restoreContext()
+ * 
+ * The following macros MUST be defined if LDL_MAC_interrupt() or LDL_MAC_ticksUntilNextEvent() are called from an interrupt:
+ * 
+ * - LORA_SYSTEM_ENTER_CRITICAL() 
+ * - LORA_SYSTEM_LEAVE_CRITICAL()
  * 
  * @{
  * */
+ 
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,7 +67,7 @@ extern "C" {
 
 struct lora_mac_session;
 
-/** identifiers and application key */
+/** Identifiers and application key */
 struct lora_system_identity {
   
     uint8_t appEUI[8U];     /**< application identifier */
@@ -67,102 +75,109 @@ struct lora_system_identity {
     uint8_t appKey[16U];    /**< application key */
 };
 
-/** Get system time (ticks)
+/** @warning mandatory
  * 
- * THIS VALUE MUST BE >= 1000UL
+ * This function returns AppEUI, DevEUI, and DevKey.
  * 
- * @note system time must increment at a rate of LDL_System_tps()
- * @warning this function must be implemented on target for correct operation
- * @warning this value must be >= 1000UL
- * 
- * @param[in] app    application state
- * 
- * @return system time
- * 
- * */
-uint32_t LDL_System_ticks(void *app);
-
-/** Get AppEUI, DevEUI, and DevKey
- * 
- * @warning this function must be implemented on target for correct operation
- * 
- * @param[in] app   application state
- * @param[out] value
+ * @param[in]   app     from LDL_MAC_init()
+ * @param[out]  value
  * 
  * */
 void LDL_System_getIdentity(void *app, struct lora_system_identity *value);
 
-/** Get battery level
- *  
- * @param[in] app   application state
- * @return battery level
- * @retval 255 not implemented
+/** @warning mandatory
+ * 
+ * This function reads a free-running 32 bit counter. The counter
+ * is expected to increment at a rate of LDL_System_tps() ticks per second.
+ * 
+ * LDL uses this changing value to track of the passage of time and perform
+ * scheduling. 
+ * 
+ * @param[in]   app     from LDL_MAC_init()
+ * 
+ * @return ticks
  * 
  * */
-uint8_t LDL_System_getBatteryLevel(void *app);
+uint32_t LDL_System_ticks(void *app);
 
-/** Get a random number in range 0..255
+/** @warning mandatory
  * 
- * @return random number in range 0..255
+ * This function returns the rate (ticks per second) at which the value
+ * returned by LDL_System_ticks() increments.
  * 
- * */
-uint8_t LDL_System_rand(void);
-
-/** The number of ticks in one second
+ * The rate MUST be in the range 10KHz to 1MHz.
  * 
  * @return ticks per second
  * 
  * */
 uint32_t LDL_System_tps(void);
 
-/** XTAL error per second in ticks
+/** @warning mandatory 
+ * 
+ * XTAL uncertainty per second in ticks
  * 
  * For example, if an oscillator is accurate to +/1% of nominal:
  * 
  * @code
  * 
- * F_CPU := 8000000UL
- * PRESCALE := 64UL
- * ERROR := 0.01
+ * F_CPU := 1000000UL
+ * ERROR := 0.001
  * 
- * # works out to 1250 ticks
- * XTAL_ERROR := '( $(F_CPU) * $(ERROR) / $(PRESCALE) )'
+ * # works out to 100 ticks
+ * XTAL_ERROR := '( $(F_CPU) * $(ERROR) )'
  * 
  * @endcode
  * 
- * @return xtal error in ticks
+ * @return xtal uncertainty in ticks
  * 
  * */
 uint32_t LDL_System_eps(void);
 
+/** LDL uses this function to select channels and to add random dither 
+ * to scheduled events.
+ * 
+ * @retval (0..255)
+ * 
+ * */
+uint8_t LDL_System_rand(void *app);
+
+/** LDL uses this function to discover the battery level for for device
+ * status MAC command.
+ *  
+ * @param[in]   app     from LDL_MAC_init()
+ * 
+ * @return      DevStatusAns.battery 
+ * @retval      255 not implemented
+ * 
+ * */
+uint8_t LDL_System_getBatteryLevel(void *app);
 
 /** Advance schedule by this many ticks to compensate for delay
- * in processing an interrupt
+ * between detecting an event and processing it.
  * 
- * - advances RX1 and RX2 window schedule by so many system time ticks
+ * @retval ticks
  * 
  * */
 uint32_t LDL_System_advance(void);
 
-/** Restore saved context
+/** Called once during LDL_MAC_init() to restore saved context
  * 
- * @note called only once during #LDL_MAC_init
+ * Returning false indicates to LDL that there is no saved context
+ * and that LDL should restore from defaults.
  * 
- * @param[in] app    application state
- * @param[out] value
+ * @param[in] app       from LDL_MAC_init()
+ * @param[out] value    session data
  * 
- * @retval true if context was restored
- * @retval false MAC will restore session from defaults
+ * @retval true     restored
+ * @retval false    not-restored
  * 
  * */
 bool LDL_System_restoreContext(void *app, struct lora_mac_session *value);
 
-/** Save context
+/** Called by LDL every time lora_mac_session changes
  * 
- * @note This will be called by MAC every time a member in lora_mac_session changes
- * 
- * @param[in] app
- * @param[in] value
+ * @param[in] app       from LDL_MAC_init()
+ * @param[in] value     session data
  * 
  * */
 void LDL_System_saveContext(void *app, const struct lora_mac_session *value);
@@ -170,12 +185,13 @@ void LDL_System_saveContext(void *app, const struct lora_mac_session *value);
 #ifndef LORA_SYSTEM_ENTER_CRITICAL
 
 /** Expanded inside functions which might be called from both mainloop 
- * and interrupt.
+ * and interrupt. At the moment only LDL_MAC_ticksUntilNextEvent() and
+ * LDL_MAC_interrupt() are safe to call this way.
  * 
  * Always paired with #LORA_SYSTEM_LEAVE_CRITICAL within the same function like so:
  * 
  * @code
- * void LDL_Event_xxx(void *app)
+ * void some_function(void *app)
  * {
  *      LORA_SYSTEM_ENTER_CRITICAL(app)
  * 
@@ -185,18 +201,22 @@ void LDL_System_saveContext(void *app, const struct lora_mac_session *value);
  * }
  * @endcode
  * 
- * Note that there are no semicolons following the 
- * macro when it appears in LDL. This means if you are using avr-libc you 
- * are free to insert the ATOMIC_BLOCK macro like so:
+ * If you are using avr-libc:
  * 
  * @code
  * #include <util/atomic.h>
  * 
  * #define LORA_SYSTEM_ENTER_CRITICAL(APP) ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
- * #define LORA_SYSTEM_ENTER_CRITICAL(APP) }
+ * #define LORA_SYSTEM_LEAVE_CRITICAL(APP) }
  * @endcode
  * 
- * @param[in] app   application state
+ * If you are using CMSIS:
+ * @code
+ * #define LORA_SYSTEM_ENTER_CRITICAL(APP) volatile uint32_t primask = __get_PRIMASK(); __disable_irq();
+ * #define LORA_SYSTEM_LEAVE_CRITICAL(APP) __set_PRIMASK(primask);
+ * @endcode
+ * 
+ * @param[in] APP   app from LDL_MAC_init()   
  * 
  * */
 #define LORA_SYSTEM_ENTER_CRITICAL(APP)
@@ -208,9 +228,8 @@ void LDL_System_saveContext(void *app, const struct lora_mac_session *value);
  * and interrupt.
  * 
  * Always paired with #LORA_SYSTEM_ENTER_CRITICAL within the same function. 
- * See #LORA_SYSTEM_ENTER_CRITICAL for example.
  * 
- * @param[in] app   application state
+ * @param[in] APP   app from LDL_MAC_init()
  * 
  * */
 #define LORA_SYSTEM_LEAVE_CRITICAL(APP)

@@ -25,7 +25,14 @@
 /** @file */
 
 /**
- * @addtogroup ldl_optional
+ * @defgroup ldl_crypto Crypto
+ * @ingroup ldl
+ * 
+ * If necessary the default AES and AES_CMAC implementations can be removed from the build
+ * by defining:
+ * 
+ * - #LORA_ENABLE_PLATFORM_CMAC
+ * - #LORA_ENABLE_PLATFORM_AES
  * 
  * @{
  * */
@@ -56,10 +63,7 @@ struct lora_aes_ctx {
     #define AES_BLOCK_SIZE 16U
 #endif
 
-/**
- * 
- * This interface is called by LDL to initialise the AES block cipher
- * prior to calling LDL_AES_encrypt() and LDL_AES_decrypt().
+/** Initialise AES block cipher
  * 
  * @param[in] ctx
  * @param[in] key pointer to 16 byte key

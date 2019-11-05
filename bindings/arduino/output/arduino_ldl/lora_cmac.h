@@ -25,7 +25,7 @@
 /** @file */
 
 /**
- * @addtogroup ldl_optional
+ * @addtogroup ldl_crypto
  * 
  * @{
  * */

@@ -28,8 +28,6 @@
  * @defgroup ldl_radio Radio
  * @ingroup ldl
  * 
- * 
- * 
  * @{
  * */
 
@@ -42,6 +40,8 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 
+struct lora_mac;
+
 enum lora_radio_event {    
     LORA_RADIO_EVENT_TX_COMPLETE,
     LORA_RADIO_EVENT_RX_READY,
@@ -49,13 +49,23 @@ enum lora_radio_event {
     LORA_RADIO_EVENT_NONE,
 };
 
-/** radio type */
+/** Radio driver type
+ * 
+ * The driver selected at LDL_Radio_init() must have first been included
+ * in the build.
+ * 
+ * Drivers are included in the build by defining:
+ * 
+ * - #LORA_ENABLE_SX1272
+ * - #LORA_ENABLE_SX1276
+ * 
+ * */
 enum lora_radio_type {
 #ifdef LORA_ENABLE_SX1272    
     LORA_RADIO_SX1272,      /**< SX1272 */
 #endif    
 #ifdef LORA_ENABLE_SX1276   
-    LORA_RADIO_SX1276,      /**< SX1272 (RFM95W) */
+    LORA_RADIO_SX1276,      /**< SX1276 */
 #endif    
     LORA_RADIO_NONE         /**< no radio */
 };
@@ -87,11 +97,13 @@ struct lora_radio_packet_metadata {
     uint32_t freq;
 };
 
-/** specify power amplifier */
+/** Power amplifier configuration */
 enum lora_radio_pa {
     LORA_RADIO_PA_RFO,      /**< RFO pin */
     LORA_RADIO_PA_BOOST     /**< BOOST pin */
 };
+
+typedef void (*radio_event_handler_fn)(struct lora_mac *self, enum lora_radio_event event);
 
 /** Radio data */
 struct lora_radio {
@@ -102,25 +114,35 @@ struct lora_radio {
     enum lora_radio_type type;
 };
 
-/** Initialise Radio
+/** Initialise radio driver
+ * 
+ * This must be done before calling LDL_MAC_init().
  * 
  * @param[in] self
- * @param[in] board board specific connections see @ref ldl_board
+ * @param[in] type  driver to initialise
+ * @param[in] board passed to board interface functions (e.g. LDL_SPI_write())
  * 
  * */
 void LDL_Radio_init(struct lora_radio *self, enum lora_radio_type type, void *board);
 
-/** Which PA is connected?
+/** Select power amplifier
+ * 
+ * This setting applies to the following radio drivers:
+ * 
+ * - LORA_RADIO_SX1272
+ * - LORA_RADIO_SX1276
+ * 
+ * These radios have different hardware connections for different
+ * power amplifiers. This setting tells the driver which one is connected.
+ * 
+ * For example, the Semtech SX1272MB2xAS MBED shield uses the #LORA_RADIO_PA_RFO connection,
+ * while the HopeRF RFM96W uses the #LORA_RADIO_PA_BOOST connection.
  * 
  * @param[in] self
  * @param[in] pa power amplifier setting
  * 
  * */
 void LDL_Radio_setPA(struct lora_radio *self, enum lora_radio_pa pa);
-
-
-
-
 
 void LDL_Radio_entropyBegin(struct lora_radio *self);
 unsigned int LDL_Radio_entropyEnd(struct lora_radio *self);

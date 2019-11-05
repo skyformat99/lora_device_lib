@@ -24,13 +24,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-uint8_t LDL_System_rand(void) __attribute__((weak));
+uint8_t LDL_System_rand(void *app) __attribute__((weak));
 uint8_t LDL_System_getBatteryLevel(void *app) __attribute__((weak));
 bool LDL_System_restoreContext(void *app, struct lora_mac_session *value) __attribute__((weak));
 void LDL_System_saveContext(void *app, const struct lora_mac_session *value) __attribute__((weak));
 uint32_t LDL_System_advance(void) __attribute__((weak));
 
-uint8_t LDL_System_rand(void)
+uint8_t LDL_System_rand(void *app)
 {
     return (uint8_t)rand();
 }

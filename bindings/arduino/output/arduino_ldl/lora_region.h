@@ -38,19 +38,29 @@ extern "C" {
  * 
  * @ingroup ldl_mac
  * 
+ * The region selected at LDL_MAC_init() needs to have first been included
+ * in the build.
+ * 
+ * Regions are included in the build by defining:
+ * 
+ * - #LORA_ENABLE_EU_863_870
+ * - #LORA_ENABLE_US_902_928
+ * - #LORA_ENABLE_AU_915_928
+ * - #LORA_ENABLE_EU_433
+ * 
  *  */
 enum lora_region {
 #ifdef LORA_ENABLE_EU_863_870
-    EU_863_870,
+    EU_863_870, /**< EU_863_870 */
 #endif
 #ifdef LORA_ENABLE_US_902_928
-    US_902_928,
+    US_902_928, /**< US_902_928 */
 #endif
 #ifdef LORA_ENABLE_AU_915_928
-    AU_915_928,
+    AU_915_928, /**< AU_915_928 */
 #endif
 #ifdef LORA_ENABLE_EU_433        
-    EU_433,
+    EU_433,     /**< EU_433 */
 #endif    
 };
 

@@ -26,6 +26,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 
+#include "lora_radio.h"
 #include "lora_mac.h"
 #include "lora_system.h"
 #include "lora_spi.h"
@@ -184,16 +185,16 @@ class ArduinoLDL {
          * This is set to 12 by default
          * 
          * */
-        void setAggregatedDutyCycleLimit(uint8_t limit);
+        void setMaxDCycle(uint8_t maxDCycle);
         
-        uint8_t getAggregatedDutyCycleLimit();
+        uint8_t getMaxDCycle();
         
         /* transmission redundancy to apply to all upstream messages
          * 
          * */        
-        void setRedundancy(uint8_t nbTrans);
+        void setNbTrans(uint8_t nbTrans);
         
-        uint8_t getRedundancy();
+        uint8_t getNbTrans();
 };
 
 #endif

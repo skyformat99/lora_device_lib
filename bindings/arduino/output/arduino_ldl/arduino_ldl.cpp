@@ -139,7 +139,7 @@ ArduinoLDL::ArduinoLDL(get_identity_fn get_id, enum lora_region region, enum lor
      * 1 / (2 ^ 12)     = 0.000244141
      * 
      * */
-    setAggregatedDutyCycleLimit(12U);
+    setMaxDCycle(12U);
 }
 
 uint32_t ArduinoLDL::time()
@@ -242,7 +242,7 @@ void ArduinoLDL::interrupt()
         
         if(state && !ptr->state){
 
-            LDL_MAC_interrupt(&ptr->mac, ptr->signal, LDL_System_ticks(NULL));
+            LDL_MAC_interrupt(&ptr->mac, ptr->signal);
         }
         
         ptr->state = state;
@@ -296,24 +296,24 @@ uint32_t ArduinoLDL::ticksPerMilliSecond()
     return TPS/1000UL;
 }
 
-void ArduinoLDL::setAggregatedDutyCycleLimit(uint8_t limit)
+void ArduinoLDL::setMaxDCycle(uint8_t maxDCycle)
 {
-    LDL_MAC_setAggregatedDutyCycleLimit(&mac, limit);
+    LDL_MAC_setMaxDCycle(&mac, maxDCycle);
 }
 
-uint8_t ArduinoLDL::getAggregatedDutyCycleLimit()
+uint8_t ArduinoLDL::getMaxDCycle()
 {
-    return LDL_MAC_getAggregatedDutyCycleLimit(&mac);
+    return LDL_MAC_getMaxDCycle(&mac);
 }
 
-void ArduinoLDL::setRedundancy(uint8_t nbTrans)
+void ArduinoLDL::setNbTrans(uint8_t nbTrans)
 {
-    LDL_MAC_setRedundancy(&mac, nbTrans);
+    LDL_MAC_setNbTrans(&mac, nbTrans);
 }
 
-uint8_t ArduinoLDL::getRedundancy()
+uint8_t ArduinoLDL::getNbTrans()
 {
-    return LDL_MAC_getRedundancy(&mac);
+    return LDL_MAC_getNbTrans(&mac);
 }
 
 /* protected methods **************************************************/

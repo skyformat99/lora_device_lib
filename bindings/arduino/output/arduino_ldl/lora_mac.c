@@ -20,6 +20,7 @@
  * */
 
 #include "lora_mac.h"
+#include "lora_radio.h"
 #include "lora_frame.h"
 #include "lora_debug.h"
 #include "lora_aes.h"
@@ -61,7 +62,7 @@ static uint32_t timeNow(struct lora_mac *self);
 static void inputArm(struct lora_mac *self, enum lora_input_type type);
 static bool inputCheck(const struct lora_mac *self, enum lora_input_type type, uint32_t *error);
 static void inputClear(struct lora_mac *self);
-static void inputSignal(struct lora_mac *self, enum lora_input_type type, uint32_t time);
+static void inputSignal(struct lora_mac *self, enum lora_input_type type);
 static bool inputPending(const struct lora_mac *self);
 static void timerSet(struct lora_mac *self, enum lora_timer_inst timer, uint32_t timeout);
 //static void timerIncrement(struct lora_mac *self, enum lora_timer_inst timer, uint32_t timeout);
@@ -77,7 +78,7 @@ static void downlinkMissingHandler(struct lora_mac *self);
 static uint32_t ticksToMS(uint32_t ticks);
 static uint32_t ticksToMSCoarse(uint32_t ticks);
 static uint32_t msUntilNextChannel(const struct lora_mac *self, uint8_t rate);
-static uint32_t rand32(void);
+static uint32_t rand32(void *app);
 static uint32_t getRetryDuty(uint32_t seconds_since);
 
 /* functions **********************************************************/
@@ -185,15 +186,13 @@ bool LDL_MAC_otaa(struct lora_mac *self)
                 (void)memcpy(f.appEUI, identity.appEUI, sizeof(f.appEUI));
                 (void)memcpy(f.devEUI, identity.devEUI, sizeof(f.devEUI));
                 
-                self->devNonce = LDL_System_rand();
-                self->devNonce <<= 8U;
-                self->devNonce |= LDL_System_rand();
+                self->devNonce = rand32(self->app);
                 
                 f.devNonce = self->devNonce;
 
                 self->bufferLen = (uint8_t)LDL_Frame_putJoinRequest(identity.appKey, &f, self->buffer, sizeof(self->buffer));
                 
-                delay = rand32() % (60UL*LDL_System_tps());
+                delay = rand32(self->app) % (60UL*LDL_System_tps());
                 
                 LORA_DEBUG(self->app, "sending join in %"PRIu32" ticks", delay)
                             
@@ -979,7 +978,7 @@ void LDL_MAC_process(struct lora_mac *self)
             
                     if(selectChannel(self, self->tx.rate, self->tx.chIndex, 0UL, &self->tx.chIndex, &self->tx.freq)){
                                 
-                        uint32_t delay = rand32() % (LDL_System_tps()*30UL);
+                        uint32_t delay = rand32(self->app) % (LDL_System_tps()*30UL);
                                 
                         LORA_DEBUG(self->app, "dither retry by %"PRIu32" ticks", delay)
                                 
@@ -1083,13 +1082,12 @@ uint8_t LDL_MAC_getPower(const struct lora_mac *self)
     return self->ctx.power;
 }
 
-bool LDL_MAC_enableADR(struct lora_mac *self)
+void LDL_MAC_enableADR(struct lora_mac *self)
 {
     LORA_PEDANTIC(self != NULL)
     
     self->ctx.adr = true;
     LDL_System_saveContext(self->app, &self->ctx);        
-    return true;
 }
 
 bool LDL_MAC_adr(const struct lora_mac *self)
@@ -1099,14 +1097,12 @@ bool LDL_MAC_adr(const struct lora_mac *self)
     return self->ctx.adr;
 }
 
-bool LDL_MAC_disableADR(struct lora_mac *self)
+void LDL_MAC_disableADR(struct lora_mac *self)
 {
     LORA_PEDANTIC(self != NULL)
     
     self->ctx.adr = false;
     LDL_System_saveContext(self->app, &self->ctx);        
-    
-    return true;
 }
 
 bool LDL_MAC_ready(const struct lora_mac *self)
@@ -1143,19 +1139,19 @@ uint32_t LDL_MAC_bwToNumber(enum lora_signal_bandwidth bw)
     return retval;
 }
 
-void LDL_MAC_interrupt(struct lora_mac *self, uint8_t n, uint32_t time)
+void LDL_MAC_interrupt(struct lora_mac *self, uint8_t n)
 {
     LORA_PEDANTIC(self != NULL)
     
     switch(LDL_Radio_signal(self->radio, n)){
     case LORA_RADIO_EVENT_TX_COMPLETE:
-        inputSignal(self, LORA_INPUT_TX_COMPLETE, time);
+        inputSignal(self, LORA_INPUT_TX_COMPLETE);
         break;
     case LORA_RADIO_EVENT_RX_READY:
-        inputSignal(self, LORA_INPUT_RX_READY, time);
+        inputSignal(self, LORA_INPUT_RX_READY);
         break;
     case LORA_RADIO_EVENT_RX_TIMEOUT:
-        inputSignal(self, LORA_INPUT_RX_TIMEOUT, time);        
+        inputSignal(self, LORA_INPUT_RX_TIMEOUT);        
         break;
     case LORA_RADIO_EVENT_NONE:
     default:
@@ -1208,22 +1204,22 @@ uint32_t LDL_MAC_timeSinceValidDownlink(struct lora_mac *self)
     return (self->last_valid_downlink == 0) ? UINT32_MAX : (timeNow(self) - self->last_valid_downlink);
 }
 
-void LDL_MAC_setAggregatedDutyCycleLimit(struct lora_mac *self, uint8_t limit)
+void LDL_MAC_setMaxDCycle(struct lora_mac *self, uint8_t maxDCycle)
 {
     LORA_PEDANTIC(self != NULL)
     
-    self->ctx.maxDutyCycle = limit & 0xfU;
+    self->ctx.maxDutyCycle = maxDCycle & 0xfU;
     LDL_System_saveContext(self->app, &self->ctx);          
 }
 
-uint8_t LDL_MAC_getAggregatedDutyCycleLimit(const struct lora_mac *self)
+uint8_t LDL_MAC_getMaxDCycle(const struct lora_mac *self)
 {
     LORA_PEDANTIC(self != NULL)
     
     return self->ctx.maxDutyCycle;
 }
 
-void LDL_MAC_setRedundancy(struct lora_mac *self, uint8_t nbTrans)
+void LDL_MAC_setNbTrans(struct lora_mac *self, uint8_t nbTrans)
 {
     LORA_PEDANTIC(self != NULL)
     
@@ -1231,7 +1227,7 @@ void LDL_MAC_setRedundancy(struct lora_mac *self, uint8_t nbTrans)
     LDL_System_saveContext(self->app, &self->ctx);      
 }
 
-uint8_t LDL_MAC_getRedundancy(const struct lora_mac *self)
+uint8_t LDL_MAC_getNbTrans(const struct lora_mac *self)
 {
     LORA_PEDANTIC(self != NULL)
     
@@ -1395,7 +1391,7 @@ static bool dataCommand(struct lora_mac *self, bool confirmed, uint8_t port, con
     
     if(self->opts.dither > 0U){
         
-        send_delay = (rand32() % ((uint32_t)self->opts.dither * LDL_System_tps()));
+        send_delay = (rand32(self->app) % ((uint32_t)self->opts.dither * LDL_System_tps()));
     }
     
     self->service_start_time = timeNow(self) + (send_delay / LDL_System_tps());            
@@ -1933,7 +1929,7 @@ static bool selectChannel(const struct lora_mac *self, uint8_t rate, uint8_t pre
             }
         }
     
-        selection = LDL_System_rand() % available;
+        selection = LDL_System_rand(self->app) % available;
         
         for(i=0U; i < LDL_Region_numChannels(self->region); i++){
         
@@ -2190,7 +2186,7 @@ static uint32_t getRetryDuty(uint32_t seconds_since)
     }
 }
 
-static void inputSignal(struct lora_mac *self, enum lora_input_type type, uint32_t time)
+static void inputSignal(struct lora_mac *self, enum lora_input_type type)
 {
     LORA_SYSTEM_ENTER_CRITICAL(self->app)
     
@@ -2198,7 +2194,7 @@ static void inputSignal(struct lora_mac *self, enum lora_input_type type, uint32
     
         if((self->inputs.armed & (1U << type)) > 0U){
     
-            self->inputs.time = time;
+            self->inputs.time = LDL_System_ticks(self->app);
             self->inputs.state = (1U << type);
         }
     }
@@ -2565,17 +2561,17 @@ static uint32_t msUntilNextChannel(const struct lora_mac *self, uint8_t rate)
     return min;
 }
 
-static uint32_t rand32(void)
+static uint32_t rand32(void *app)
 {
     uint32_t retval;
     
-    retval = LDL_System_rand();
+    retval = LDL_System_rand(app);
     retval <<= 8;
-    retval |= LDL_System_rand();
+    retval |= LDL_System_rand(app);
     retval <<= 8;
-    retval |= LDL_System_rand();
+    retval |= LDL_System_rand(app);
     retval <<= 8;
-    retval |= LDL_System_rand();
+    retval |= LDL_System_rand(app);
     
     return retval;
 }

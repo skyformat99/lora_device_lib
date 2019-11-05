@@ -26,25 +26,89 @@
 /** @file */
 
 /**
- * @addtogroup ldl_optional
+ * @defgroup ldl_build_options Build Options
+ * @ingroup ldl
+ * 
+ * Build time options.
+ * 
+ * These can be defined in two ways:
+ * 
+ * - using your build system (e.g. using -D)
+ * - in a header file which is then included using the #LORA_TARGET_INCLUDE macro
  * 
  * @{
  * */
+
+#ifndef LORA_MAX_PACKET
+    /** Redefine this to reduce the stack and data memory footprint.
+     * 
+     * The maximum allowable size is UINT8_MAX bytes
+     * 
+     * */
+    #define LORA_MAX_PACKET UINT8_MAX    
+#endif
+ 
+#ifndef LORA_DEFAULT_RATE
+    /** Redefine to limit maximum rate to this setting
+     * 
+     * Useful if you want to avoid a large spreading factor if your
+     * hardware doesn't support it.
+     * 
+     * */
+    #define LORA_DEFAULT_RATE 1U
+
+#endif
+
+#ifndef LORA_REDUNDANCY_MAX
+    /** Redefine to limit the maximum redundancy setting 
+     * 
+     * (i.e. LinkADRReq.redundancy.NbTrans)
+     * 
+     * The implementation and that standard limit this value to 15. Since
+     * the network can set this value, if you feel it is way too high to 
+     * ever consider using, you can use this macro to further limit it.
+     * 
+     * e.g.
+     * 
+     * @code
+     * #define LORA_REDUNDANCY_MAX 3
+     * @endcode
+     * 
+     * would ensure there will never be more than 3 redundant frames.
+     * 
+     * */
+    #define LORA_REDUNDANCY_MAX 0xfU
+#endif
+
+#ifndef LORA_REDUNANCY_OFFTIME_LIMIT
+    /** This value is the limit which accumulated off-time must not
+     * exceed when redundant unconfirmed data frames are sent
+     * back-to-back.
+     * 
+     * The default is one hour. This is appropriate for EU_863_870
+     * where duty cycle is evaluated over one hour.
+     * 
+     * Units are milliseconds.
+     * 
+     * */
+    #define LORA_REDUNANCY_OFFTIME_LIMIT (60UL*60UL*1000UL)
+#endif
 
 #ifdef DOXYGEN
 
     /** Include a target specific file in all headers.
      * 
-     * @note This will ensure LORA_TARGET_INCLUDE is included in every LDL source and header file
+     * This file can be used to define:
      * 
-     * Within this file you could define things like LORA_ERROR() and LORA_ASSERT().
-     * Also use this file to include lora_aes_ctx and lora_cmac_ctx if they
-     * have been changed.
+     * - @ref ldl_build_options
+     * - platform specific definintion of lora_cmac_ctx
+     * - platform specific definintion of lora_aes_ctx
+     * - anything else you want included
      * 
      * Example (defined from a makefile):
      * 
      * @code
-     * -DLORA_TARGET_INCLUDE='target_specific.h'
+     * -DLORA_TARGET_INCLUDE='"target_specific.h"'
      * @endcode
      * 
      * Where `target_specific.h` would be kept somewhere on the include
@@ -55,14 +119,13 @@
     #undef LORA_TARGET_INCLUDE
     
     
-
     /** 
      * Define this macro to remove the built-in AES implementation.
      * 
      * The effect of defining this macro is that:
      * 
      * - lora_aes.c will build to an empty object
-     * - struct lora_aes_ctx is only a forward declaration
+     * - struct lora_aes_ctx becomes a forward declaration
      * 
      * */
     #define LORA_ENABLE_PLATFORM_AES
@@ -74,7 +137,7 @@
      * The effect of defining this macro is that:
      * 
      * - lora_cmac.c will build to an empty object
-     * - struct lora_cmac_ctx is only a forward declaration
+     * - struct lora_cmac_ctx becomes a forward declaration
      * 
      * */
     #define LORA_ENABLE_PLATFORM_CMAC
@@ -85,14 +148,14 @@
      * 
      * */
     #define LORA_ENABLE_SX1272
-    #undef LORA_ENABLE_SX1272
+    //#undef LORA_ENABLE_SX1272
 
     /** 
      * Define to add support for SX1276
      * 
      * */
     #define LORA_ENABLE_SX1276
-    #undef LORA_ENABLE_SX1276 
+    //#undef LORA_ENABLE_SX1276 
 
     /** 
      * Define to remove parts of the codec not required for a device
@@ -165,18 +228,30 @@
     #undef LORA_DISABLE_MAC_STARTUP_EVENT
     
     /**
-     * Define to remote join timeout event
+     * Define to remove join timeout event
      * 
      * */
     #define LORA_DISABLE_JOIN_TIMEOUT_EVENT
     #undef LORA_DISABLE_JOIN_TIMEOUT_EVENT
     
+    /**
+     * Define to remove data complete event
+     * 
+     * */
     #define LORA_DISABLE_DATA_COMPLETE_EVENT
     #undef LORA_DISABLE_DATA_COMPLETE_EVENT
     
+    /**
+     * Define to remove data timeout event
+     * 
+     * */
     #define LORA_DISABLE_DATA_TIMEOUT_EVENT
     #undef LORA_DISABLE_DATA_TIMEOUT_EVENT
     
+    /**
+     * Define to remove join complete event
+     * 
+     * */
     #define LORA_DISABLE_JOIN_COMPLETE_EVENT
     #undef LORA_DISABLE_JOIN_COMPLETE_EVENT
     
@@ -198,58 +273,40 @@
      * 
      * */
     #define LORA_ENABLE_AU_915_928
-    #undef LORA_ENABLE_AU_915_928
+    //#undef LORA_ENABLE_AU_915_928
     
     /**
      * Define to enable support for EU_863_870
      * 
      * */
     #define LORA_ENABLE_EU_863_870
-    #undef LORA_ENABLE_EU_863_870
+    //#undef LORA_ENABLE_EU_863_870
     
     /**
      * Define to enable support for EU_433
      * 
      * */
     #define LORA_ENABLE_EU_433
-    #undef LORA_ENABLE_EU_433
+    //#undef LORA_ENABLE_EU_433
     
     /**
      * Define to enable support for US_902_928
      * 
      * */
     #define LORA_ENABLE_US_902_928
-    #undef LORA_ENABLE_US_902_928
+    //#undef LORA_ENABLE_US_902_928
 
     /**
      * Define to keep RX buffer in mac state rather than
-     * on the stack
+     * on the stack.
+     * 
+     * This will save the stack from growing by #LORA_MAX_PACKET bytes
+     * when LDL_MAC_process() is called.
      * 
      * */
     #define LORA_ENABLE_STATIC_RX_BUFFER
     #undef LORA_ENABLE_STATIC_RX_BUFFER
 
-    /**
-     * The network can set redundancy to as high as 15 retransmissions
-     * per message. This setting can be defined to limit that 
-     * number to something lower.
-     * 
-     * */
-    #define LORA_REDUNDANCY_MAX
-    #undef LORA_REDUNDANCY_MAX
-    
-    /**
-     * The accumulated offtime which the redundancy retransmission 
-     * limit will not exceed.
-     * 
-     * For example, ETSI duty cycle limits are evalulated over one hour
-     * therefore the milliseconds until the next available channel
-     * should not be allowed to exceed one hour.
-     * 
-     * */
-    #define LORA_REDUNANCY_OFFTIME_LIMIT
-    #undef
-    
 #endif
 
 #ifdef LORA_TARGET_INCLUDE

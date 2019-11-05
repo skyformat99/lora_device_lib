@@ -27,8 +27,30 @@
 /**
  * @defgroup ldl LDL
  * 
- * Below is a basic example of how to use LDL to join and then send 
- * data:
+ * Interface documentation for [LoRa Device Library](https://github.com/cjhdev/lora_device_lib).
+ * 
+ * - @ref ldl_mac MAC layer
+ * - @ref ldl_radio radio driver
+ * - @ref ldl_system portable system interface
+ * - @ref ldl_radio_connector portable connector between radio driver and transceiver
+ * - @ref ldl_build_options portable build options
+ * - @ref ldl_crypto portable cryptography interface
+ * 
+ * ### Usage
+ * 
+ * Below is an example of how to use LDL to join and then send data. 
+ * 
+ * What isn't shown:
+ * 
+ * - how ISRs connect to handle_radio_interrupt_dio*
+ * - implementation of @ref ldl_radio_connector
+ * - implementation of @ref ldl_system
+ * - implementation of functions marked as "extern"
+ * 
+ * This example would need the following @ref ldl_build_options to be defined:
+ * 
+ * - #LORA_ENABLE_SX1272
+ * - #LORA_ENABLE_EU_863_870
  * 
  * @include examples/doxygen/example.c
  * 
@@ -37,6 +59,50 @@
 /**
  * @defgroup ldl_mac MAC
  * @ingroup ldl
+ * 
+ * Before accessing any of the interfaces #lora_mac must be initialised
+ * by calling LDL_MAC_init().
+ * 
+ * Initialisation will take order of milliseconds but LDL_MAC_init() does 
+ * not block, instead it schedules actions to run in the future.
+ * It is then the responsibility of the application to poll LDL_MAC_process() 
+ * from a loop in order to ensure the schedule is processed. LDL_MAC_ready() will return true
+ * when initialisation is complete.
+ * 
+ * On systems that sleep, LDL_MAC_ticksUntilNextEvent() can be used in combination
+ * with a wakeup timer to ensure that LDL_MAC_process() is called only when 
+ * necessary.
+ * 
+ * Events (#lora_mac_response_type) that occur within LDL_MAC_process() are pushed back to the 
+ * application using the #lora_mac_response_fn function pointer. 
+ * This includes everything from state change notifications
+ * to data received from the network.
+ * 
+ * The application is free to apply settings while waiting for LDL_MAC_ready() to become
+ * true. Setting interfaces are:
+ * 
+ * - LDL_MAC_setRate()
+ * - LDL_MAC_setPower()
+ * - LDL_MAC_enableADR()
+ * - LDL_MAC_disableADR()
+ * - LDL_MAC_setMaxDCycle()
+ * - LDL_MAC_setNbTrans()
+ * 
+ * Data services are not available until #lora_mac is joined to a network.
+ * The join procedure is initiated by calling LDL_MAC_otaa(). LDL_MAC_otaa() will return false if the join procedure cannot be initiated. The application
+ * can use LDL_MAC_errno() to discover the reason for failure.
+ * 
+ * The join procedure will run indefinitely until either the join succeeds, or the application
+ * calls LDL_MAC_cancel() or LDL_MAC_forget(). The application can check on the join status
+ * by calling LDL_MAC_joined().
+ * 
+ * Once joined the application can use the data services:
+ * 
+ * - LDL_MAC_unconfirmedData()
+ * - LDL_MAC_confirmedData()
+ * 
+ * If the application wishes to un-join it can call LDL_MAC_forget().
+ * 
  * 
  * @{
  * */
@@ -47,61 +113,14 @@ extern "C" {
 
 #include "lora_platform.h"
 #include "lora_region.h"
-#include "lora_radio.h"
 #include "lora_stream.h"
 
 #include <stdint.h>
 #include <stdbool.h>
-
-#ifndef LORA_MAX_PACKET
-    /** @ingroup ldl_optional
-     * 
-     * Redefine this to reduce the stack and data memory footprint.
-     * 
-     * **Example (defined in makefile):**
-     * 
-     * @code
-     * -DLORA_MAX_PACKET=64U
-     * @endcode
-     * 
-     * */
-    #define LORA_MAX_PACKET UINT8_MAX
-    
-#endif
- 
-#ifndef LORA_DEFAULT_RATE
-    /** @ingroup ldl_optional
-     * 
-     * - transmit rate is set to this value upon reset
-     * - if ADR is enabled, the stack will never drop back below this value
-     * 
-     * example:
-     * 
-     * @code
-     * 
-     * -DLORA_DEFAULT_RATE=0U
-     * 
-     * @endcode
-     * 
-     * This would ensure the stack defaults to using the largest spreading
-     * factor.
-     * 
-     * */
-    #define LORA_DEFAULT_RATE 1U
-
-#endif
-
-#ifndef LORA_REDUNDANCY_MAX
-    #define LORA_REDUNDANCY_MAX 0xfU
-#endif
-
-#ifndef LORA_REDUNANCY_OFFTIME_LIMIT
-    #define LORA_REDUNANCY_OFFTIME_LIMIT (60UL*60UL*1000UL)
-#endif
  
 struct lora_mac;
 
-/** events pushed to application (some with data arguments)
+/** Event types pushed to application
  * 
  * @see lora_mac_response_arg
  * 
@@ -131,7 +150,7 @@ enum lora_mac_response_type {
     LORA_MAC_TX_BEGIN,      /**< transmit begin */
 };
 
-/** event data arguments pushed to application
+/** Event arguments sent to application
  * 
  * @see lora_mac_response_type
  * 
@@ -141,28 +160,28 @@ union lora_mac_response_arg {
     /** #LORA_MAC_DOWNSTREAM argument */
     struct {
         
-        int16_t rssi;
-        int16_t snr;
-        uint8_t size;   /**< size of downstream message */
+        int16_t rssi;   /**< rssi of frame */
+        int16_t snr;    /**< snr of frame */
+        uint8_t size;   /**< size of frame */
         
     } downstream;
     
     /** #LORA_MAC_RX argument */
     struct {
         
-        const uint8_t *data;
-        uint16_t counter;        
-        uint8_t port;           
-        uint8_t size;   /**< size of downstream payload */
+        const uint8_t *data;    /**< message data */
+        uint16_t counter;       /**< frame counter */  
+        uint8_t port;           /**< lorawan application port */  
+        uint8_t size;           /**< size of message */
         
     } rx;     
     
     /** #LORA_MAC_LINK_STATUS argument */
     struct {
         
-        bool inFOpt;        /**< carried in Fopt field */
-        int8_t margin;                         
-        uint8_t gwCount;    /**< received by this many gateways */
+        bool inFOpt;        /**< link status was transported in Fopt field */
+        int8_t margin;      /**< SNR margin */                     
+        uint8_t gwCount;    /**< number of gateways in range */
         
     } link_status;
     
@@ -184,7 +203,7 @@ union lora_mac_response_arg {
         uint32_t freq;                      /**< frequency */    
         enum lora_spreading_factor sf;      /**< spreading factor */
         enum lora_signal_bandwidth bw;      /**< bandwidth */
-        uint8_t power;
+        uint8_t power;                      /**< power setting @warning this is not dBm */
         uint8_t size;                       /**< message size */
         
     } tx_begin;
@@ -192,15 +211,15 @@ union lora_mac_response_arg {
     /** #LORA_MAC_STARTUP argument */
     struct {
         
-        unsigned int entropy;       /**< srand seed */
+        unsigned int entropy;               /**< srand seed from radio driver */
         
     } startup;
 };
 
-/** MAC calls this function to notify application of events
+/** LDL calls this function pointer to notify application of events
  * 
- * @param[in] app   the pointer passed in LDL_MAC_init()
- * @param[in] type  
+ * @param[in] app   app from LDL_MAC_init()
+ * @param[in] type  event type (#lora_mac_response_type)  
  * @param[in] arg   **OPTIONAL** depending on #lora_mac_response_type
  * 
  * */
@@ -337,12 +356,11 @@ struct lora_mac_session {
     bool adr;
 };
 
-/** data service options */
+/** data service invocation options */
 struct lora_mac_data_opts {
     
-    uint8_t nbTrans;        /**< redundancy (0..LORA_REDUNDANCY_MAX) */
-    
-    bool check;             /**< piggy-back a check link MAC command */
+    uint8_t nbTrans;        /**< redundancy (0..LORA_REDUNDANCY_MAX) */    
+    bool check;             /**< piggy-back a LinkCheckReq */
     uint8_t dither;         /**< seconds of dither to add to the transmit schedule (0..60) */
 };
 
@@ -411,7 +429,7 @@ struct lora_mac {
     
     uint32_t service_start_time;
     
-    /* number of join/upstream trials */
+    /* number of join/data trials */
     uint32_t trials;
   
     /* options and overrides applicable to current data service */
@@ -419,84 +437,111 @@ struct lora_mac {
 };
 
 
-/** Initialise MAC 
+/** Initialise #lora_mac 
  * 
- * @param[in] self
- * @param[in] app       passed back in #lora_mac_response_fn and applicable @ref ldl_system functions
- * @param[in] region    lorawan region id
- * @param[in] radio     initialised radio object see LDL_Radio_init()
- * @param[in] handler   application callback
+ * @param[in] self      #lora_mac 
+ * @param[in] app       pointer passed to #lora_mac_response_fn and @ref ldl_system functions
+ * @param[in] region    lorawan region id #lora_region
+ * @param[in] radio     initialised radio object 
+ * @param[in] handler   application callback #lora_mac_response_fn
+ * 
+ * @see LDL_Radio_init()
  * 
  * */
 void LDL_MAC_init(struct lora_mac *self, void *app, enum lora_region region, struct lora_radio *radio, lora_mac_response_fn handler);
 
-/** Send data upstream without confirmation
+/** Send data without confirmation
  * 
- * @param[in] self
- * @param[in] port 
- * @param[in] data pointer to message to send (will be cached by MAC)
- * @param[in] len byte length of data
- * @param[in] opts options (may be NULL)
+ * Once initiated MAC will send nbTrans times. NbTrans may be set:
  * 
- * @return request result
+ * - globally by the network (via MAC command)
+ * - globally by LDL_MAC_setRedundancy()
+ * - per invocation by #lora_mac_data_opts
+ *
+ * The application can cancel by calling LDL_MAC_cancel().
  * 
- * @retval true upstream data pending pending
- * @retval false error, LDL_MAC_errno() will give reason
+ * #lora_mac_response_fn will push #LORA_MAC_DATA_COMPLETE on completion.
+ * 
+ * @param[in] self  #lora_mac
+ * @param[in] port  lorawan port (must be >0)
+ * @param[in] data  pointer to message to send
+ * @param[in] len   byte length of data
+ * @param[in] opts  #lora_mac_data_opts (may be NULL)
+ * 
+ * @retval true     pending
+ * @retval false    error
+ * 
+ * @see LDL_MAC_errno()
  * 
  * */
 bool LDL_MAC_unconfirmedData(struct lora_mac *self, uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts);
 
-/** Send data upstream with confirmation
+/** Send data with confirmation
  * 
- * @param[in] self
- * @param[in] port 
- * @param[in] data pointer to message to send (will be cached by MAC)
- * @param[in] len byte length of data
- * @param[in] opts options (may be NULL)
+ * Once initiated MAC will send at most nbTrans times until a confirmation is received. NbTrans may be set:
  * 
- * @return request result
+ * - globally by the network (via MAC command)
+ * - globally by LDL_MAC_setRedundancy()
+ * - per invocation by #lora_mac_data_opts
  * 
- * @retval true upstream data pending pending
- * @retval false error, LDL_MAC_errno() will give reason
+ * The application can cancel by calling LDL_MAC_cancel().
+ * 
+ * #lora_mac_response_fn will push #LORA_MAC_DATA_TIMEOUT on every timeout
+ * #lora_mac_response_fn will push #LORA_MAC_DATA_COMPLETE on completion
+ * 
+ * 
+ * @param[in] self  #lora_mac
+ * @param[in] port  lorawan port (must be >0)
+ * @param[in] data  pointer to message to send
+ * @param[in] len   byte length of data
+ * @param[in] opts  #lora_mac_data_opts (may be NULL)
+ * 
+ * @retval true     pending
+ * @retval false    error
+ * 
+ * @see LDL_MAC_errno()
  * 
  * */
 bool LDL_MAC_confirmedData(struct lora_mac *self, uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts);
 
-/** Initiate over the air join procedure (or re-join if already joined)
+/** Initiate over the air join procedure
  * 
- * @note MAC will try to join forever if no respose is received or 
- *       until application calls #LDL_MAC_cancel
+ * Once initiated MAC will keep trying to join forever.
  * 
- * @param[in] self
+ * - Application can cancel by calling LDL_MAC_cancel()
+ * - #lora_mac_response_fn will push #LORA_MAC_JOIN_TIMEOUT on every timeout
+ * - #lora_mac_response_fn will push #LORA_MAC_JOIN_COMPLETE on completion
  * 
- * @return request result
+ * @param[in] self  #lora_mac
  * 
- * @retval true join request pending
- * @retval false error, LDL_MAC_errno() will give reason
+ * @retval true     pending
+ * @retval false    error
+ * 
+ * @see LDL_MAC_errno()
  * 
  * */
 bool LDL_MAC_otaa(struct lora_mac *self);
 
-/** Forget network and all settings
+/** Forget network
  * 
- * @param[in] self
+ * @param[in] self  #lora_mac
  * 
  * */
 void LDL_MAC_forget(struct lora_mac *self);
 
-/** Return state to IDLE
+/** Return state to #LORA_STATE_IDLE
  * 
- * @note has no effect if state is RESET 
- *       (i.e. stack is performing chip reset cycle which will complete in so many millseconds)
+ * @note has no immediate effect if MAC is already in the process of resetting
+ * the radio
  * 
- * @param[in] self
+ * @param[in] self  #lora_mac
  * 
  * */
 void LDL_MAC_cancel(struct lora_mac *self);
 
-/** Drive the MAC to process next events
+/** Call to process next events
  * 
- * @param[in] self
+ * @param[in] self  #lora_mac
  * 
  * */
 void LDL_MAC_process(struct lora_mac *self);
@@ -505,29 +550,31 @@ void LDL_MAC_process(struct lora_mac *self);
  * 
  * @note this function is safe to call from mainloop and interrupt
  * 
- * @param[in] self
+ * @param[in] self  #lora_mac
  * 
- * @return ticks until next event
+ * @return system ticks
  * 
- * @retval UINT32_MAX there are no future events at this time
+ * @retval UINT32_MAX   there are no future events at this time
  * 
  * */
 uint32_t LDL_MAC_ticksUntilNextEvent(const struct lora_mac *self);
 
 /** Set the transmit data rate
  * 
- * @param[in] self
+ * @param[in] self  #lora_mac
  * @param[in] rate
  * 
- * @retval true data rate applied
- * @retval false error, LDL_MAC_errno() will give reason
+ * @retval true     applied
+ * @retval false    error 
+ * 
+ * @see LDL_MAC_errno()
  * 
  * */
 bool LDL_MAC_setRate(struct lora_mac *self, uint8_t rate);
 
 /** Get the current transmit data rate
  * 
- * @param[in] self
+ * @param[in] self  #lora_mac
  * 
  * @return transmit data rate setting
  * 
@@ -536,20 +583,20 @@ uint8_t LDL_MAC_getRate(const struct lora_mac *self);
 
 /** Set the transmit power
  * 
- * @param[in] self
+ * @param[in] self  #lora_mac
  * @param[in] power
  * 
- * @return request result
+ * @retval true     applied
+ * @retval false    error
  * 
- * @retval true power applied
- * @retval false error, LDL_MAC_errno() will give reason
+ * @see LDL_MAC_errno()
  * 
  * */
 bool LDL_MAC_setPower(struct lora_mac *self, uint8_t power);
 
 /** Get the current transmit power
  * 
- * @param[in] self
+ * @param[in] self  #lora_mac
  * 
  * @return transmit power setting
  * 
@@ -558,39 +605,39 @@ uint8_t LDL_MAC_getPower(const struct lora_mac *self);
 
 /** Enable ADR mode
  * 
- * @param[in] self
- * 
- * @retval true enabled
- * @retval false error, LDL_MAC_errno() will give reason
+ * @param[in] self  #lora_mac
  * 
  * */
-bool LDL_MAC_enableADR(struct lora_mac *self);
+void LDL_MAC_enableADR(struct lora_mac *self);
 
 /** Disable ADR mode
  * 
- * @param[in] self
- * 
- * @retval true enabled
- * @retval false error, LDL_MAC_errno() will give reason
+ * @param[in] self  #lora_mac
  * 
  * */
-bool LDL_MAC_disableADR(struct lora_mac *self);
+void LDL_MAC_disableADR(struct lora_mac *self);
 
 /** Is ADR mode enabled?
  * 
- * @param[in] self
+ * @param[in] self  #lora_mac
  * 
- * @return answer
- * 
- * @retval true ADR is enabled
- * @retval false ADR is not enabled
+ * @retval true     enabled
+ * @retval false    not enabled
  * 
  * */
 bool LDL_MAC_adr(const struct lora_mac *self);
 
 /** Read the last error
  * 
- * @param[in] self
+ * The following functions will set the errno when they fail:
+ * 
+ * - LDL_MAC_otaa()
+ * - LDL_MAC_unconfirmedData()
+ * - LDL_MAC_confirmedData()
+ * - LDL_MAC_setRate()
+ * - LDL_MAC_setPower()
+ * 
+ * @param[in] self  #lora_mac
  * 
  * @return #lora_mac_errno
  * 
@@ -599,7 +646,7 @@ enum lora_mac_errno LDL_MAC_errno(const struct lora_mac *self);
 
 /** Read the current operation
  * 
- * @param[in] self
+ * @param[in] self  #lora_mac
  * 
  * @return #lora_mac_operation
  * 
@@ -608,7 +655,7 @@ enum lora_mac_operation LDL_MAC_op(const struct lora_mac *self);
 
 /** Read the current state
  * 
- * @param[in] self
+ * @param[in] self  #lora_mac
  * 
  * @return #lora_mac_state
  * 
@@ -617,22 +664,20 @@ enum lora_mac_state LDL_MAC_state(const struct lora_mac *self);
 
 /** Is MAC joined?
  * 
- * @param[in] self
+ * @param[in] self  #lora_mac
  * 
- * @return answer
- * 
- * @retval true joined
- * @retval false not joined
+ * @retval true     joined
+ * @retval false    not joined
  * 
  * */
 bool LDL_MAC_joined(const struct lora_mac *self);
 
 /** Is MAC ready to send?
  * 
- * @param[in] self
+ * @param[in] self  #lora_mac
  * 
- * @retval true ready
- * @retval false not ready
+ * @retval true     ready
+ * @retval false    not ready
  *
  * */
 bool LDL_MAC_ready(const struct lora_mac *self);
@@ -643,7 +688,7 @@ bool LDL_MAC_ready(const struct lora_mac *self);
  * @param[in] sf    spreading factor
  * @param[in] size  size of message
  * 
- * @return time in system ticks
+ * @return system ticks
  * 
  * */
 uint32_t LDL_MAC_transmitTimeUp(enum lora_signal_bandwidth bw, enum lora_spreading_factor sf, uint8_t size);
@@ -654,7 +699,7 @@ uint32_t LDL_MAC_transmitTimeUp(enum lora_signal_bandwidth bw, enum lora_spreadi
  * @param[in] sf    spreading factor
  * @param[in] size  size of message
  * 
- * @return time in system ticks
+ * @return system ticks
  * 
  * */
 uint32_t LDL_MAC_transmitTimeDown(enum lora_signal_bandwidth bw, enum lora_spreading_factor sf, uint8_t size);
@@ -667,16 +712,15 @@ uint32_t LDL_MAC_transmitTimeDown(enum lora_signal_bandwidth bw, enum lora_sprea
  * */
 uint32_t LDL_MAC_bwToNumber(enum lora_signal_bandwidth bw);
 
-/** Signal a DIO interrupt
+/** Receive an interrupt from the radio
  * 
- * @param[in] bw bandwidth
- * @param[in] n DIO number (e.g. DIO0 is 0)
- * @param[in] time system time
+ * @param[in] self  #lora_mac
+ * @param[in] n     DIO number
  * 
  * */
-void LDL_MAC_interrupt(struct lora_mac *self, uint8_t n, uint32_t time);
+void LDL_MAC_interrupt(struct lora_mac *self, uint8_t n);
 
-/** Get application maximum transfer unit in bytes
+/** Get the maximum transfer unit in bytes
  * 
  * This number changes depending on:
  * 
@@ -684,16 +728,22 @@ void LDL_MAC_interrupt(struct lora_mac *self, uint8_t n, uint32_t time);
  * - rate
  * - pending mac commands
  * 
- * @param[in] self
- * @retval payload size in bytes
+ * @param[in] self  #lora_mac
+ * @retval mtu
  * 
  * */
 uint8_t LDL_MAC_mtu(const struct lora_mac *self);
 
 /** Seconds since last valid downlink message
  * 
- * @param[in] self
- * @return seconds since last downlink
+ * A valid downlink is one that is:
+ * 
+ * - expected type for current operation
+ * - well formed
+ * - able to be decrypted
+ * 
+ * @param[in] self  #lora_mac
+ * @return seconds since last valid downlink
  * 
  * @retval UINT32_MAX no valid downlink received
  * 
@@ -704,43 +754,49 @@ uint32_t LDL_MAC_timeSinceValidDownlink(struct lora_mac *self);
  * 
  * duty cycle limit = 1 / (2 ^ limit)
  * 
- * @note useful for meeting network imposed fair access policy
+ * @param[in] self  #lora_mac
+ * @param[in] maxDCycle
  * 
- * @param[in] self
- * @param[limit] limit aggregated duty cycle limit
- * 
- * */
-void LDL_MAC_setAggregatedDutyCycleLimit(struct lora_mac *self, uint8_t limit);
-
-/** Get upstream aggregated duty cycle limit
- * 
- * @param[in] self
- * 
- * @return aggregated duty cycle limit
+ * @see LoRaWAN Specification: DutyCycleReq.DutyCyclePL.MaxDCycle
  * 
  * */
-uint8_t LDL_MAC_getAggregatedDutyCycleLimit(const struct lora_mac *self);
+void LDL_MAC_setMaxDCycle(struct lora_mac *self, uint8_t maxDCycle);
 
-/** Set upstream transmission redundancy
+/** Get aggregated duty cycle limit
  * 
+ * @param[in] self  #lora_mac
+ * 
+ * @return maxDCycle
+ * 
+ * @see LoRaWAN Specification: DutyCycleReq.DutyCyclePL.MaxDCycle
+ * 
+ * */
+uint8_t LDL_MAC_getMaxDCycle(const struct lora_mac *self);
+
+/** Set transmission redundancy
+ *
  * - confirmed and unconfirmed uplink frames are sent nbTrans times (or until acknowledgement is received)
  * - a value of zero will leave the setting unchanged
  * - limited to 15 or LORA_REDUNDANCY_MAX (whichever is lower)
  * 
- * @param[in] self
- * @param[in] nbTrans redundancy setting
+ * @param[in] self  #lora_mac
+ * @param[in] nbTrans
+ * 
+ * @see LoRaWAN Specification: LinkADRReq.Redundancy.NbTrans
  * 
  * */
-void LDL_MAC_setRedundancy(struct lora_mac *self, uint8_t nbTrans);
+void LDL_MAC_setNbTrans(struct lora_mac *self, uint8_t nbTrans);
 
-/** Get upstream transmission redundancy
+/** Get transmission redundancy
  * 
- * @param[in] self
+ * @param[in] self  #lora_mac
  * 
  * @return nbTrans
  * 
+ * @see LoRaWAN Specification: LinkADRReq.Redundancy.NbTrans
+ * 
  * */
-uint8_t LDL_MAC_getRedundancy(const struct lora_mac *self);
+uint8_t LDL_MAC_getNbTrans(const struct lora_mac *self);
 
 #ifdef __cplusplus
 }

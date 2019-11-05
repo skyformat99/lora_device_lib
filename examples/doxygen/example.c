@@ -4,30 +4,103 @@
 #include "lora_radio.h"
 #include "lora_mac.h"
 
-/* state for the radio and MAC layer */
 struct lora_radio radio;
 struct lora_mac mac;
 
-/* set a timer event that will ensure a wakeup so many ticks in future */
+/* a pointer to be passed back to the application (anything you like) */
+void *app_pointer;
+
+/* a pointer to be passed to the SPI module (anything you like) */
+void *radio_connector_pointer;
+
+/* somehow set a timer event that will ensure a wakeup so many ticks in future */
 extern void wakeup_after(uint32_t ticks);
 
-/* activate sleep mode */
+/* somehow activate sleep mode */
 extern void sleep(void);
 
-/* This function will be called when the radio signals an interrupt. 
- * How this happens is platform specific. 
- * 
- * */
-void handle_radio_interrupt(uint8_t n)
+/* somehow enable interrupts */
+extern void enable_interrupts(void);
+
+/* somehow connect DIOx interrupt lines back to the radio driver */
+void handle_radio_interrupt_dio0(void)
 {
-    /* safe to call from interrupt or mainloop */
-    LDL_MAC_interrupt(&mac, n, LDL_System_ticks(&mac));
+    LDL_MAC_interrupt(&mac, 0);
+}
+void handle_radio_interrupt_dio1(void)
+{
+    LDL_MAC_interrupt(&mac, 1);
+}
+void handle_radio_interrupt_dio2(void)
+{
+    LDL_MAC_interrupt(&mac, 2);
+}
+void handle_radio_interrupt_dio3(void)
+{
+    LDL_MAC_interrupt(&mac, 3);
 }
 
-/* This will be called from within LDL_MAC_process() to pass events back to
- * the application.
- * 
- * */
+/* Called from within LDL_MAC_process() to pass events back to the application */
+void app_handler(void *app, enum lora_mac_response_type type, const union lora_mac_response_arg *arg);
+
+int main(void)
+{
+    LDL_Radio_init(&radio, LORA_RADIO_SX1272, radio_connector_pointer);
+    
+    /* This radio has two power amplifiers. The amplifier in use
+     * depends on the hardware (i.e. which pin the PCB traces connect).
+     * 
+     * You have to tell the driver which amplifier is connected:
+     * 
+     * - The Semtech MBED SX1272 shield uses LORA_RADIO_PA_RFO
+     * - The HopeRF RFM95 SX1276 module uses LORA_RADIO_PA_BOOST
+     * 
+     * */
+    LDL_Radio_setPA(&radio, LORA_RADIO_PA_RFO);
+
+    LDL_MAC_init(&mac, app_pointer, EU_863_870, &radio, app_handler);
+
+    /* Ensure a maximum aggregated duty cycle of ~1%
+     * 
+     * EU_863_870 already includes duty cycle limits. This is to safeguard
+     * the example if the region is changed to US_902_928 or AU_915_928.
+     * 
+     * Aggregated Duty Cycle Limit = 1 / (2 ^ setting)
+     * 
+     * */
+    LDL_MAC_setMaxDCycle(&mac, 7);
+
+    enable_interrupts();
+    
+    for(;;){
+        
+        if(LDL_MAC_ready(&mac)){
+           
+            if(LDL_MAC_joined(&mac)){
+                
+                const char msg[] = "hello world";                
+                                
+                /* final argument is NULL since we don't have any specific invocation options */
+                (void)LDL_MAC_unconfirmedData(&mac, 1, msg, sizeof(msg), NULL);
+            }
+            else{
+                
+                (void)LDL_MAC_otaa(&mac);
+            }            
+        }
+        
+        LDL_MAC_process(&mac);        
+        
+        uint32_t ticks_until_next_event = LDL_MAC_ticksUntilNextEvent(&mac);
+        
+        if(ticks_until_next_event > 0UL){
+            
+            wakeup_after(ticks_until_next_event);
+            sleep();
+        }
+    }
+}
+
 void app_handler(void *app, enum lora_mac_response_type type, const union lora_mac_response_arg *arg)
 {
     switch(type){
@@ -49,7 +122,6 @@ void app_handler(void *app, enum lora_mac_response_type type, const union lora_m
         /* do something */
         break;
         
-    /* Ignore all other events */
     case LORA_MAC_CHIP_ERROR:
     case LORA_MAC_RESET:
     case LORA_MAC_JOIN_COMPLETE:
@@ -64,73 +136,5 @@ void app_handler(void *app, enum lora_mac_response_type type, const union lora_m
     case LORA_MAC_TX_BEGIN:
     default:
         break;    
-    }
-}
-
-int main(void)
-{
-    /* To initialise the radio driver you need:
-     * 
-     * - radio type
-     * - optional board specific state
-     *
-     * */ 
-    LDL_Radio_init(&radio, LORA_RADIO_SX1272, NULL);
-    
-    /* This radio has two power amplifiers. The amplifier in use
-     * depends on the hardware (i.e. which pin the PCB traces connect).
-     * 
-     * You have to tell the driver which amplifier is connected:
-     * 
-     * - The Semtech MBED SX1272 shield uses LORA_RADIO_PA_RFO
-     * - The HopeRF RFM95 SX1276 module uses LORA_RADIO_PA_BOOST
-     * 
-     * */
-    LDL_Radio_setPA(&radio, LORA_RADIO_PA_RFO);
-
-    /* To initialise the mac layer you need:
-     * 
-     * - initialised radio
-     * - region code
-     * - application callback
-     * 
-     * */
-    LDL_MAC_init(&mac, NULL, EU_863_870, &radio, app_handler);
-
-    /* 
-     * - wait until MAC is ready to send
-     * - if not joined, initiate the join
-     * - if joined, send a message
-     * - run the MAC by polling LDL_MAC_process()
-     * - sleep until next MAC event
-     * 
-     * */
-    for(;;){
-        
-        if(LDL_MAC_ready(&mac)){
-           
-            if(LDL_MAC_joined(&mac)){
-                
-                const char msg[] = "hello world";                
-                                
-                /* final argument is NULL since we don't have any specific invocation options */
-                (void)LDL_MAC_unconfirmedData(&mac, 1, msg, sizeof(msg), NULL);
-            }
-            else{
-                
-                (void)LDL_MAC_otaa(&mac);
-            }            
-        }
-        
-        LDL_MAC_process(&mac);        
-        
-        /* safe to call from interrupt or mainloop */
-        uint32_t ticks_until_next_event = LDL_MAC_ticksUntilNextEvent(&mac);
-        
-        if(ticks_until_next_event > 0UL){
-            
-            wakeup_after(ticks_until_next_event);
-            sleep();
-        }
     }
 }

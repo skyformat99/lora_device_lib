@@ -10,6 +10,21 @@
 
 #include <string.h>
 
+uint32_t LDL_System_ticks(void *app)
+{
+    return 0UL;
+}
+
+uint32_t LDL_System_tps(void)
+{
+    return 1000000UL;
+}
+
+uint32_t LDL_System_eps(void)
+{
+    return 0UL;
+}
+
 void LDL_System_getIdentity(void *receiver, struct lora_system_identity *value)
 {
     struct mock_system_param *self = (struct mock_system_param *)receiver;    
@@ -40,7 +55,7 @@ void LDL_System_setUp(void *receiver, uint16_t value)
     self->upCounter = value;   
 }
 
-uint8_t LDL_System_rand(void)
+uint8_t LDL_System_rand(void *app)
 {
     return mock();
 }

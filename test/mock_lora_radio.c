@@ -8,7 +8,7 @@
 
 #include "lora_radio.h"
 
-void LDL_Radio_init(struct lora_radio *self, enum lora_radio_type type, const struct lora_board *board)
+void LDL_Radio_init(struct lora_radio *self, enum lora_radio_type type, void *board)
 {    
 }
 

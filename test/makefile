@@ -25,8 +25,8 @@ DEBUG_DEFINES += -DLORA_ENABLE_AU_915_928
 DEBUG_DEFINES += -DLORA_ENABLE_EU_863_870
 DEBUG_DEFINES += -DLORA_ENABLE_EU_433
 
-CFLAGS := -O0 -Wall -g -fprofile-arcs -ftest-coverage $(INCLUDES) $(CMOCKA_DEFINES) $(DEBUG_DEFINES)
-LDFLAGS := -fprofile-arcs -g
+CFLAGS := -O0 -Wall -ggdb -fprofile-arcs -ftest-coverage $(INCLUDES) $(CMOCKA_DEFINES) $(DEBUG_DEFINES)
+LDFLAGS := -fprofile-arcs -ggdb
 
 SRC := $(notdir $(wildcard $(DIR_ROOT)/src/*.c))
 SRC_CMOCKA := $(notdir $(wildcard $(DIR_CMOCKA)/src/*.c))
@@ -104,7 +104,7 @@ $(DIR_BIN)/tc_region: $(addprefix $(DIR_BUILD)/, tc_region.o lora_region.o $(OBJ
 
 $(DIR_BIN)/tc_integration_sx1272: CFLAGS += -DLORA_ENABLE_SX1272
 $(DIR_BIN)/tc_integration_sx1272: CFLAGS += -DLORA_ENABLE_SX1276
-$(DIR_BIN)/tc_integration_sx1272: $(addprefix $(DIR_BUILD)/, common_integration.o mock_lora_system.o mock_system_time.o $(OBJ) $(OBJ_CMOCKA))
+$(DIR_BIN)/tc_integration_sx1272: $(addprefix $(DIR_BUILD)/, common_integration.o  mock_lora_system.o mock_system_time.o $(OBJ) $(OBJ_CMOCKA))
 	@ echo linking $@
 	@ $(CC) $(LDFLAGS) $^ -o $@
 

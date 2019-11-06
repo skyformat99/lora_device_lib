@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "lora_board.h"
-
 struct mock_chip {
     
     bool select;
@@ -16,7 +14,6 @@ struct user_data {
     
     struct mock_chip chip;
     struct lora_radio radio;    
-    struct lora_board board;
 };
 
 void board_select(void *receiver, bool state);

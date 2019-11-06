@@ -7,9 +7,9 @@
 #include "cmocka.h"
 #include "lora_radio.h"
 #include "mock_board.h"
-#include "lora_spi.h"
+#include "lora_chip.h"
 
-void LDL_SPI_select(void *self, bool state)
+void LDL_Chip_select(void *self, bool state)
 {
     struct mock_chip *_self = (struct mock_chip *)self;
     
@@ -27,7 +27,7 @@ void LDL_SPI_select(void *self, bool state)
     _self->select = state;    
 }
 
-void LDL_SPI_reset(void *self, bool state)
+void LDL_Chip_reset(void *self, bool state)
 {
     struct mock_chip *_self = (struct mock_chip *)_self;
     
@@ -45,7 +45,7 @@ void LDL_SPI_reset(void *self, bool state)
     _self->reset = state;    
 }
 
-void LDL_SPI_write(void *self, uint8_t data)
+void LDL_Chip_write(void *self, uint8_t data)
 {
     struct mock_chip *_self = (struct mock_chip *)self;
     
@@ -55,7 +55,7 @@ void LDL_SPI_write(void *self, uint8_t data)
     check_expected(data);
 }
 
-uint8_t LDL_SPI_read(void *self)
+uint8_t LDL_Chip_read(void *self)
 {
     struct mock_chip *_self = (struct mock_chip *)self;
     

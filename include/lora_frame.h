@@ -47,7 +47,7 @@ enum lora_frame_type {
 struct lora_frame_data {
     
     uint32_t devAddr;
-    uint16_t counter;
+    uint32_t counter;
     bool ack;
     bool adr;
     bool adrAckReq;

@@ -327,8 +327,8 @@ struct lora_mac_channel {
 /** session parameter cache */
 struct lora_mac_session {
     
-    uint16_t up;
-    uint16_t down;
+    uint32_t up;
+    uint32_t down;
     
     uint8_t appSKey[16U];
     uint8_t nwkSKey[16U];    

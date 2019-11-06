@@ -30,9 +30,9 @@
 
 /* static function prototypes *****************************************/
 
-static void cipherData(enum lora_frame_type type, const uint8_t *key, uint32_t devAddr, uint16_t counter, uint8_t *data, size_t len);
+static void cipherData(enum lora_frame_type type, const uint8_t *key, uint32_t devAddr, uint32_t counter, uint8_t *data, size_t len);
 
-static uint32_t cmacData(enum lora_frame_type type, const uint8_t *key, uint32_t devAddr, uint16_t counter, const uint8_t *msg, size_t len);
+static uint32_t cmacData(enum lora_frame_type type, const uint8_t *key, uint32_t devAddr, uint32_t counter, const uint8_t *msg, size_t len);
 static uint32_t cmacJoin(const uint8_t *key, const uint8_t *msg, size_t len);
 
 static void xor128(uint8_t *acc, const uint8_t *op);
@@ -65,7 +65,7 @@ size_t LDL_Frame_putData(enum lora_frame_type type, const void *nwkSKey, const v
             pos += putU8(&ptr[pos], max - pos, ((uint8_t)type) << 5);            
             pos += putU32(&ptr[pos], max - pos, f->devAddr);            
             pos += putU8(&ptr[pos], max - pos, (f->adr ? 0x80U : 0U) | (f->adrAckReq ? 0x40U : 0U) | (f->ack ? 0x20U : 0U) | (f->pending ? 0x10U : 0U) | (f->optsLen & 0xfU));
-            pos += putU16(&ptr[pos], max - pos, f->counter);            
+            pos += putU16(&ptr[pos], max - pos, (uint16_t)f->counter);            
             (void)memcpy(&ptr[pos], f->opts, f->optsLen);
             pos += f->optsLen;
 
@@ -194,6 +194,7 @@ bool LDL_Frame_decode(const void *appKey, const void *nwkSKey, const void *appSK
     uint32_t mic = 0U;        
     bool retval = false;
     size_t i;
+    uint16_t counter;
 
     (void)memset(f, 0, sizeof(*f));
     
@@ -338,7 +339,9 @@ bool LDL_Frame_decode(const void *appKey, const void *nwkSKey, const void *appSK
                     f->fields.data.pending = ((fhdr & 0x10U) > 0U) ? true : false;
                     f->fields.data.optsLen = fhdr & 0xfU;
                     
-                    pos += getU16(&ptr[pos], len - pos, &f->fields.data.counter);
+                    pos += getU16(&ptr[pos], len - pos, &counter);
+                    
+                    f->fields.data.counter = (uint32_t)counter;
                     
                     f->fields.data.opts = (f->fields.data.optsLen > 0U) ? &ptr[pos] : NULL; 
                     
@@ -426,7 +429,7 @@ size_t LDL_Frame_phyOverhead(void)
 
 /* static functions ***************************************************/
 
-static void cipherData(enum lora_frame_type type, const uint8_t *key, uint32_t devAddr, uint16_t counter, uint8_t *data, size_t len)
+static void cipherData(enum lora_frame_type type, const uint8_t *key, uint32_t devAddr, uint32_t counter, uint8_t *data, size_t len)
 {
     struct lora_aes_ctx ctx;
     uint8_t a[16];
@@ -449,8 +452,8 @@ static void cipherData(enum lora_frame_type type, const uint8_t *key, uint32_t d
     a[9] = (uint8_t)(devAddr >> 24);
     a[10] = (uint8_t)counter;
     a[11] = (uint8_t)(counter >> 8);
-    a[12] = 0U;
-    a[13] = 0U;
+    a[12] = (uint8_t)(counter >> 16);
+    a[13] = (uint8_t)(counter >> 24);
     a[14] = 0U;
     a[15] = 0U;
 
@@ -476,7 +479,7 @@ static void cipherData(enum lora_frame_type type, const uint8_t *key, uint32_t d
     }
 }
 
-static uint32_t cmacData(enum lora_frame_type type, const uint8_t *key, uint32_t devAddr, uint16_t counter, const uint8_t *msg, size_t len)
+static uint32_t cmacData(enum lora_frame_type type, const uint8_t *key, uint32_t devAddr, uint32_t counter, const uint8_t *msg, size_t len)
 {
     uint8_t b[16];
     struct lora_aes_ctx aes_ctx;
@@ -495,8 +498,8 @@ static uint32_t cmacData(enum lora_frame_type type, const uint8_t *key, uint32_t
     b[9] = (uint8_t)(devAddr >> 24);
     b[10] = (uint8_t)counter;
     b[11] = (uint8_t)(counter >> 8);
-    b[12] = 0U;
-    b[13] = 0U;
+    b[12] = (uint8_t)(counter >> 16);
+    b[13] = (uint8_t)(counter >> 24);
     b[14] = 0U;
     b[15] = (uint8_t)len;
 

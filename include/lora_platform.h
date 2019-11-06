@@ -28,7 +28,7 @@
  * @defgroup ldl_build_options Build Options
  * @ingroup ldl
  * 
- * Build time options.
+ * # Build Options
  * 
  * These can be defined in two ways:
  * 
@@ -69,7 +69,7 @@
      * 
      * e.g.
      * 
-     * @code
+     * @code{.c}
      * #define LORA_REDUNDANCY_MAX 3
      * @endcode
      * 

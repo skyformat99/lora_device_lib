@@ -37,7 +37,7 @@
      * 
      * Example:
      * 
-     * @code
+     * @code{.c}
      * #define LORA_ERROR(...) do{printf(__VA_ARGS__);printf("\n");}while(0);
      * @endcode
      * 
@@ -54,7 +54,7 @@
      * 
      * Example:
      * 
-     * @code
+     * @code{.c}
      * #define LORA_INFO(...) do{printf(__VA_ARGS__);printf("\n");}while(0);
      * @endcode
      * 
@@ -72,7 +72,7 @@
      * 
      * Example:
      * 
-     * @code
+     * @code{.c}
      * #define LORA_DEBUG(APP, ...) do{printf(__VA_ARGS__);printf("\n");}while(0);
      * @endcode
      * 
@@ -89,7 +89,7 @@
      * 
      * Example:
      * 
-     * @code
+     * @code{.c}
      * #define LORA_ASSERT(X) assert(X);
      * @endcode
      * 
@@ -107,7 +107,7 @@
      * 
      * Example:
      * 
-     * @code
+     * @code{.c}
      * #define LORA_PEDANTIC(X) assert(X);
      * @endcode
      * 

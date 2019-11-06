@@ -27,23 +27,24 @@
 /**
  * @defgroup ldl LDL
  * 
+ * # LDL Interface Documentation
+ * 
  * Interface documentation for [LoRa Device Library](https://github.com/cjhdev/lora_device_lib).
  * 
- * - @ref ldl_mac MAC layer
- * - @ref ldl_radio radio driver
+ * - @ref ldl_mac MAC layer interface
+ * - @ref ldl_radio radio driver interface
  * - @ref ldl_system portable system interface
- * - @ref ldl_radio_connector portable connector between radio driver and transceiver
+ * - @ref ldl_radio_connector portable connector between radio driver and transceiver digital interface
  * - @ref ldl_build_options portable build options
  * - @ref ldl_crypto portable cryptography interface
  * 
- * ### Usage
+ * ## Usage
  * 
  * Below is an example of how to use LDL to join and then send data. 
  * 
  * What isn't shown:
  * 
- * - how ISRs connect to handle_radio_interrupt_dio*
- * - implementation of @ref ldl_radio_connector
+ * - complete implementation of @ref ldl_radio_connector
  * - implementation of @ref ldl_system
  * - implementation of functions marked as "extern"
  * 
@@ -54,11 +55,20 @@
  * 
  * @include examples/doxygen/example.c
  * 
+ * ## Examples
+ * 
+ *  - Arduino (AVR)
+ *      - [arduino_ldl.cpp](https://github.com/cjhdev/lora_device_lib/tree/master/bindings/arduino/output/arduino_ldl/arduino_ldl.cpp)
+ *      - [arduino_ldl.h](https://github.com/cjhdev/lora_device_lib/tree/master/bindings/arduino/output/arduino_ldl/arduino_ldl.h)
+ *      - [platform.h](https://github.com/cjhdev/lora_device_lib/tree/master/bindings/arduino/output/arduino_ldl/platform.h)
+ * 
  * */
 
 /**
  * @defgroup ldl_mac MAC
  * @ingroup ldl
+ * 
+ * # MAC Interface
  * 
  * Before accessing any of the interfaces #lora_mac must be initialised
  * by calling LDL_MAC_init().
@@ -71,7 +81,8 @@
  * 
  * On systems that sleep, LDL_MAC_ticksUntilNextEvent() can be used in combination
  * with a wakeup timer to ensure that LDL_MAC_process() is called only when 
- * necessary.
+ * necessary. Note that the counter behind LDL_System_ticks() must continue
+ * to increment during sleep.
  * 
  * Events (#lora_mac_response_type) that occur within LDL_MAC_process() are pushed back to the 
  * application using the #lora_mac_response_fn function pointer. 
@@ -452,13 +463,13 @@ void LDL_MAC_init(struct lora_mac *self, void *app, enum lora_region region, str
 
 /** Send data without confirmation
  * 
- * Once initiated MAC will send nbTrans times. NbTrans may be set:
+ * Once initiated MAC will send at most nbTrans times until a valid downlink is received. NbTrans may be set:
  * 
- * - globally by the network (via MAC command)
- * - globally by LDL_MAC_setRedundancy()
+ * - globally by the network (via LinkADRReq)
+ * - globally by the application (via LDL_MAC_setNbTrans())
  * - per invocation by #lora_mac_data_opts
  *
- * The application can cancel by calling LDL_MAC_cancel().
+ * The application can cancel the service while it is in progress by calling LDL_MAC_cancel().
  * 
  * #lora_mac_response_fn will push #LORA_MAC_DATA_COMPLETE on completion.
  * 
@@ -480,11 +491,11 @@ bool LDL_MAC_unconfirmedData(struct lora_mac *self, uint8_t port, const void *da
  * 
  * Once initiated MAC will send at most nbTrans times until a confirmation is received. NbTrans may be set:
  * 
- * - globally by the network (via MAC command)
- * - globally by LDL_MAC_setRedundancy()
+ * - globally by the network (via LinkADRReq)
+ * - globally by the application (via LDL_MAC_setNbTrans())
  * - per invocation by #lora_mac_data_opts
  * 
- * The application can cancel by calling LDL_MAC_cancel().
+ * The application can cancel the service while it is in progress by calling LDL_MAC_cancel().
  * 
  * #lora_mac_response_fn will push #LORA_MAC_DATA_TIMEOUT on every timeout
  * #lora_mac_response_fn will push #LORA_MAC_DATA_COMPLETE on completion
@@ -504,7 +515,7 @@ bool LDL_MAC_unconfirmedData(struct lora_mac *self, uint8_t port, const void *da
  * */
 bool LDL_MAC_confirmedData(struct lora_mac *self, uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts);
 
-/** Initiate over the air join procedure
+/** Initiate Over The Air Activation
  * 
  * Once initiated MAC will keep trying to join forever.
  * 
@@ -548,13 +559,22 @@ void LDL_MAC_process(struct lora_mac *self);
 
 /** Get number of ticks until the next event
  * 
- * @note this function is safe to call from mainloop and interrupt
+ * Aside from the passage of time, calls to the following functions may 
+ * cause the return value of this function to be change:
+ * 
+ * - LDL_MAC_process()
+ * - LDL_MAC_otaa()
+ * - LDL_MAC_unconfirmedData()
+ * - LDL_MAC_confirmedData()
+ * - LDL_MAC_interrupt()
  * 
  * @param[in] self  #lora_mac
  * 
  * @return system ticks
  * 
  * @retval UINT32_MAX   there are no future events at this time
+ * 
+ * @note this function is safe to call from mainloop and interrupt if LORA_SYSTEM_ENTER_CRITICAL() and LORA_SYSTEM_ENTER_CRITICAL() have been defined
  * 
  * */
 uint32_t LDL_MAC_ticksUntilNextEvent(const struct lora_mac *self);
@@ -716,6 +736,10 @@ uint32_t LDL_MAC_bwToNumber(enum lora_signal_bandwidth bw);
  * 
  * @param[in] self  #lora_mac
  * @param[in] n     DIO number
+ * 
+ * @ingroup ldl_radio_connector
+ * 
+ * @note this function is safe to call from mainloop and interrupt if LORA_SYSTEM_ENTER_CRITICAL() and LORA_SYSTEM_ENTER_CRITICAL() have been defined
  * 
  * */
 void LDL_MAC_interrupt(struct lora_mac *self, uint8_t n);

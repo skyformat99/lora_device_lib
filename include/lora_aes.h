@@ -28,11 +28,18 @@
  * @defgroup ldl_crypto Crypto
  * @ingroup ldl
  * 
- * If necessary the default AES and AES_CMAC implementations can be removed from the build
- * by defining:
+ * # Crypto Interface
+ * 
+ * These interfaces are documented for integrators that wish to replace the default
+ * AES and/or AES_CMAC implementations. 
+ * 
+ * The default implementations can be removed by defining the build options:
  * 
  * - #LORA_ENABLE_PLATFORM_CMAC
  * - #LORA_ENABLE_PLATFORM_AES
+ * 
+ * The integrator can then implement the interfaces in this group to wrap
+ * the platform specific implementation.
  * 
  * @{
  * */

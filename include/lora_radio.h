@@ -28,6 +28,17 @@
  * @defgroup ldl_radio Radio
  * @ingroup ldl
  * 
+ * # Radio Driver Interface
+ * 
+ * The application must use the following interfaces to initialise the radio
+ * driver before calling LDL_MAC_init() :
+ * 
+ * - LDL_Radio_init()
+ * - LDL_Radio_setPA()
+ * 
+ * There are more radio interfaces than those documented in this group
+ * but the application does not need to interact with them directly.
+ * 
  * @{
  * */
 
@@ -116,7 +127,7 @@ struct lora_radio {
  * 
  * @param[in] self
  * @param[in] type  driver to initialise
- * @param[in] board passed to board interface functions (e.g. LDL_SPI_write())
+ * @param[in] board passed to board interface functions (e.g. LDL_Chip_write())
  * 
  * */
 void LDL_Radio_init(struct lora_radio *self, enum lora_radio_type type, void *board);

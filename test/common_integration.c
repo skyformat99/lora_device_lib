@@ -23,19 +23,19 @@ static void test_init(void **user)
     LDL_MAC_init(&self, &self, EU_863_870, &radio, responseHandler);
 }
 
-void LDL_SPI_select(void *self, bool state)
+void LDL_Chip_select(void *self, bool state)
 {
 }
 
-void LDL_SPI_reset(void *self, bool state)
+void LDL_Chip_reset(void *self, bool state)
 {
 }
 
-void LDL_SPI_write(void *self, uint8_t data)
+void LDL_Chip_write(void *self, uint8_t data)
 {
 }
 
-uint8_t LDL_SPI_read(void *self)
+uint8_t LDL_Chip_read(void *self)
 {
     return 0U;
 }

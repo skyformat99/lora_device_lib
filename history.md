@@ -1,6 +1,6 @@
 # Release History
 
-## 0.1.7
+## 0.2.0
 
 ### features
 
@@ -18,11 +18,13 @@
 
 ### changes
 
+- changed uplink and downlink counters to 32 bit
 - renamed LDL_MAC_setRedundancy() to LDL_MAC_setNbtrans()
 - renamed LDL_MAC_getRedundancy() to LDL_MAC_getNbTrans()
 - renamed LDL_MAC_setAggregated() to LDL_MAC_setMaxDCycle()
 - renamed LDL_MAC_getAggregated() to LDL_MAC_getMaxDCycle()
 - renamed LDL_System_time() to LDL_System_ticks()
+- changed LDL_MAC_interrupt() to use one less argument (no need to pass time)
 - changed LDL_MAC_unconfirmedData() to accept additional argument (invocation option structure)
 - changed LDL_MAC_confirmedData() to accept additional argument(invocation option structure)
 - changed OTAA procedure so that maxDCycle is no longer applied (this should only apply to data service)
@@ -37,6 +39,7 @@
 - changed LORA_DEBUG() to accept argument (app pointer)
 - changed LORA_INFO() to accept argument (app pointer)
 - changed LORA_ERROR() to accept argument (app pointer)
+- changed how off-time is accounted for
 
 ### bugs
 

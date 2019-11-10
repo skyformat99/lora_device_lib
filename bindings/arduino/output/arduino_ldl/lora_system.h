@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef LORA_SYSTEM_H
-#define LORA_SYSTEM_H
+#ifndef __LORA_SYSTEM_H
+#define __LORA_SYSTEM_H
 
 /** @file */
 
@@ -28,16 +28,18 @@
  * @defgroup ldl_system System
  * @ingroup ldl
  * 
+ * # System Interface
+ * 
  * System interfaces connect LDL to the underlying system. 
  * 
- * The following MUST be implemented:
+ * The following *MUST* be implemented:
  * 
  * - LDL_System_getIdentity()
  * - LDL_System_ticks()
  * - LDL_System_tps()
  * - LDL_System_eps()
  * 
- * The following have weak implementations which MAY be
+ * The following have weak implementations which *MAY* be
  * re-implemented:
  * 
  * - LDL_System_advance()
@@ -46,7 +48,7 @@
  * - LDL_System_saveContext()
  * - LDL_System_restoreContext()
  * 
- * The following macros MUST be defined if LDL_MAC_interrupt() or LDL_MAC_ticksUntilNextEvent() are called from an interrupt:
+ * The following macros *MUST* be defined if LDL_MAC_interrupt() or LDL_MAC_ticksUntilNextEvent() are called from an interrupt:
  * 
  * - LORA_SYSTEM_ENTER_CRITICAL() 
  * - LORA_SYSTEM_LEAVE_CRITICAL()
@@ -67,27 +69,22 @@ extern "C" {
 
 struct lora_mac_session;
 
-/** Identifiers and application key */
+/** Identifiers */
 struct lora_system_identity {
   
-    uint8_t appEUI[8U];     /**< application identifier */
+    uint8_t joinEUI[8U];    /**< join identifier */
     uint8_t devEUI[8U];     /**< device identifier */
-    uint8_t appKey[16U];    /**< application key */
 };
 
-/** @warning mandatory
- * 
- * This function returns AppEUI, DevEUI, and DevKey.
+/** This function returns device identifiers
  * 
  * @param[in]   app     from LDL_MAC_init()
- * @param[out]  value
+ * @param[out]  value   #lora_system_identity
  * 
  * */
 void LDL_System_getIdentity(void *app, struct lora_system_identity *value);
 
-/** @warning mandatory
- * 
- * This function reads a free-running 32 bit counter. The counter
+/** This function reads a free-running 32 bit counter. The counter
  * is expected to increment at a rate of LDL_System_tps() ticks per second.
  * 
  * LDL uses this changing value to track of the passage of time and perform
@@ -100,9 +97,7 @@ void LDL_System_getIdentity(void *app, struct lora_system_identity *value);
  * */
 uint32_t LDL_System_ticks(void *app);
 
-/** @warning mandatory
- * 
- * This function returns the rate (ticks per second) at which the value
+/** This function returns the rate (ticks per second) at which the value
  * returned by LDL_System_ticks() increments.
  * 
  * The rate MUST be in the range 10KHz to 1MHz.
@@ -112,20 +107,15 @@ uint32_t LDL_System_ticks(void *app);
  * */
 uint32_t LDL_System_tps(void);
 
-/** @warning mandatory 
+/** XTAL uncertainty per second in ticks
  * 
- * XTAL uncertainty per second in ticks
+ * For example, if a 1MHz ticker is accurate to +/0.1% of nominal:
  * 
- * For example, if an oscillator is accurate to +/1% of nominal:
- * 
- * @code
- * 
- * F_CPU := 1000000UL
- * ERROR := 0.001
- * 
- * # works out to 100 ticks
- * XTAL_ERROR := '( $(F_CPU) * $(ERROR) )'
- * 
+ * @code{.c}
+ * uint32_t LDL_System_eps(void)
+ * {
+ *     return 1000000UL / 1000UL;
+ * }
  * @endcode
  * 
  * @return xtal uncertainty in ticks
@@ -138,16 +128,24 @@ uint32_t LDL_System_eps(void);
  * 
  * @retval (0..255)
  * 
+ * 
+ * LDL includes the following weak implementation:
+ * @snippet src/lora_system.c LDL_System_rand
+ * 
  * */
 uint8_t LDL_System_rand(void *app);
 
 /** LDL uses this function to discover the battery level for for device
  * status MAC command.
- *  
+ *
  * @param[in]   app     from LDL_MAC_init()
  * 
  * @return      DevStatusAns.battery 
  * @retval      255 not implemented
+ * 
+ *  
+ * LDL includes the following weak implementation:
+ * @snippet src/lora_system.c LDL_System_getBatteryLevel
  * 
  * */
 uint8_t LDL_System_getBatteryLevel(void *app);
@@ -157,13 +155,19 @@ uint8_t LDL_System_getBatteryLevel(void *app);
  * 
  * @retval ticks
  * 
+ * 
+ * LDL includes the following weak implementation:
+ * @snippet src/lora_system.c LDL_System_advance
+ * 
  * */
 uint32_t LDL_System_advance(void);
 
-/** Called once during LDL_MAC_init() to restore saved context
+/** Called once during LDL_MAC_init() to restore saved session data
  * 
  * Returning false indicates to LDL that there is no saved context
  * and that LDL should restore from defaults.
+ * 
+ * Note that #lora_mac_session does not contain secrets.
  * 
  * @param[in] app       from LDL_MAC_init()
  * @param[out] value    session data
@@ -171,13 +175,23 @@ uint32_t LDL_System_advance(void);
  * @retval true     restored
  * @retval false    not-restored
  * 
+ * 
+ * LDL includes the following weak implementation:
+ * @snippet src/lora_system.c LDL_System_restoreContext
+ * 
  * */
 bool LDL_System_restoreContext(void *app, struct lora_mac_session *value);
 
-/** Called by LDL every time lora_mac_session changes
+/** Called by LDL every time #lora_mac_session changes
+ * 
+ * Note that #lora_mac_session does not contain secrets.
  * 
  * @param[in] app       from LDL_MAC_init()
  * @param[in] value     session data
+ * 
+ * 
+ * LDL includes the following weak implementation:
+ * @snippet src/lora_system.c LDL_System_saveContext
  * 
  * */
 void LDL_System_saveContext(void *app, const struct lora_mac_session *value);
@@ -190,7 +204,7 @@ void LDL_System_saveContext(void *app, const struct lora_mac_session *value);
  * 
  * Always paired with #LORA_SYSTEM_LEAVE_CRITICAL within the same function like so:
  * 
- * @code
+ * @code{.c}
  * void some_function(void *app)
  * {
  *      LORA_SYSTEM_ENTER_CRITICAL(app)
@@ -203,7 +217,7 @@ void LDL_System_saveContext(void *app, const struct lora_mac_session *value);
  * 
  * If you are using avr-libc:
  * 
- * @code
+ * @code{.c}
  * #include <util/atomic.h>
  * 
  * #define LORA_SYSTEM_ENTER_CRITICAL(APP) ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
@@ -211,7 +225,7 @@ void LDL_System_saveContext(void *app, const struct lora_mac_session *value);
  * @endcode
  * 
  * If you are using CMSIS:
- * @code
+ * @code{.c}
  * #define LORA_SYSTEM_ENTER_CRITICAL(APP) volatile uint32_t primask = __get_PRIMASK(); __disable_irq();
  * #define LORA_SYSTEM_LEAVE_CRITICAL(APP) __set_PRIMASK(primask);
  * @endcode

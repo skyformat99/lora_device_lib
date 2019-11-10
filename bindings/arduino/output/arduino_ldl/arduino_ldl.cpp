@@ -19,7 +19,11 @@
  *
  * */
 
+#include "platform.h"
+
 #include "arduino_ldl.h"
+
+
 
 #include <SPI.h>
 #include <stdlib.h>
@@ -27,7 +31,9 @@
 /* ticks per second (micros()) */
 #define TPS 1000000UL
 
-struct ArduinoLDL::DioInput *ArduinoLDL::dio_inputs = nullptr; 
+using namespace LDL;
+
+struct Radio::DioInput *Radio::dio_inputs = nullptr; 
 
 static const SPISettings spi_settings(4000000UL, MSBFIRST, SPI_MODE0);
 
@@ -38,9 +44,14 @@ uint32_t LDL_System_ticks(void *app)
     return micros();
 }
 
-void LDL_System_getIdentity(void *receiver, struct lora_system_identity *value)
+void LDL_System_getIdentity(void *app, struct lora_system_identity *value)
 {
-    ArduinoLDL::getIdentity(receiver, value);    
+    struct arduino_ldl_id id;
+    
+    MAC::getIdentity(app, &id);   
+    
+    (void)memcpy(value->joinEUI, id.joinEUI, sizeof(value->joinEUI));
+    (void)memcpy(value->devEUI, id.devEUI, sizeof(value->devEUI));     
 }
 
 uint32_t LDL_System_tps(void)
@@ -58,22 +69,22 @@ uint32_t LDL_System_eps(void)
     return XTAL_PPM;    
 }
 
-void LDL_SPI_select(void *self, bool state)
+void LDL_Chip_select(void *self, bool state)
 {
-    ArduinoLDL::radioSelect(self, state);               
+    Radio::radioSelect(self, state);               
 }
 
-void LDL_SPI_reset(void *self, bool state)
+void LDL_Chip_reset(void *self, bool state)
 {    
-    ArduinoLDL::radioReset(self, state);
+    Radio::radioReset(self, state);
 }
 
-void LDL_SPI_write(void *self, uint8_t data)
+void LDL_Chip_write(void *self, uint8_t data)
 {
     SPI.transfer(data);
 }
 
-uint8_t LDL_SPI_read(void *self)
+uint8_t LDL_Chip_read(void *self)
 {
     return SPI.transfer(0U);
 }
@@ -82,37 +93,16 @@ uint8_t LDL_SPI_read(void *self)
 
 ISR(PCINT0_vect){
     
-    ArduinoLDL::interrupt();    
+    Radio::interrupt();    
 }
 ISR(PCINT1_vect, ISR_ALIASOF(PCINT0_vect));
 ISR(PCINT2_vect, ISR_ALIASOF(PCINT0_vect));
 
-/* public methods *****************************************************/
+/* constructors *******************************************************/
 
-void ArduinoLDL::radioSelect(void *self, bool state)
+Radio::Radio(enum lora_radio_type type, enum lora_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1) : 
+    dio0(dio0, 0, radio), dio1(dio1, 1, radio), nreset(nreset), nselect(nselect)
 {
-    if(state){
-
-        SPI.beginTransaction(spi_settings); 
-        digitalWrite(to_obj(self)->nselect, LOW);        
-    }   
-    else{
-        
-        digitalWrite(to_obj(self)->nselect, HIGH);
-        SPI.endTransaction();        
-    } 
-}
-
-static void ArduinoLDL::radioReset(void *self, bool state)
-{
-     pinMode(to_obj(self)->nreset, state ? OUTPUT : INPUT);
-}
-
-ArduinoLDL::ArduinoLDL(get_identity_fn get_id, enum lora_region region, enum lora_radio_type radio_type, enum lora_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1) : 
-    dio0(dio0, 0, mac), dio1(dio1, 1, mac), nreset(nreset), nselect(nselect), get_id(get_id)
-{
-    handle_rx = NULL;
-    
     pinMode(nreset, INPUT);
     pinMode(nselect, OUTPUT);
     digitalWrite(nselect, HIGH);
@@ -122,9 +112,47 @@ ArduinoLDL::ArduinoLDL(get_identity_fn get_id, enum lora_region region, enum lor
     
     SPI.begin();
     
-    LDL_Radio_init(&radio, radio_type, this);
+    LDL_Radio_init(&radio, type, this);
+    
     LDL_Radio_setPA(&radio, pa);
-    LDL_MAC_init(&mac, this, region, &radio, adapter);
+    
+    /* works for AVR only */
+    PCICR |= _BV(PCIE0) |_BV(PCIE1) |_BV(PCIE2);  
+}
+
+#ifdef LORA_ENABLE_SX1272
+SX1272::SX1272(enum lora_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1) : 
+    Radio(LORA_RADIO_SX1272, pa, nreset, nselect, dio0, dio1) 
+{    
+}
+#endif
+
+#ifdef LORA_ENABLE_SX1276
+SX1276::SX1276(enum lora_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1) : 
+    Radio(LORA_RADIO_SX1276, pa, nreset, nselect, dio0, dio1) 
+{
+}
+#endif
+
+MAC::MAC(Radio& radio, enum lora_region region, get_identity_fn get_id) : 
+    radio(radio), get_id(get_id)
+{
+    handle_rx = NULL;
+    
+    struct arduino_ldl_id id;
+    
+    get_id(&id);
+    
+    LDL_SM_init(&sm, id.appKey, id.nwkKey, id.devEUI);
+    
+    struct lora_mac_init_arg arg = {0};
+    
+    arg.app = this;
+    arg.radio = &radio.radio;
+    arg.handler = adapter;
+    arg.sm = &sm;
+    
+    LDL_MAC_init(&mac, region, &arg);
     
     /* works for AVR only */
     PCICR |= _BV(PCIE0) |_BV(PCIE1) |_BV(PCIE2);  
@@ -142,97 +170,118 @@ ArduinoLDL::ArduinoLDL(get_identity_fn get_id, enum lora_region region, enum lor
     setMaxDCycle(12U);
 }
 
-uint32_t ArduinoLDL::time()
+/* public methods *****************************************************/
+
+void Radio::radioSelect(void *self, bool state)
+{
+    if(state){
+
+        SPI.beginTransaction(spi_settings); 
+        digitalWrite(to_obj(self)->nselect, LOW);        
+    }   
+    else{
+        
+        digitalWrite(to_obj(self)->nselect, HIGH);
+        SPI.endTransaction();        
+    } 
+}
+
+static void Radio::radioReset(void *self, bool state)
+{
+     pinMode(to_obj(self)->nreset, state ? OUTPUT : INPUT);
+}
+
+uint32_t MAC::ticks()
 {
     return LDL_System_ticks(NULL);
 }
 
-bool ArduinoLDL::unconfirmedData(uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts)
+bool MAC::unconfirmedData(uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts)
 {
     return LDL_MAC_unconfirmedData(&mac, port, data, len, opts); 
 }
 
-bool ArduinoLDL::unconfirmedData(uint8_t port, const struct lora_mac_data_opts *opts)
+bool MAC::unconfirmedData(uint8_t port, const struct lora_mac_data_opts *opts)
 {
     return LDL_MAC_unconfirmedData(&mac, port, NULL, 0U, opts); 
 }
 
-bool ArduinoLDL::confirmedData(uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts)
+bool MAC::confirmedData(uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts)
 {
     return LDL_MAC_confirmedData(&mac, port, data, len, opts); 
 }
 
-bool ArduinoLDL::confirmedData(uint8_t port, const struct lora_mac_data_opts *opts)
+bool MAC::confirmedData(uint8_t port, const struct lora_mac_data_opts *opts)
 {
     return LDL_MAC_confirmedData(&mac, port, NULL, 0U, opts); 
 }
 
-bool ArduinoLDL::otaa()
+bool MAC::otaa()
 {
     return LDL_MAC_otaa(&mac); 
 }
 
-void ArduinoLDL::forget()
+void MAC::forget()
 {
     LDL_MAC_forget(&mac); 
 }
 
-void ArduinoLDL::cancel()
+void MAC::cancel()
 {
     LDL_MAC_cancel(&mac);
 }
 
-bool ArduinoLDL::setRate(uint8_t rate)
+bool MAC::setRate(uint8_t rate)
 {
     return LDL_MAC_setRate(&mac, rate);
 }
 
-uint8_t ArduinoLDL::getRate()
+uint8_t MAC::getRate()
 {
     return LDL_MAC_getRate(&mac);
 }
 
-bool ArduinoLDL::setPower(uint8_t power)
+bool MAC::setPower(uint8_t power)
 {
     return LDL_MAC_setPower(&mac, power);
 }
 
-uint8_t ArduinoLDL::getPower()
+uint8_t MAC::getPower()
 {
     return LDL_MAC_getPower(&mac);
 }
 
-enum lora_mac_errno ArduinoLDL::getErrno()
+enum lora_mac_errno MAC::getErrno()
 {
     return LDL_MAC_errno(&mac);
 }    
 
-bool ArduinoLDL::joined()
+bool MAC::joined()
 {
     return LDL_MAC_joined(&mac);
 }
 
-bool ArduinoLDL::ready()
+bool MAC::ready()
 {
     return LDL_MAC_ready(&mac);
 }
 
-enum lora_mac_operation ArduinoLDL::getOP()
+enum lora_mac_operation MAC::getOP()
 {
     return LDL_MAC_op(&mac);
 }
 
-enum lora_mac_state ArduinoLDL::getState()
+enum lora_mac_state MAC::getState()
 {
     return LDL_MAC_state(&mac);
 }
 
-void ArduinoLDL::process()
+void MAC::process()
 {        
     LDL_MAC_process(&mac);    
 }        
 
-void ArduinoLDL::interrupt()
+void Radio::interrupt()
 {
     struct DioInput *ptr = dio_inputs;
 
@@ -242,7 +291,7 @@ void ArduinoLDL::interrupt()
         
         if(state && !ptr->state){
 
-            LDL_MAC_interrupt(&ptr->mac, ptr->signal);
+            LDL_Radio_interrupt(&ptr->radio, ptr->signal);
         }
         
         ptr->state = state;
@@ -251,74 +300,74 @@ void ArduinoLDL::interrupt()
     }
 }
 
-void ArduinoLDL::getIdentity(void *ptr, struct lora_system_identity *value)
+void MAC::getIdentity(void *ptr, struct arduino_ldl_id *value)
 {
-    to_obj(ptr)->get_id(value);
+    to_obj(ptr)->get_id(value);    
 }
 
-void ArduinoLDL::enableADR()
-{
-    LDL_MAC_enableADR(&mac);
-}
-
-void ArduinoLDL::disableADR()
+void MAC::enableADR()
 {
     LDL_MAC_enableADR(&mac);
 }
 
-bool ArduinoLDL::adr()
+void MAC::disableADR()
+{
+    LDL_MAC_enableADR(&mac);
+}
+
+bool MAC::adr()
 {
     LDL_MAC_adr(&mac);
 }
 
-void ArduinoLDL::onRX(handle_rx_fn handler)
+void MAC::onRX(handle_rx_fn handler)
 {
     handle_rx = handler;
 }
 
-void ArduinoLDL::onEvent(handle_event_fn handler)
+void MAC::onEvent(handle_event_fn handler)
 {
     handle_event = handler;
 }
 
-uint32_t ArduinoLDL::ticksUntilNextEvent()
+uint32_t MAC::ticksUntilNextEvent()
 {
     return LDL_MAC_ticksUntilNextEvent(&mac);
 }
 
-uint32_t ArduinoLDL::ticksPerSecond()
+uint32_t MAC::ticksPerSecond()
 {
     return TPS;
 }
 
-uint32_t ArduinoLDL::ticksPerMilliSecond()
+uint32_t MAC::ticksPerMilliSecond()
 {
     return TPS/1000UL;
 }
 
-void ArduinoLDL::setMaxDCycle(uint8_t maxDCycle)
+void MAC::setMaxDCycle(uint8_t maxDCycle)
 {
     LDL_MAC_setMaxDCycle(&mac, maxDCycle);
 }
 
-uint8_t ArduinoLDL::getMaxDCycle()
+uint8_t MAC::getMaxDCycle()
 {
     return LDL_MAC_getMaxDCycle(&mac);
 }
 
-void ArduinoLDL::setNbTrans(uint8_t nbTrans)
+void MAC::setNbTrans(uint8_t nbTrans)
 {
     LDL_MAC_setNbTrans(&mac, nbTrans);
 }
 
-uint8_t ArduinoLDL::getNbTrans()
+uint8_t MAC::getNbTrans()
 {
     return LDL_MAC_getNbTrans(&mac);
 }
 
 /* protected methods **************************************************/
 
-void ArduinoLDL::arm_dio(struct DioInput *dio)
+void Radio::arm_dio(struct DioInput *dio)
 {
     pinMode(dio->pin, INPUT);
     unmask_pcint(dio->pin);
@@ -340,10 +389,8 @@ void ArduinoLDL::arm_dio(struct DioInput *dio)
     }
 }
 
-
-
 /* works for AVR only */
-void ArduinoLDL::unmask_pcint(uint8_t pin)
+void Radio::unmask_pcint(uint8_t pin)
 {
     volatile uint8_t *pcmsk;
     uint8_t bit;
@@ -370,14 +417,19 @@ void ArduinoLDL::unmask_pcint(uint8_t pin)
     }    
 }
 
-ArduinoLDL *ArduinoLDL::to_obj(void *ptr)
+MAC *MAC::to_obj(void *ptr)
 {
-    return static_cast<ArduinoLDL *>(ptr);
+    return static_cast<MAC *>(ptr);
 }
 
-void ArduinoLDL::adapter(void *receiver, enum lora_mac_response_type type, const union lora_mac_response_arg *arg)
+Radio *Radio::to_obj(void *ptr)
 {
-    ArduinoLDL *self = to_obj(receiver);
+    return static_cast<Radio *>(ptr);
+}
+
+void MAC::adapter(void *receiver, enum lora_mac_response_type type, const union lora_mac_response_arg *arg)
+{
+    MAC *self = to_obj(receiver);
     
     /* need to seed rand on startup */
     if(type == LORA_MAC_STARTUP){
@@ -396,7 +448,7 @@ void ArduinoLDL::adapter(void *receiver, enum lora_mac_response_type type, const
     }
 }
 
-void ArduinoLDL::eventDebug(enum lora_mac_response_type type, const union lora_mac_response_arg *arg)
+void MAC::eventDebug(enum lora_mac_response_type type, const union lora_mac_response_arg *arg)
 {
     const char *bw125 PROGMEM = "125";
     const char *bw250 PROGMEM = "250";
@@ -409,7 +461,7 @@ void ArduinoLDL::eventDebug(enum lora_mac_response_type type, const union lora_m
     };
 
     Serial.print('[');
-    Serial.print(time());
+    Serial.print(ticks());
     Serial.print(']');
     
     switch(type){
@@ -463,7 +515,7 @@ void ArduinoLDL::eventDebug(enum lora_mac_response_type type, const union lora_m
     Serial.print('\n');
 }
 
-void ArduinoLDL::eventDebugVerbose(enum lora_mac_response_type type, const union lora_mac_response_arg *arg)
+void MAC::eventDebugVerbose(enum lora_mac_response_type type, const union lora_mac_response_arg *arg)
 {
     const char *bw125 PROGMEM = "125";
     const char *bw250 PROGMEM = "250";
@@ -476,7 +528,7 @@ void ArduinoLDL::eventDebugVerbose(enum lora_mac_response_type type, const union
     };
 
     Serial.print('[');
-    Serial.print(time());
+    Serial.print(ticks());
     Serial.print(']');
     
     switch(type){

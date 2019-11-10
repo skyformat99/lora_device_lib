@@ -19,31 +19,33 @@
  *
  * */
 
-#ifndef LORA_MAC_H
-#define LORA_MAC_H
+#ifndef __LORA_MAC_H
+#define __LORA_MAC_H
 
 /** @file */
 
 /**
  * @defgroup ldl LDL
  * 
+ * # LDL Interface Documentation
+ * 
  * Interface documentation for [LoRa Device Library](https://github.com/cjhdev/lora_device_lib).
  * 
- * - @ref ldl_mac MAC layer
- * - @ref ldl_radio radio driver
+ * - @ref ldl_mac MAC layer interface
+ * - @ref ldl_radio radio driver interface
  * - @ref ldl_system portable system interface
- * - @ref ldl_radio_connector portable connector between radio driver and transceiver
+ * - @ref ldl_radio_connector portable connector between radio driver and transceiver digital interface
  * - @ref ldl_build_options portable build options
- * - @ref ldl_crypto portable cryptography interface
+ * - @ref ldl_tsm portable security module interface
+ * - @ref ldl_crypto cryptographic implementations used by the default security module
  * 
- * ### Usage
+ * ## Usage
  * 
  * Below is an example of how to use LDL to join and then send data. 
  * 
  * What isn't shown:
  * 
- * - how ISRs connect to handle_radio_interrupt_dio*
- * - implementation of @ref ldl_radio_connector
+ * - complete implementation of @ref ldl_radio_connector
  * - implementation of @ref ldl_system
  * - implementation of functions marked as "extern"
  * 
@@ -54,11 +56,20 @@
  * 
  * @include examples/doxygen/example.c
  * 
+ * ## Examples
+ * 
+ *  - Arduino (AVR)
+ *      - [arduino_ldl.cpp](https://github.com/cjhdev/lora_device_lib/tree/master/bindings/arduino/output/arduino_ldl/arduino_ldl.cpp)
+ *      - [arduino_ldl.h](https://github.com/cjhdev/lora_device_lib/tree/master/bindings/arduino/output/arduino_ldl/arduino_ldl.h)
+ *      - [platform.h](https://github.com/cjhdev/lora_device_lib/tree/master/bindings/arduino/output/arduino_ldl/platform.h)
+ * 
  * */
 
 /**
  * @defgroup ldl_mac MAC
  * @ingroup ldl
+ * 
+ * # MAC Interface
  * 
  * Before accessing any of the interfaces #lora_mac must be initialised
  * by calling LDL_MAC_init().
@@ -71,7 +82,8 @@
  * 
  * On systems that sleep, LDL_MAC_ticksUntilNextEvent() can be used in combination
  * with a wakeup timer to ensure that LDL_MAC_process() is called only when 
- * necessary.
+ * necessary. Note that the counter behind LDL_System_ticks() must continue
+ * to increment during sleep.
  * 
  * Events (#lora_mac_response_type) that occur within LDL_MAC_process() are pushed back to the 
  * application using the #lora_mac_response_fn function pointer. 
@@ -114,11 +126,13 @@ extern "C" {
 #include "lora_platform.h"
 #include "lora_region.h"
 #include "lora_stream.h"
+#include "lora_radio.h"
 
 #include <stdint.h>
 #include <stdbool.h>
  
 struct lora_mac;
+struct lora_sm;
 
 /** Event types pushed to application
  * 
@@ -127,27 +141,58 @@ struct lora_mac;
  *  */
 enum lora_mac_response_type {
         
-    LORA_MAC_CHIP_ERROR,    /**< Chip didn't respond as expected */
-    LORA_MAC_RESET,         /**< Chip is being reset; wait for #LORA_MAC_STARTUP */
-    LORA_MAC_STARTUP,       /**< MAC has started and is ready for commands */
+    /** diagnostic event: radio chip did not respond as expected and will now be reset
+     * 
+     * */
+    LORA_MAC_CHIP_ERROR,
     
-    LORA_MAC_JOIN_COMPLETE, /**< join request was successful */
-    LORA_MAC_JOIN_TIMEOUT,  /**< join request timed out */        
-    LORA_MAC_DATA_COMPLETE, /**< confirmed/unconfirmed data request completed successfully */
-    LORA_MAC_DATA_TIMEOUT,  /**< confirmed data request has timed out */
-    LORA_MAC_DATA_NAK,      /**< confirmed data request was not acknowledged (i.e. a downlink was received but without ACK) */
+    /** diagnostic event: radio chip is in process of being reset
+     * 
+     * MAC will send #LORA_MAC_STARTUP when it is ready again
+     * 
+     * */
+    LORA_MAC_RESET,
     
-    LORA_MAC_RX,            /**< data received */    
+    /** MAC has started and is now ready for commands
+     * 
+     * */
+    LORA_MAC_STARTUP,
     
-    LORA_MAC_LINK_STATUS,   /**< link status answer */
+    /** join request was answered and MAC is now joined */
+    LORA_MAC_JOIN_COMPLETE,
     
-    LORA_MAC_RX1_SLOT,      /**< RX1 slot information */    
-    LORA_MAC_RX2_SLOT,      /**< RX2 slot information */ 
+    /** join request was not answered (MAC will try again) */
+    LORA_MAC_JOIN_TIMEOUT,
     
-    LORA_MAC_DOWNSTREAM,    /**< downstream message received */
+    /** data request (confirmed or unconfirmed) completed successfully */
+    LORA_MAC_DATA_COMPLETE,
+    
+    /** confirmed data request was not answered */
+    LORA_MAC_DATA_TIMEOUT,
+    
+    /** confirmed data request was answered but the ACK bit wasn't set */
+    LORA_MAC_DATA_NAK,
+    
+    /** data receieved */
+    LORA_MAC_RX,
+    
+    /** LinkCheckAns */
+    LORA_MAC_LINK_STATUS,
+    
+    /** diagnostic event: RX1 window opened */
+    LORA_MAC_RX1_SLOT,
+    
+    /** diagnostic event: RX2 window opened */
+    LORA_MAC_RX2_SLOT,
+    
+    /** diagnostic event: a frame has been receieved in an RX window */
+    LORA_MAC_DOWNSTREAM,
         
-    LORA_MAC_TX_COMPLETE,   /**< transmit complete */             
-    LORA_MAC_TX_BEGIN,      /**< transmit begin */
+    /** diagnostic event: transmit complete */
+    LORA_MAC_TX_COMPLETE,
+    
+    /** diagnostic event: transmit begin */
+    LORA_MAC_TX_BEGIN,
 };
 
 /** Event arguments sent to application
@@ -258,6 +303,7 @@ enum lora_mac_operation {
   
     LORA_OP_NONE,                   /**< no active operation */
     LORA_OP_JOINING,                /**< MAC is performing a join */
+    LORA_OP_REJOINING,              /**< MAC is performing a rejoin */
     LORA_OP_DATA_UNCONFIRMED,       /**< MAC is sending unconfirmed data */
     LORA_OP_DATA_CONFIRMED,         /**< MAC is sending confirmed data */    
     LORA_OP_RESET,                  /**< MAC is performing radio reset */
@@ -277,6 +323,33 @@ enum lora_mac_errno {
     LORA_ERRNO_INTERNAL     /**< implementation fault */
 };
 
+/* band array indices */
+enum lora_band_index {
+    
+    LORA_BAND_1,
+    LORA_BAND_2,
+    LORA_BAND_3,
+    LORA_BAND_4,
+    LORA_BAND_5,
+    LORA_BAND_GLOBAL,
+    LORA_BAND_RETRY,
+    LORA_BAND_MAX
+};
+
+enum lora_timer_inst {
+    
+    LORA_TIMER_WAITA,
+    LORA_TIMER_WAITB,
+    LORA_TIMER_BAND,
+    LORA_TIMER_MAX
+};
+
+struct lora_timer {
+    
+    uint32_t time;    
+    bool armed;
+};
+
 enum lora_input_type {
   
     LORA_INPUT_TX_COMPLETE,
@@ -291,48 +364,20 @@ struct lora_input {
     uint32_t time;
 };
 
-enum lora_timer_inst {
-    
-    LORA_TIMER_WAITA,
-    LORA_TIMER_WAITB,
-    LORA_TIMER_BAND,
-    LORA_TIMER_MAX
-};
-
-/* band array indices */
-enum lora_band_index {
-    
-    LORA_BAND_1,
-    LORA_BAND_2,
-    LORA_BAND_3,
-    LORA_BAND_4,
-    LORA_BAND_5,
-    LORA_BAND_GLOBAL,
-    LORA_BAND_RETRY,
-    LORA_BAND_MAX
-};
-
-struct lora_timer {
-    
-    uint32_t time;    
-    bool armed;
-};
-
 struct lora_mac_channel {
     
     uint32_t freqAndRate;
     uint32_t dlFreq;
 };
 
-/** session parameter cache */
+/** session cache */
 struct lora_mac_session {
     
-    uint16_t up;
-    uint16_t down;
+    /* frame counters */
+    uint32_t up;
+    uint16_t appDown;
+    uint16_t nwkDown;
     
-    uint8_t appSKey[16U];
-    uint8_t nwkSKey[16U];    
-
     uint32_t devAddr;
     
     struct lora_mac_channel chConfig[16U];
@@ -354,6 +399,8 @@ struct lora_mac_session {
     
     bool joined;
     bool adr;
+    
+    uint8_t version;
 };
 
 /** data service invocation options */
@@ -407,6 +454,7 @@ struct lora_mac {
     
     struct lora_mac_session ctx;
     
+    struct lora_sm *sm;
     struct lora_radio *radio;
     struct lora_input inputs;
     struct lora_timer timers[LORA_TIMER_MAX];
@@ -436,29 +484,43 @@ struct lora_mac {
     struct lora_mac_data_opts opts;
 };
 
+/** passed as an argument to LDL_MAC_init() */
+struct lora_mac_init_arg {
+    
+    /** pointer passed to #lora_mac_response_fn and @ref ldl_system functions */
+    void *app;      
+    
+    /** initialised radio object */
+    struct lora_radio *radio;
+    
+    /** security module object */
+    struct lora_sm *sm;
+    
+    /** application callback #lora_mac_response_fn */
+    lora_mac_response_fn handler;
+};
+
 
 /** Initialise #lora_mac 
  * 
- * @param[in] self      #lora_mac 
- * @param[in] app       pointer passed to #lora_mac_response_fn and @ref ldl_system functions
+ * @param[in] self      #lora_mac
  * @param[in] region    lorawan region id #lora_region
- * @param[in] radio     initialised radio object 
- * @param[in] handler   application callback #lora_mac_response_fn
+ * @param[in] arg       #lora_mac_init_arg
  * 
  * @see LDL_Radio_init()
  * 
  * */
-void LDL_MAC_init(struct lora_mac *self, void *app, enum lora_region region, struct lora_radio *radio, lora_mac_response_fn handler);
+void LDL_MAC_init(struct lora_mac *self, enum lora_region region, const struct lora_mac_init_arg *arg);
 
 /** Send data without confirmation
  * 
- * Once initiated MAC will send nbTrans times. NbTrans may be set:
+ * Once initiated MAC will send at most nbTrans times until a valid downlink is received. NbTrans may be set:
  * 
- * - globally by the network (via MAC command)
- * - globally by LDL_MAC_setRedundancy()
+ * - globally by the network (via LinkADRReq)
+ * - globally by the application (via LDL_MAC_setNbTrans())
  * - per invocation by #lora_mac_data_opts
  *
- * The application can cancel by calling LDL_MAC_cancel().
+ * The application can cancel the service while it is in progress by calling LDL_MAC_cancel().
  * 
  * #lora_mac_response_fn will push #LORA_MAC_DATA_COMPLETE on completion.
  * 
@@ -480,11 +542,11 @@ bool LDL_MAC_unconfirmedData(struct lora_mac *self, uint8_t port, const void *da
  * 
  * Once initiated MAC will send at most nbTrans times until a confirmation is received. NbTrans may be set:
  * 
- * - globally by the network (via MAC command)
- * - globally by LDL_MAC_setRedundancy()
+ * - globally by the network (via LinkADRReq)
+ * - globally by the application (via LDL_MAC_setNbTrans())
  * - per invocation by #lora_mac_data_opts
  * 
- * The application can cancel by calling LDL_MAC_cancel().
+ * The application can cancel the service while it is in progress by calling LDL_MAC_cancel().
  * 
  * #lora_mac_response_fn will push #LORA_MAC_DATA_TIMEOUT on every timeout
  * #lora_mac_response_fn will push #LORA_MAC_DATA_COMPLETE on completion
@@ -504,7 +566,7 @@ bool LDL_MAC_unconfirmedData(struct lora_mac *self, uint8_t port, const void *da
  * */
 bool LDL_MAC_confirmedData(struct lora_mac *self, uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts);
 
-/** Initiate over the air join procedure
+/** Initiate Over The Air Activation
  * 
  * Once initiated MAC will keep trying to join forever.
  * 
@@ -548,13 +610,22 @@ void LDL_MAC_process(struct lora_mac *self);
 
 /** Get number of ticks until the next event
  * 
- * @note this function is safe to call from mainloop and interrupt
+ * Aside from the passage of time, calls to the following functions may 
+ * cause the return value of this function to be change:
+ * 
+ * - LDL_MAC_process()
+ * - LDL_MAC_otaa()
+ * - LDL_MAC_unconfirmedData()
+ * - LDL_MAC_confirmedData()
+ * - LDL_Radio_interrupt()
  * 
  * @param[in] self  #lora_mac
  * 
  * @return system ticks
  * 
  * @retval UINT32_MAX   there are no future events at this time
+ * 
+ * @note this function is safe to call from mainloop and interrupt if LORA_SYSTEM_ENTER_CRITICAL() and LORA_SYSTEM_ENTER_CRITICAL() have been defined
  * 
  * */
 uint32_t LDL_MAC_ticksUntilNextEvent(const struct lora_mac *self);
@@ -712,13 +783,7 @@ uint32_t LDL_MAC_transmitTimeDown(enum lora_signal_bandwidth bw, enum lora_sprea
  * */
 uint32_t LDL_MAC_bwToNumber(enum lora_signal_bandwidth bw);
 
-/** Receive an interrupt from the radio
- * 
- * @param[in] self  #lora_mac
- * @param[in] n     DIO number
- * 
- * */
-void LDL_MAC_interrupt(struct lora_mac *self, uint8_t n);
+
 
 /** Get the maximum transfer unit in bytes
  * 
@@ -797,6 +862,25 @@ void LDL_MAC_setNbTrans(struct lora_mac *self, uint8_t nbTrans);
  * 
  * */
 uint8_t LDL_MAC_getNbTrans(const struct lora_mac *self);
+
+/* for internal use only */
+void LDL_MAC_radioEvent(struct lora_mac *self, enum lora_radio_event event);
+bool LDL_MAC_addChannel(struct lora_mac *self, uint8_t chIndex, uint32_t freq, uint8_t minRate, uint8_t maxRate);
+void LDL_MAC_removeChannel(struct lora_mac *self, uint8_t chIndex);
+bool LDL_MAC_maskChannel(struct lora_mac *self, uint8_t chIndex);
+bool LDL_MAC_unmaskChannel(struct lora_mac *self, uint8_t chIndex);
+
+void LDL_MAC_timerSet(struct lora_mac *self, enum lora_timer_inst timer, uint32_t timeout);
+bool LDL_MAC_timerCheck(struct lora_mac *self, enum lora_timer_inst timer, uint32_t *error);
+void LDL_MAC_timerClear(struct lora_mac *self, enum lora_timer_inst timer);
+uint32_t LDL_MAC_timerTicksUntilNext(const struct lora_mac *self);
+uint32_t LDL_MAC_timerTicksUntil(const struct lora_mac *self, enum lora_timer_inst timer, uint32_t *error);
+
+void LDL_MAC_inputArm(struct lora_mac *self, enum lora_input_type type);
+bool LDL_MAC_inputCheck(const struct lora_mac *self, enum lora_input_type type, uint32_t *error);
+void LDL_MAC_inputClear(struct lora_mac *self);
+void LDL_MAC_inputSignal(struct lora_mac *self, enum lora_input_type type);
+bool LDL_MAC_inputPending(const struct lora_mac *self);
 
 #ifdef __cplusplus
 }

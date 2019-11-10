@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef LORA_REGION_H
-#define LORA_REGION_H
+#ifndef __LORA_REGION_H
+#define __LORA_REGION_H
 
 /** @file */
 
@@ -31,7 +31,6 @@ extern "C" {
 #include "lora_platform.h"
 #include "lora_radio_defs.h"
 #include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
     
 /** LoRaWAN Region
@@ -79,13 +78,13 @@ int16_t LDL_Region_getTXPower(enum lora_region region, uint8_t power);
 uint8_t LDL_Region_numChannels(enum lora_region region);
 uint8_t LDL_Region_getJA1Delay(enum lora_region region);
 uint32_t LDL_Region_getOffTimeFactor(enum lora_region region, uint8_t band);
-uint16_t LDL_Region_getMaxFCNTGap(enum lora_region region);
 uint8_t LDL_Region_getRX1Delay(enum lora_region region);
 uint8_t LDL_Region_getRX1Offset(enum lora_region region);
 uint32_t LDL_Region_getRX2Freq(enum lora_region region);
 uint8_t LDL_Region_getRX2Rate(enum lora_region region);
 uint8_t LDL_Region_getJoinRate(enum lora_region region, uint32_t trial);
-void LDL_Region_getDefaultChannels(enum lora_region region, struct lora_mac *receiver, void (*handler)(struct lora_mac *reciever, uint8_t chIndex, uint32_t freq, uint8_t minRate, uint8_t maxRate));
+void LDL_Region_getDefaultChannels(enum lora_region region, struct lora_mac *mac);
+void LDL_Region_processCFList(enum lora_region region, struct lora_mac *mac, const uint8_t *cfList, uint8_t cfListLen);
 
 
 #ifdef __cplusplus

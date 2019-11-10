@@ -19,8 +19,8 @@
  *
  * */
  
-#ifndef LORA_CMAC_H
-#define LORA_CMAC_H
+#ifndef __LORA_CMAC_H
+#define __LORA_CMAC_H
 
 /** @file */
 
@@ -34,17 +34,10 @@
 extern "C" {
 #endif
 
-#include "lora_platform.h"
 #include <stdint.h>
 #include <stddef.h>
 
 struct lora_aes_ctx;
-
-#ifdef LORA_ENABLE_PLATFORM_CMAC
-
-struct lora_cmac_ctx;
-
-#else
 
 /** CMAC state */
 struct lora_cmac_ctx {
@@ -54,8 +47,6 @@ struct lora_cmac_ctx {
     uint8_t x[16U];
     uint32_t size;
 };
-
-#endif
 
 /** Initialise CMAC state
  * 

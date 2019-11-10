@@ -19,8 +19,12 @@
  *
  * */
 
-#ifndef LORA_MAC_COMMANDS_H
-#define LORA_MAC_COMMANDS_H
+#ifndef __LORA_MAC_COMMANDS_H
+#define __LORA_MAC_COMMANDS_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -190,5 +194,9 @@ bool LDL_MAC_putTXParamSetupAns(struct lora_stream *s);
 bool LDL_MAC_getDownCommand(struct lora_stream *s, struct lora_downstream_cmd *cmd);
 bool LDL_MAC_getUpCommand(struct lora_stream *s, struct lora_upstream_cmd *cmd);
 bool LDL_MAC_peekNextCommand(struct lora_stream *s, enum lora_mac_cmd_type *type);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

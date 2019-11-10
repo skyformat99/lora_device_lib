@@ -29,7 +29,7 @@
  * @defgroup ldl_build_options Build Options
  * @ingroup ldl
  * 
- * Build time options.
+ * # Build Options
  * 
  * These can be defined in two ways:
  * 
@@ -70,7 +70,7 @@
      * 
      * e.g.
      * 
-     * @code
+     * @code{.c}
      * #define LORA_REDUNDANCY_MAX 3
      * @endcode
      * 
@@ -101,8 +101,6 @@
      * This file can be used to define:
      * 
      * - @ref ldl_build_options
-     * - platform specific definintion of lora_cmac_ctx
-     * - platform specific definintion of lora_aes_ctx
      * - anything else you want included
      * 
      * Example (defined from a makefile):
@@ -117,31 +115,6 @@
      * */
     #define LORA_TARGET_INCLUDE
     #undef LORA_TARGET_INCLUDE
-    
-    
-    /** 
-     * Define this macro to remove the built-in AES implementation.
-     * 
-     * The effect of defining this macro is that:
-     * 
-     * - lora_aes.c will build to an empty object
-     * - struct lora_aes_ctx becomes a forward declaration
-     * 
-     * */
-    #define LORA_ENABLE_PLATFORM_AES
-    #undef LORA_ENABLE_PLATFORM_AES
-    
-    /** 
-     * Define this macro to remove the built-in CMAC implementation.
-     * 
-     * The effect of defining this macro is that:
-     * 
-     * - lora_cmac.c will build to an empty object
-     * - struct lora_cmac_ctx becomes a forward declaration
-     * 
-     * */
-    #define LORA_ENABLE_PLATFORM_CMAC
-    #undef LORA_ENABLE_PLATFORM_CMAC
     
     /** 
      * Define to add support for SX1272
@@ -306,6 +279,17 @@
      * */
     #define LORA_ENABLE_STATIC_RX_BUFFER
     #undef LORA_ENABLE_STATIC_RX_BUFFER
+
+    /** 
+     * Define to include LoRaWAN 1.1 features in build
+     * 
+     * This is backwards compatible with 1.0 but will require
+     * more resources.
+     * 
+     * */
+    #define LORA_ENABLE_POINT_ONE
+    #undef LORA_ENABLE_POINT_ONE
+    
 
 #endif
 

@@ -19,20 +19,24 @@
  *
  * */
 
-#ifndef LORA_AES_H
-#define LORA_AES_H
+#ifndef __LORA_AES_H
+#define __LORA_AES_H
 
 /** @file */
 
 /**
- * @defgroup ldl_crypto Crypto
+ * @defgroup ldl_crypto Default Crypto
  * @ingroup ldl
  * 
- * If necessary the default AES and AES_CMAC implementations can be removed from the build
- * by defining:
+ * # Default Crypto Interface
  * 
- * - #LORA_ENABLE_PLATFORM_CMAC
- * - #LORA_ENABLE_PLATFORM_AES
+ * The implementations for these interfaces are used by the default
+ * @ref ldl_tsm. They are documented here to assist integrators that
+ * choose to reimplement @ref ldl_tsm.
+ * 
+ * These implementations are provided for the purpose of evaluating LDL
+ * and no effort has been made to ensure they are hardened against
+ * attacks.
  * 
  * @{
  * */
@@ -41,14 +45,7 @@
 extern "C" {
 #endif
 
-#include "lora_platform.h"
 #include <stdint.h>
-
-#ifdef LORA_ENABLE_PLATFORM_AES
-
-struct lora_aes_ctx;
-
-#else
 
 /** AES state */
 struct lora_aes_ctx {
@@ -56,8 +53,6 @@ struct lora_aes_ctx {
     uint8_t k[240U];
     uint8_t r;
 };
-
-#endif
 
 #ifndef AES_BLOCK_SIZE
     #define AES_BLOCK_SIZE 16U

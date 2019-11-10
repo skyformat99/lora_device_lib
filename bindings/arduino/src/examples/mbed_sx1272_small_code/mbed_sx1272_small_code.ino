@@ -21,41 +21,45 @@
 
 #include <arduino_ldl.h>
 
-static void get_identity(struct lora_system_identity *id)
+static void get_identity(struct arduino_ldl_id *id)
 {       
-    static const struct lora_system_identity _id = {
-        .appEUI = {0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U},
+    static const struct arduino_ldl_id _id = {
+        .joinEUI = {0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U},
         .devEUI = {0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x00U,0x01U},
-        .appKey = {0x2bU,0x7eU,0x15U,0x16U,0x28U,0xaeU,0xd2U,0xa6U,0xabU,0xf7U,0x15U,0x88U,0x09U,0xcfU,0x4fU,0x3cU}
+        .appKey = {0x2bU,0x7eU,0x15U,0x16U,0x28U,0xaeU,0xd2U,0xa6U,0xabU,0xf7U,0x15U,0x88U,0x09U,0xcfU,0x4fU,0x3cU},
+        .nwkKey = {0x2bU,0x7eU,0x15U,0x16U,0x28U,0xaeU,0xd2U,0xa6U,0xabU,0xf7U,0x15U,0x88U,0x09U,0xcfU,0x4fU,0x3cU}
     };
 
     memcpy(id, &_id, sizeof(*id));
 }
 
-ArduinoLDL& get_ldl()
+LDL::MAC& get_ldl()
 {
-    static ArduinoLDL ldl(
-        get_identity,       /* specify name of function that returns euis and key */
-        EU_863_870,         /* specify region */
-        LORA_RADIO_SX1272,  /* specify radio */    
-        LORA_RADIO_PA_RFO,  /* specify radio power amplifier */
+    static LDL::SX1272 radio(
+        LORA_RADIO_PA_RFO,  /* specify power amplifier */
         A0,                 /* radio reset pin */
         10,                 /* radio select pin */
         2,                  /* radio dio0 pin */
         3                   /* radio dio1 pin */
     );
     
-    return ldl;
+    static LDL::MAC mac(
+        radio,              /* mac needs a radio */
+        EU_863_870,         /* specify region */
+        get_identity        /* specify name of function that returns euis and keys */               
+    );
+    
+    return mac;
 }
 
 void setup() 
 {
-    ArduinoLDL& ldl = get_ldl();
+    LDL::MAC& ldl = get_ldl();
 }
 
 void loop() 
 { 
-    ArduinoLDL& ldl = get_ldl();
+    LDL::MAC& ldl = get_ldl();
     
     if(ldl.ready()){
     

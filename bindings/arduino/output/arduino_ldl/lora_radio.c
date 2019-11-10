@@ -23,8 +23,8 @@
 
 #include "lora_debug.h"
 #include "lora_radio.h"
-#include "lora_system.h"
-#include "lora_spi.h"
+#include "lora_chip.h"
+#include "lora_platform.h"
 
 #if defined(LORA_ENABLE_SX1272) || defined(LORA_ENABLE_SX1276)
 
@@ -181,11 +181,29 @@ void LDL_Radio_setPA(struct lora_radio *self, enum lora_radio_pa pa)
     self->pa = pa;    
 }
 
+void LDL_Radio_setHandler(struct lora_radio *self, struct lora_mac *mac, lora_radio_event_fn handler)
+{
+    LORA_PEDANTIC(self != NULL)
+    
+    self->handler = handler;
+    self->mac = mac;
+}
+
+void LDL_Radio_interrupt(struct lora_radio *self, uint8_t n)
+{
+    LORA_PEDANTIC(self != NULL)
+    
+    if(self->handler != NULL){
+        
+        self->handler(self->mac, LDL_Radio_signal(self, n));
+    }
+}
+
 void LDL_Radio_reset(struct lora_radio *self, bool state)
 {
     LORA_PEDANTIC(self != NULL)
     
-    LDL_SPI_reset(self->board, state);
+    LDL_Chip_reset(self->board, state);
 }
 
 void LDL_Radio_transmit(struct lora_radio *self, const struct lora_radio_tx_setting *settings, const void *data, uint8_t len)
@@ -727,16 +745,16 @@ static void burstWrite(struct lora_radio *self, uint8_t reg, const uint8_t *data
 
     if(len > 0U){
 
-        LDL_SPI_select(self->board, true);
+        LDL_Chip_select(self->board, true);
         
-        LDL_SPI_write(self->board, reg | 0x80U);
+        LDL_Chip_write(self->board, reg | 0x80U);
 
         for(i=0; i < len; i++){
 
-            LDL_SPI_write(self->board, data[i]);
+            LDL_Chip_write(self->board, data[i]);
         }
 
-        LDL_SPI_select(self->board, false);
+        LDL_Chip_select(self->board, false);
     }
 }
 
@@ -746,16 +764,16 @@ static void burstRead(struct lora_radio *self, uint8_t reg, uint8_t *data, uint8
 
     if(len > 0U){
 
-        LDL_SPI_select(self->board, true);
+        LDL_Chip_select(self->board, true);
 
-        LDL_SPI_write(self->board, reg & 0x7fU);
+        LDL_Chip_write(self->board, reg & 0x7fU);
 
         for(i=0U; i < len; i++){
 
-            data[i] = LDL_SPI_read(self->board);
+            data[i] = LDL_Chip_read(self->board);
         }
 
-        LDL_SPI_select(self->board, false);
+        LDL_Chip_select(self->board, false);
     }
 }
 

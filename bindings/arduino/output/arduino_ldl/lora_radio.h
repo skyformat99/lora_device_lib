@@ -19,14 +19,25 @@
  *
  * */
 
-#ifndef LORA_RADIO_H
-#define LORA_RADIO_H
+#ifndef __LORA_RADIO_H
+#define __LORA_RADIO_H
 
 /** @file */
 
 /**
  * @defgroup ldl_radio Radio
  * @ingroup ldl
+ * 
+ * # Radio Driver Interface
+ * 
+ * The application must use the following interfaces to initialise the radio
+ * driver before calling LDL_MAC_init() :
+ * 
+ * - LDL_Radio_init()
+ * - LDL_Radio_setPA()
+ * 
+ * There are more radio interfaces than those documented in this group
+ * but the application does not need to interact with them directly.
  * 
  * @{
  * */
@@ -39,8 +50,6 @@ extern "C" {
 #include "lora_radio_defs.h"
 #include <stdint.h>
 #include <stdbool.h>
-
-struct lora_mac;
 
 enum lora_radio_event {    
     LORA_RADIO_EVENT_TX_COMPLETE,
@@ -103,7 +112,9 @@ enum lora_radio_pa {
     LORA_RADIO_PA_BOOST     /**< BOOST pin */
 };
 
-typedef void (*radio_event_handler_fn)(struct lora_mac *self, enum lora_radio_event event);
+struct lora_mac;
+
+typedef void (*lora_radio_event_fn)(struct lora_mac *self, enum lora_radio_event event);
 
 /** Radio data */
 struct lora_radio {
@@ -112,7 +123,10 @@ struct lora_radio {
     enum lora_radio_pa pa;
     uint8_t dio_mapping1;    
     enum lora_radio_type type;
+    struct lora_mac *mac;
+    lora_radio_event_fn handler;    
 };
+
 
 /** Initialise radio driver
  * 
@@ -120,7 +134,7 @@ struct lora_radio {
  * 
  * @param[in] self
  * @param[in] type  driver to initialise
- * @param[in] board passed to board interface functions (e.g. LDL_SPI_write())
+ * @param[in] board passed to board interface functions (e.g. LDL_Chip_write())
  * 
  * */
 void LDL_Radio_init(struct lora_radio *self, enum lora_radio_type type, void *board);
@@ -143,6 +157,20 @@ void LDL_Radio_init(struct lora_radio *self, enum lora_radio_type type, void *bo
  * 
  * */
 void LDL_Radio_setPA(struct lora_radio *self, enum lora_radio_pa pa);
+
+/** Receive an interrupt from the chip
+ * 
+ * @param[in] self  #lora_radio
+ * @param[in] n     DIO number
+ * 
+ * @ingroup ldl_radio_connector
+ * 
+ * @note this function is safe to call from an interrupt if LORA_SYSTEM_ENTER_CRITICAL() and LORA_SYSTEM_ENTER_CRITICAL() have been defined
+ * 
+ * */
+void LDL_Radio_interrupt(struct lora_radio *self, uint8_t n);
+
+void LDL_Radio_setHandler(struct lora_radio *self, struct lora_mac *mac, lora_radio_event_fn handler);
 
 void LDL_Radio_entropyBegin(struct lora_radio *self);
 unsigned int LDL_Radio_entropyEnd(struct lora_radio *self);

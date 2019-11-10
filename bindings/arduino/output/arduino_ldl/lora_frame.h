@@ -19,19 +19,15 @@
  *
  * */
 
-#ifndef LORA_FRAME_H
-#define LORA_FRAME_H
-
-/** @file */
+#ifndef __LORA_FRAME_H
+#define __LORA_FRAME_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "lora_platform.h"
 #include <stdint.h>
 #include <stdbool.h>
-#include <stddef.h>
 
 /* types **************************************************************/
 
@@ -42,6 +38,7 @@ enum lora_frame_type {
     FRAME_TYPE_DATA_UNCONFIRMED_DOWN,
     FRAME_TYPE_DATA_CONFIRMED_UP,
     FRAME_TYPE_DATA_CONFIRMED_DOWN,    
+    FRAME_TYPE_REJOIN_REQ
 };
 
 struct lora_frame_data {
@@ -57,56 +54,83 @@ struct lora_frame_data {
     uint8_t optsLen;
 
     uint8_t port;
+    
     const uint8_t *data;
     uint8_t dataLen;
+    
+    uint32_t mic;
 };
 
-struct lora_frame_join_accept {
+enum lora_frame_rejoin_type {
+        
+    LORA_REJOIN_TYPE_1,
+    LORA_REJOIN_TYPE_2,
+    LORA_REJOIN_TYPE_3
+};
+
+struct lora_frame_rejoin_request {
     
-    uint32_t appNonce;
+    enum lora_frame_rejoin_type type;
+    uint32_t netID;
+    uint8_t devEUI[8U];
+    uint16_t rjCount;    
+    uint32_t mic;
+};
+
+struct lora_frame_join_request {
+    
+    uint8_t joinEUI[8U];
+    uint8_t devEUI[8U];
+    uint16_t devNonce;    
+    uint32_t mic;
+};
+
+struct lora_frame_down {
+
+    enum lora_frame_type type;
+    
+    /* join accept */
+    uint32_t joinNonce;
     uint32_t netID;
     uint32_t devAddr;
     uint8_t rx1DataRateOffset;
     uint8_t rx2DataRate;
     uint8_t rxDelay;
+    bool optNeg;
+    uint8_t *cfList;
+    uint8_t cfListLen;
     
-    uint32_t cfList[5U];
-    enum { NO_CFLIST, FREQ_CFLIST, MASK_CFLIST } cfListType;    
-};
+    /* data */
+    /*uint32_t devAddr;*/
+    uint16_t counter;
+    bool ack;
+    bool adr;
+    bool adrAckReq;
+    bool pending;
 
-struct lora_frame_join_request {
-    
-    uint8_t appEUI[8U];
-    uint8_t devEUI[8U];
-    uint16_t devNonce;    
-};
+    uint8_t *opts;
+    uint8_t optsLen;
 
-struct lora_frame {
-
-    enum lora_frame_type type;
+    uint8_t port;
     
-    union {
-        
-        struct lora_frame_data data;
-        struct lora_frame_join_accept joinAccept;
-        struct lora_frame_join_request joinRequest;        
-        
-    } fields;
+    uint8_t *data;
+    uint8_t dataLen;
     
-    /* true if MIC validated */
-    bool valid;    
+    uint32_t mic;    
 };
 
 /* function prototypes ************************************************/
 
-size_t LDL_Frame_putData(enum lora_frame_type type, const void *nwkSKey, const void *appSKey, const struct lora_frame_data *f, void *out, size_t max);
-size_t LDL_Frame_putJoinRequest(const void *key, const struct lora_frame_join_request *f, void *out, size_t max);
-size_t LDL_Frame_putJoinAccept(const void *key, const struct lora_frame_join_accept *f, void *out, size_t max);
-bool LDL_Frame_decode(const void *appKey, const void *nwkSKey, const void *appSKey, void *in, size_t len, struct lora_frame *f);
-size_t LDL_Frame_getPhyPayloadSize(size_t dataLen, size_t optsLen);
-bool LDL_Frame_isUpstream(enum lora_frame_type type);
-size_t LDL_Frame_phyOverhead(void);
-size_t LDL_Frame_dataOverhead(void);
+uint8_t LDL_Frame_putData(enum lora_frame_type type, const struct lora_frame_data *f, void *out, uint8_t max);
+uint8_t LDL_Frame_putJoinRequest(const struct lora_frame_join_request *f, void *out, uint8_t max);
+uint8_t LDL_Frame_putRejoinRequest(const struct lora_frame_rejoin_request *f, void *out, uint8_t max);
+bool LDL_Frame_peek(const void *in, uint8_t len, enum lora_frame_type *type);
+bool LDL_Frame_decode(struct lora_frame_down *f, void *in, uint8_t len);
+
+uint8_t LDL_Frame_sizeofJoinAccept(bool withCFList);
+uint8_t LDL_Frame_getPhyPayloadSize(uint8_t dataLen, uint8_t optsLen);
+uint8_t LDL_Frame_phyOverhead(void);
+uint8_t LDL_Frame_dataOverhead(void);
 
 #ifdef __cplusplus
 }

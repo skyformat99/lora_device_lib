@@ -41,7 +41,7 @@
  * 
  * The following interface MUST be called when the radio signals an interrupt:
  * 
- * - LDL_Radio_interrupt()
+ * - LDL_MAC_interrupt()
  * 
  * The @ref ldl_radio_connector must be implemented in such a way as to ensure that LDL_MAC_interrupt()
  * will not be called before LDL_MAC_init() has been performed.
@@ -94,19 +94,19 @@
  * 
  * void dio0_rising_edge_isr(void)
  * {
- *   LDL_Radio_interrupt(&mac, 0);
+ *   LDL_MAC_interrupt(&mac, 0);
  * }
  * void dio1_rising_edge_isr(void)
  * {
- *   LDL_Radio_interrupt(&mac, 1);
+ *   LDL_MAC_interrupt(&mac, 1);
  * }
  * void dio2_rising_edge_isr(void)
  * {
- *   LDL_Radio_interrupt(&mac, 2);
+ *   LDL_MAC_interrupt(&mac, 2);
  * }
  * void dio3_rising_edge_isr(void)
  * {
- *   LDL_Radio_interrupt(&mac, 3);
+ *   LDL_MAC_interrupt(&mac, 3);
  * }
  * @endcode
  * 

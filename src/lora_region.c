@@ -35,10 +35,14 @@
     #define memcpy_P memcpy
     
 #endif
+
+#include "stddef.h"
     
 /* static function prototypes *****************************************/
 
 static bool upRateRange(enum lora_region region, uint8_t chIndex, uint8_t *minRate, uint8_t *maxRate);
+static uint8_t unpackCFListMask(const uint8_t *cfList, uint16_t *mask);
+static uint8_t unpackCFListFreq(const uint8_t *cfList, uint32_t *freq);
 
 /* functions **********************************************************/
 
@@ -96,7 +100,7 @@ void LDL_Region_convertRate(enum lora_region region, uint8_t rate, enum lora_spr
             *sf = SF_7;
             *bw = BW_125;
             *mtu = 250U;
-            LORA_ERROR("invalid rate")
+            LORA_INFO(NULL,"invalid rate")
             break;
         }
         break;
@@ -160,7 +164,7 @@ void LDL_Region_convertRate(enum lora_region region, uint8_t rate, enum lora_spr
             *sf = SF_7;
             *bw = BW_125;
             *mtu = 250U;
-            LORA_ERROR("invalid rate")
+            LORA_INFO(NULL,"invalid rate")
             break;
         }    
         break;
@@ -234,7 +238,7 @@ void LDL_Region_convertRate(enum lora_region region, uint8_t rate, enum lora_spr
             *sf = SF_7;
             *bw = BW_125;
             *mtu = 250U;
-            LORA_ERROR("invalid rate")
+            LORA_INFO(NULL,"invalid rate")
             break;
         }    
         break;
@@ -396,9 +400,9 @@ uint8_t LDL_Region_numChannels(enum lora_region region)
     return retval;    
 }
 
-void LDL_Region_getDefaultChannels(enum lora_region region, struct lora_mac *receiver, void (*handler)(struct lora_mac *reciever, uint8_t chIndex, uint32_t freq, uint8_t minRate, uint8_t maxRate))
+void LDL_Region_getDefaultChannels(enum lora_region region, struct lora_mac *mac)
 {
-    LORA_PEDANTIC(handler != NULL)
+    LORA_PEDANTIC(mac != NULL)
     
     uint8_t minRate;
     uint8_t maxRate;
@@ -411,9 +415,9 @@ void LDL_Region_getDefaultChannels(enum lora_region region, struct lora_mac *rec
     
         (void)upRateRange(region, 0U, &minRate, &maxRate);
         
-        handler(receiver, 0U, 868100000UL, minRate, maxRate);
-        handler(receiver, 1U, 868300000UL, minRate, maxRate);
-        handler(receiver, 2U, 868500000UL, minRate, maxRate);        
+        LDL_MAC_addChannel(mac, 0U, 868100000UL, minRate, maxRate);
+        LDL_MAC_addChannel(mac, 1U, 868300000UL, minRate, maxRate);
+        LDL_MAC_addChannel(mac, 2U, 868500000UL, minRate, maxRate);        
         break;
 #endif        
 #ifdef LORA_ENABLE_EU_433    
@@ -421,12 +425,87 @@ void LDL_Region_getDefaultChannels(enum lora_region region, struct lora_mac *rec
     
         (void)upRateRange(region, 0U, &minRate, &maxRate);
         
-        handler(receiver, 0U, 433175000UL, minRate, maxRate);
-        handler(receiver, 1U, 433375000UL, minRate, maxRate);
-        handler(receiver, 2U, 433575000UL, minRate, maxRate);        
+        LDL_MAC_addChannel(mac, 0U, 433175000UL, minRate, maxRate);
+        LDL_MAC_addChannel(mac, 1U, 433375000UL, minRate, maxRate);
+        LDL_MAC_addChannel(mac, 2U, 433575000UL, minRate, maxRate);        
         break;
 #endif        
     }
+}
+
+
+
+void LDL_Region_processCFList(enum lora_region region, struct lora_mac *mac, const uint8_t *cfList, uint8_t cfListLen)
+{
+    if(cfListLen == 16U){
+    
+        switch(region){
+        default:
+            break;
+
+#if defined(LORA_ENABLE_EU_863_870) || defined(LORA_ENABLE_EU_433)
+
+#   ifdef LORA_ENABLE_EU_863_870        
+        case EU_863_870:
+#   endif
+#   ifdef LORA_ENABLE_EU_433
+        case EU_433:
+#   endif        
+           /* 0 means frequency list */
+           if(cfList[15] == 0U){
+               
+                uint8_t minRate;
+                uint8_t maxRate;
+                uint32_t freq;
+                uint8_t i;
+                uint8_t pos;
+                
+                for(i=0U,pos=0U; i < 4U; i++){
+                
+                     pos += unpackCFListFreq(&cfList[pos], &freq);
+                     
+                     (void)upRateRange(region, i+4U, &minRate, &maxRate);                 
+                     
+                     (void)LDL_MAC_addChannel(mac, i+4U, freq, minRate, maxRate);
+                }            
+            }        
+            break;
+#endif  
+
+#if defined(LORA_ENABLE_US_902_928) || defined(LORA_ENABLE_AU_915_928)
+      
+#   ifdef LORA_ENABLE_US_902_928
+        case US_902_928:
+            break;
+#   endif
+#   ifdef LORA_ENABLE_AU_915_928
+        case AU_915_928:        
+#   endif
+            /* 1 means mask list */
+           if(cfList[15] == 1U){
+                
+                uint16_t mask;
+                uint8_t i;
+                uint8_t b;
+                uint8_t pos;
+                
+                for(i=0U,pos=0U; i < 5U; i++){
+                
+                    pos += unpackCFListMask(&cfList[pos], &mask);
+                     
+                     for(b=0U; b < 16U; b++){
+                                        
+                        if((mask & (1 << b)) > 0U){ 
+                        
+                            (void)LDL_MAC_unmaskChannel(mac, (i * 16U) + b);
+                        }
+                    }                 
+                }            
+            }        
+            break;
+#endif        
+        }
+    }    
 }
 
 uint32_t LDL_Region_getOffTimeFactor(enum lora_region region, uint8_t band)
@@ -570,7 +649,7 @@ void LDL_Region_getRX1DataRate(enum lora_region region, uint8_t tx_rate, uint8_t
         else{
                         
             *rx1_rate = tx_rate;
-            LORA_ERROR("out of range error")
+            LORA_INFO(NULL,"out of range error")
         }
     }        
 }
@@ -593,11 +672,6 @@ void LDL_Region_getRX1Freq(enum lora_region region, uint32_t txFreq, uint8_t chI
         break;    
 #endif        
     }
-}
-
-uint16_t LDL_Region_getMaxFCNTGap(enum lora_region region)
-{
-    return 16384U;        
 }
 
 uint8_t LDL_Region_getRX1Delay(enum lora_region region)
@@ -897,6 +971,28 @@ static bool upRateRange(enum lora_region region, uint8_t chIndex, uint8_t *minRa
     }
     
     return retval;
+}
+
+static uint8_t unpackCFListFreq(const uint8_t *cfList, uint32_t *freq)
+{
+    *freq = cfList[0];
+    *freq <<= 8;
+    *freq |= cfList[1];
+    *freq <<= 8;
+    *freq |= cfList[2];
+    
+    *freq *= 100UL;
+    
+    return 3U;
+}
+
+static uint8_t unpackCFListMask(const uint8_t *cfList, uint16_t *mask)
+{
+    *mask = cfList[0];
+    *mask <<= 8;
+    *mask |= cfList[1];
+    
+    return 2U;    
 }
 
 #ifndef LORA_ENABLE_AVR

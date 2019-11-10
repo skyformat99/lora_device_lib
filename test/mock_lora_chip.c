@@ -6,12 +6,12 @@
 
 #include "cmocka.h"
 #include "lora_radio.h"
-#include "mock_board.h"
+#include "mock_lora_chip.h"
 #include "lora_chip.h"
 
 void LDL_Chip_select(void *self, bool state)
 {
-    struct mock_chip *_self = (struct mock_chip *)self;
+    struct mock_lora_chip *_self = (struct mock_lora_chip *)self;
     
     if(state){
         
@@ -29,7 +29,7 @@ void LDL_Chip_select(void *self, bool state)
 
 void LDL_Chip_reset(void *self, bool state)
 {
-    struct mock_chip *_self = (struct mock_chip *)_self;
+    struct mock_lora_chip *_self = (struct mock_lora_chip *)_self;
     
     if(state){
         
@@ -47,7 +47,7 @@ void LDL_Chip_reset(void *self, bool state)
 
 void LDL_Chip_write(void *self, uint8_t data)
 {
-    struct mock_chip *_self = (struct mock_chip *)self;
+    struct mock_lora_chip *_self = (struct mock_lora_chip *)self;
     
     assert_true(_self->select);
     assert_false(_self->reset);    
@@ -57,7 +57,7 @@ void LDL_Chip_write(void *self, uint8_t data)
 
 uint8_t LDL_Chip_read(void *self)
 {
-    struct mock_chip *_self = (struct mock_chip *)self;
+    struct mock_lora_chip *_self = (struct mock_lora_chip *)self;
     
     assert_true(_self->select);
     assert_false(_self->reset);

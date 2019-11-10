@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef LORA_SYSTEM_H
-#define LORA_SYSTEM_H
+#ifndef __LORA_SYSTEM_H
+#define __LORA_SYSTEM_H
 
 /** @file */
 
@@ -69,15 +69,14 @@ extern "C" {
 
 struct lora_mac_session;
 
-/** Identifiers and application key */
+/** Identifiers */
 struct lora_system_identity {
   
-    uint8_t appEUI[8U];     /**< application identifier */
+    uint8_t joinEUI[8U];    /**< join identifier */
     uint8_t devEUI[8U];     /**< device identifier */
-    uint8_t appKey[16U];    /**< application key */
 };
 
-/** This function returns AppEUI, DevEUI, and DevKey.
+/** This function returns device identifiers
  * 
  * @param[in]   app     from LDL_MAC_init()
  * @param[out]  value   #lora_system_identity
@@ -130,13 +129,8 @@ uint32_t LDL_System_eps(void);
  * @retval (0..255)
  * 
  * 
- * LDL includes the following weak implementation.
- * @code{.c}
- * uint8_t LDL_System_rand(void *app)
- * {
- *     return rand();
- * }
- * @endcode
+ * LDL includes the following weak implementation:
+ * @snippet src/lora_system.c LDL_System_rand
  * 
  * */
 uint8_t LDL_System_rand(void *app);
@@ -151,12 +145,7 @@ uint8_t LDL_System_rand(void *app);
  * 
  *  
  * LDL includes the following weak implementation:
- * @code{.c}
- * uint8_t LDL_System_getBatteryLevel(void *app)
- * {
- *     return 255U;
- * }
- * @endcode
+ * @snippet src/lora_system.c LDL_System_getBatteryLevel
  * 
  * */
 uint8_t LDL_System_getBatteryLevel(void *app);
@@ -164,24 +153,21 @@ uint8_t LDL_System_getBatteryLevel(void *app);
 /** Advance schedule by this many ticks to compensate for delay
  * between detecting an event and processing it.
  * 
- * LDL includes the following weak implementation:
- * @code{.c}
- * uint8_t LDL_System_advance(void *app)
- * {
- *     return 0U;
- * }
- * @endcode
- * 
  * @retval ticks
+ * 
+ * 
+ * LDL includes the following weak implementation:
+ * @snippet src/lora_system.c LDL_System_advance
  * 
  * */
 uint32_t LDL_System_advance(void);
 
-/** Called once during LDL_MAC_init() to restore saved context
+/** Called once during LDL_MAC_init() to restore saved session data
  * 
  * Returning false indicates to LDL that there is no saved context
  * and that LDL should restore from defaults.
  * 
+ * Note that #lora_mac_session does not contain secrets.
  * 
  * @param[in] app       from LDL_MAC_init()
  * @param[out] value    session data
@@ -189,28 +175,23 @@ uint32_t LDL_System_advance(void);
  * @retval true     restored
  * @retval false    not-restored
  * 
+ * 
  * LDL includes the following weak implementation:
- * @code{.c}
- * bool LDL_System_restoreContext(void *app, struct lora_mac_session *value)
- * {
- *     return false;
- * }
- * @endcode
+ * @snippet src/lora_system.c LDL_System_restoreContext
  * 
  * */
 bool LDL_System_restoreContext(void *app, struct lora_mac_session *value);
 
-/** Called by LDL every time lora_mac_session changes
+/** Called by LDL every time #lora_mac_session changes
+ * 
+ * Note that #lora_mac_session does not contain secrets.
  * 
  * @param[in] app       from LDL_MAC_init()
  * @param[in] value     session data
  * 
+ * 
  * LDL includes the following weak implementation:
- * @code{.c}
- * void LDL_System_saveContext(void *app, const struct lora_mac_session *value)
- * {
- * }
- * @endcode
+ * @snippet src/lora_system.c LDL_System_saveContext
  * 
  * */
 void LDL_System_saveContext(void *app, const struct lora_mac_session *value);

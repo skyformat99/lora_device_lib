@@ -34,7 +34,13 @@ SRC_CMOCKA := $(notdir $(wildcard $(DIR_CMOCKA)/src/*.c))
 OBJ := $(SRC:.c=.o)
 OBJ_CMOCKA := $(SRC_CMOCKA:.c=.o)
 
-TESTS := $(basename $(wildcard tc_*.c))
+TESTS += tc_aes 
+TESTS += tc_cmac
+TESTS += tc_frame
+TESTS += tc_mac_commands
+TESTS += tc_input
+TESTS += tc_timer
+
 
 LINE := ================================================================
 
@@ -81,35 +87,31 @@ $(DIR_BIN)/tc_cmac: $(addprefix $(DIR_BUILD)/, tc_cmac.o lora_cmac.o lora_aes.o 
 	@ echo linking $@
 	@ $(CC) $(LDFLAGS) $^ -o $@
 
-$(DIR_BIN)/tc_frame: $(addprefix $(DIR_BUILD)/, tc_frame.o lora_frame.o mock_lora_cmac.o mock_lora_aes.o $(OBJ_CMOCKA))
+$(DIR_BIN)/tc_frame: $(addprefix $(DIR_BUILD)/, tc_frame.o lora_frame.o lora_stream.o $(OBJ_CMOCKA))
 	@ echo linking $@
 	@ $(CC) $(LDFLAGS) $^ -o $@
 
-$(DIR_BIN)/tc_frame_with_encryption: $(addprefix $(DIR_BUILD)/, tc_frame_with_encryption.o lora_frame.o lora_cmac.o lora_aes.o $(OBJ_CMOCKA))
-	@ echo linking $@
-	@ $(CC) $(LDFLAGS) $^ -o $@
+#$(DIR_BIN)/tc_frame_with_encryption: $(addprefix $(DIR_BUILD)/, tc_frame_with_encryption.o lora_frame.o lora_cmac.o lora_aes.o $(OBJ_CMOCKA))
+#	@ echo linking $@
+#	@ $(CC) $(LDFLAGS) $^ -o $@
 
 # removed separate event...need to rework this
 #$(DIR_BIN)/tc_event: $(addprefix $(DIR_BUILD)/, tc_event.o lora_event.o mock_system_time.o mock_lora_system.o $(OBJ_CMOCKA))
 #	@ echo linking $@
 #	@ $(CC) $(LDFLAGS) $^ -o $@
 
+$(DIR_BIN)/tc_input: CFLAGS += -DLORA_ENABLE_SX1272
+$(DIR_BIN)/tc_input: CFLAGS += -DLORA_ENABLE_SX1276
+$(DIR_BIN)/tc_input: $(addprefix $(DIR_BUILD)/, $(OBJ) tc_input.o mock_lora_system.o mock_lora_chip.o $(OBJ_CMOCKA))
+	@ echo linking $@
+	@ $(CC) $(LDFLAGS) $^ -o $@
+
+$(DIR_BIN)/tc_timer: CFLAGS += -DLORA_ENABLE_SX1272
+$(DIR_BIN)/tc_timer: CFLAGS += -DLORA_ENABLE_SX1276
+$(DIR_BIN)/tc_timer: $(addprefix $(DIR_BUILD)/, $(OBJ) tc_timer.o mock_lora_system.o mock_lora_chip.o $(OBJ_CMOCKA))
+	@ echo linking $@
+	@ $(CC) $(LDFLAGS) $^ -o $@
+
 $(DIR_BIN)/tc_mac_commands: $(addprefix $(DIR_BUILD)/, tc_mac_commands.o lora_mac_commands.o lora_stream.o $(OBJ_CMOCKA))
-	@ echo linking $@
-	@ $(CC) $(LDFLAGS) $^ -o $@
-
-$(DIR_BIN)/tc_region: $(addprefix $(DIR_BUILD)/, tc_region.o lora_region.o $(OBJ_CMOCKA))
-	@ echo linking $@
-	@ $(CC) $(LDFLAGS) $^ -o $@
-
-$(DIR_BIN)/tc_integration_sx1272: CFLAGS += -DLORA_ENABLE_SX1272
-$(DIR_BIN)/tc_integration_sx1272: CFLAGS += -DLORA_ENABLE_SX1276
-$(DIR_BIN)/tc_integration_sx1272: $(addprefix $(DIR_BUILD)/, common_integration.o  mock_lora_system.o mock_system_time.o $(OBJ) $(OBJ_CMOCKA))
-	@ echo linking $@
-	@ $(CC) $(LDFLAGS) $^ -o $@
-
-$(DIR_BIN)/tc_integration_sx1276: CFLAGS += -DLORA_ENABLE_SX1272
-$(DIR_BIN)/tc_integration_sx1276: CFLAGS += -DLORA_ENABLE_SX1276
-$(DIR_BIN)/tc_integration_sx1276: $(addprefix $(DIR_BUILD)/, common_integration.o mock_lora_system.o mock_system_time.o $(OBJ) $(OBJ_CMOCKA))
 	@ echo linking $@
 	@ $(CC) $(LDFLAGS) $^ -o $@

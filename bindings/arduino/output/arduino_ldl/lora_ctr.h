@@ -18,9 +18,9 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * */
- 
-#ifndef __LORA_CMAC_H
-#define __LORA_CMAC_H
+
+#ifndef __LORA_CTR_H
+#define __LORA_CTR_H
 
 /** @file */
 
@@ -34,49 +34,26 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
-#include <stddef.h>
+#include "stdint.h"
+#include "lora_aes.h"
 
 struct lora_aes_ctx;
 
-/** CMAC state */
-struct lora_cmac_ctx {
-
-    const struct lora_aes_ctx *aes_ctx;
-    uint8_t m[16U];
-    uint8_t x[16U];
-    uint32_t size;
-};
-
-/** Initialise CMAC state
+/** Counter mode encryption
  * 
- * @param[in] ctx
- * @param[in] aes_ctx block cipher state
+ * @param[in] ctx   #lora_aes_ctx
+ * @param[in] iv    16 byte initial value
+ * @param[in] in    input buffer to encrypt
+ * @param[out] out  output buffer (can be same as in)
+ * @param[in] len   size of input
  * 
  * */
-void LDL_CMAC_init(struct lora_cmac_ctx *ctx, const struct lora_aes_ctx *aes_ctx);
-
-/** Update CMAC state
- * 
- * @param[in] ctx
- * @param[in] data
- * @param[in] len
- * 
- * */
-void LDL_CMAC_update(struct lora_cmac_ctx *ctx, const void *data, uint8_t len);
-
-/** Produce CMAC output from current state
- * 
- * @param[in]   ctx
- * @param[out]  out
- * @param[in]   outMax 
- * 
- * */
-void LDL_CMAC_finish(const struct lora_cmac_ctx *ctx, void *out, uint8_t outMax);
+void LDL_CTR_encrypt(struct lora_aes_ctx *ctx, const void *iv, const void *in, void *out, uint8_t len);
 
 #ifdef __cplusplus
 }
 #endif
 
 /** @} */
+
 #endif

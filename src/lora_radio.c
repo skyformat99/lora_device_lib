@@ -23,8 +23,8 @@
 
 #include "lora_debug.h"
 #include "lora_radio.h"
-#include "lora_system.h"
 #include "lora_chip.h"
+#include "lora_platform.h"
 
 #if defined(LORA_ENABLE_SX1272) || defined(LORA_ENABLE_SX1276)
 
@@ -179,6 +179,24 @@ void LDL_Radio_setPA(struct lora_radio *self, enum lora_radio_pa pa)
     LORA_PEDANTIC(self != NULL)
     
     self->pa = pa;    
+}
+
+void LDL_Radio_setHandler(struct lora_radio *self, struct lora_mac *mac, lora_radio_event_fn handler)
+{
+    LORA_PEDANTIC(self != NULL)
+    
+    self->handler = handler;
+    self->mac = mac;
+}
+
+void LDL_Radio_interrupt(struct lora_radio *self, uint8_t n)
+{
+    LORA_PEDANTIC(self != NULL)
+    
+    if(self->handler != NULL){
+        
+        self->handler(self->mac, LDL_Radio_signal(self, n));
+    }
 }
 
 void LDL_Radio_reset(struct lora_radio *self, bool state)

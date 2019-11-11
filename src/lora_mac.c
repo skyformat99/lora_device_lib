@@ -188,15 +188,8 @@ bool LDL_MAC_otaa(struct lora_mac *self)
                 
                 f.devNonce = self->devNonce;
 
-                /* encode frame with dummy MIC */
-                self->bufferLen = LDL_Frame_putJoinRequest(&f, self->buffer, sizeof(self->buffer));
-                
-                /* can caculate the MIC */
-                f.mic = LDL_OPS_micJoinRequest(self, self->buffer, self->bufferLen - sizeof(f.mic));
-                
-                /* simply encode frame again this time with real MIC */
-                self->bufferLen = LDL_Frame_putJoinRequest(&f, self->buffer, sizeof(self->buffer));
-                
+                LDL_OPS_prepareJoinRequest(self, &f);
+
                 delay = rand32(self->app) % (60UL*LDL_System_tps());
                 
                 LORA_DEBUG(self->app, "sending join in %"PRIu32" ticks", delay)
@@ -713,6 +706,9 @@ void LDL_MAC_process(struct lora_mac *self)
                 case FRAME_TYPE_DATA_UNCONFIRMED_DOWN:
                 case FRAME_TYPE_DATA_CONFIRMED_DOWN:
                                 
+                    
+                    LDL_OPS_syncDownCounter(self, frame.port, frame.counter);
+                        
                     self->adrAckCounter = 0U;
                     self->rxParamSetupAns_pending = false;    
                     self->dlChannelAns_pending = false;
@@ -769,6 +765,7 @@ void LDL_MAC_process(struct lora_mac *self)
                             f.counter = self->ctx.up;
                             f.adr = self->ctx.adr;
                             f.adrAckReq = self->adrAckReq;
+                            f.type = FRAME_TYPE_DATA_UNCONFIRMED_UP;
                             
                             if(cmd_len <= 15U){
                                 
@@ -781,9 +778,7 @@ void LDL_MAC_process(struct lora_mac *self)
                                 f.dataLen = cmd_len;
                             }
                             
-                            self->bufferLen = LDL_Frame_putData(FRAME_TYPE_DATA_UNCONFIRMED_UP, &f, self->buffer, sizeof(self->buffer));
-                            
-                            LDL_OPS_encryptData(self, self->buffer, self->bufferLen);
+                            LDL_OPS_prepareData(self, &f);
                             
                             self->op = LORA_OP_DATA_UNCONFIRMED;
                             self->state = LORA_STATE_WAIT_RETRY;
@@ -1457,6 +1452,7 @@ static bool dataCommand(struct lora_mac *self, bool confirmed, uint8_t port, con
     
     self->ctx.up++;
     
+    f.type = confirmed ? FRAME_TYPE_DATA_CONFIRMED_UP : FRAME_TYPE_DATA_UNCONFIRMED_UP;
     f.devAddr = self->ctx.devAddr;
     f.counter = self->ctx.up;
     f.adr = self->ctx.adr;
@@ -1473,27 +1469,26 @@ static bool dataCommand(struct lora_mac *self, bool confirmed, uint8_t port, con
         f.data = data;
         f.dataLen = len;
         
-        self->bufferLen = LDL_Frame_putData(confirmed ? FRAME_TYPE_DATA_CONFIRMED_UP : FRAME_TYPE_DATA_UNCONFIRMED_UP, &f, self->buffer, sizeof(self->buffer));
-        LDL_OPS_encryptData(self, self->buffer, self->bufferLen);
+        LDL_OPS_prepareData(self, &f);
         
         self->op = confirmed ? LORA_OP_DATA_CONFIRMED : LORA_OP_DATA_UNCONFIRMED;
-        
+                
         retval = true;
     }
     /* no room for data, prioritise data */
     else{
         
+        f.type = FRAME_TYPE_DATA_UNCONFIRMED_UP;
         f.port = 0U;
         f.data = opts;
         f.dataLen = f.optsLen;
         f.opts = NULL;
         f.optsLen = 0U;
         
-        self->bufferLen = LDL_Frame_putData(FRAME_TYPE_DATA_UNCONFIRMED_UP, &f, self->buffer, sizeof(self->buffer));
-        self->op = LORA_OP_DATA_UNCONFIRMED;
-        self->errno = LORA_ERRNO_SIZE;  //fixme: special error code to say goalpost moved?
+        LDL_OPS_prepareData(self, &f);
         
-        LDL_OPS_encryptData(self, self->buffer, self->bufferLen);
+        self->op = LORA_OP_DATA_UNCONFIRMED;
+        self->errno = LORA_ERRNO_SIZE;          //fixme: special error code to say goalpost moved?                
     }
     
     /* putData must have failed for some reason */

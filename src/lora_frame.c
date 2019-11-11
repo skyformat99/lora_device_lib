@@ -31,7 +31,21 @@ static bool getFrameType(uint8_t tag, enum lora_frame_type *type);
 
 /* functions **********************************************************/
 
-uint8_t LDL_Frame_putData(enum lora_frame_type type, const struct lora_frame_data *f, void *out, uint8_t max)
+void LDL_Frame_updateMIC(void *msg, uint8_t len, uint32_t mic)
+{
+    struct lora_stream s;    
+    
+    if(len > sizeof(mic)){
+    
+        LDL_Stream_init(&s, msg, len);
+        
+        LDL_Stream_seekSet(&s, len - sizeof(mic));
+        
+        LDL_Stream_putU32(&s, mic);    
+    }
+}
+
+uint8_t LDL_Frame_putData(const struct lora_frame_data *f, void *out, uint8_t max, struct lora_frame_data_offset *off)
 {
     struct lora_stream s;    
     
@@ -39,16 +53,18 @@ uint8_t LDL_Frame_putData(enum lora_frame_type type, const struct lora_frame_dat
     
     if(f->optsLen <= 0xfU){
 
-        LDL_Stream_putU8(&s, ((uint8_t)type) << 5);
+        LDL_Stream_putU8(&s, ((uint8_t)f->type) << 5);
         LDL_Stream_putU32(&s, f->devAddr);
         LDL_Stream_putU8(&s, (f->adr ? 0x80U : 0U) | (f->adrAckReq ? 0x40U : 0U) | (f->ack ? 0x20U : 0U) | (f->pending ? 0x10U : 0U) | (f->optsLen & 0xfU));
         LDL_Stream_putU16(&s, f->counter);
         
+        off->opts = LDL_Stream_tell(&s);
         LDL_Stream_write(&s, f->opts, f->optsLen);
         
         if(f->data != NULL){
 
-            LDL_Stream_putU8(&s, f->port);
+            LDL_Stream_putU8(&s, f->port);            
+            off->data = LDL_Stream_tell(&s);            
             LDL_Stream_write(&s, f->data, f->dataLen);        
         }
         

@@ -28,6 +28,7 @@
 struct lora_mac;
 struct lora_frame_data;
 struct lora_frame_down;
+struct lora_frame_join_request;
 
 struct lora_block {
     
@@ -40,8 +41,8 @@ void LDL_OPS_deriveKeys2(struct lora_mac *self, uint32_t joinNonce, const uint8_
 
 bool LDL_OPS_receiveFrame(struct lora_mac *self, struct lora_frame_down *f, uint8_t *in, uint8_t len);
 
-void LDL_OPS_encryptData(struct lora_mac *self, void *buf, uint8_t buflen);
-void LDL_OPS_decryptData(struct lora_mac *self, struct lora_frame_down *f);
+void LDL_OPS_prepareData(struct lora_mac *self, const struct lora_frame_data *f);
+void LDL_OPS_prepareJoinRequest(struct lora_mac *self, const struct lora_frame_join_request *f);
 
 uint32_t LDL_OPS_micDataUp(struct lora_mac *self, uint32_t devAddr, uint32_t upCounter, const void *data, uint8_t len);
 uint32_t LDL_OPS_micDataUp2(struct lora_mac *self, uint16_t downCounter, uint8_t rate, uint8_t chIndex, uint32_t devAddr, uint32_t upCounter, const void *data, uint8_t len);
@@ -54,7 +55,6 @@ uint32_t LDL_OPS_micJoinAccept2(struct lora_mac *self, uint8_t joinReqType, cons
 
 uint32_t LDL_OPS_micJoinRequest(struct lora_mac *self, const void *joinRequest, uint8_t len);
 
-uint32_t LDL_OPS_deriveDownCounter(struct lora_mac *self, uint8_t port, uint16_t counter);
 void LDL_OPS_syncDownCounter(struct lora_mac *self, uint8_t port, uint16_t counter);
 
 #endif

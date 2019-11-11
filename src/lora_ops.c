@@ -30,34 +30,16 @@ static void hdrDataDown2(struct lora_block *iv, uint16_t upCounter, uint32_t dev
 static void hdrDataDown(struct lora_block *iv, uint32_t devAddr, uint32_t downCounter, uint8_t len);
 static void hdrDataUp2(struct lora_block *iv, uint16_t downCounter, uint8_t rate, uint8_t chIndex, uint32_t devAddr, uint32_t upCounter, uint8_t len);
 static void hdrDataUp(struct lora_block *iv, uint32_t devAddr, uint32_t upCounter, uint8_t len);
+static void dataIV(struct lora_block *iv, uint32_t devAddr, bool upstream, uint32_t counter);
+static uint32_t deriveDownCounter(struct lora_mac *self, uint8_t port, uint16_t counter);
 
 /* functions **********************************************************/
-
-uint32_t LDL_OPS_deriveDownCounter(struct lora_mac *self, uint8_t port, uint16_t counter)
-{
-    LORA_PEDANTIC(self != NULL)
-    
-    uint32_t mine = ((self->ctx.version > 0U) && (port == 0U)) ? (uint32_t)self->ctx.nwkDown : (uint32_t)self->ctx.appDown;
-    
-    mine = mine << 16;
-    
-    if((uint32_t)counter < mine){
-        
-        mine = mine + 0x10000UL + (uint32_t)counter;
-    }
-    else{
-        
-        mine = mine + (uint32_t)counter;
-    }    
-    
-    return mine;
-}
 
 void LDL_OPS_syncDownCounter(struct lora_mac *self, uint8_t port, uint16_t counter)
 {
     LORA_PEDANTIC(self != NULL)
     
-    uint32_t derived = LDL_OPS_deriveDownCounter(self, port, counter);
+    uint32_t derived = deriveDownCounter(self, port, counter);
     
     if((self->ctx.version > 0U) && (port == 0U)){
         
@@ -156,6 +138,51 @@ void LDL_OPS_deriveKeys2(struct lora_mac *self, uint32_t joinNonce, const uint8_
     LDL_SM_endUpdateSessionKey(self->sm);    
 }
 
+void LDL_OPS_prepareData(struct lora_mac *self, const struct lora_frame_data *f)
+{
+    struct lora_block iv;
+    struct lora_frame_data_offset off;
+    uint32_t mic;
+    
+    dataIV(&iv, f->devAddr, true, f->counter);
+    
+    self->bufferLen = LDL_Frame_putData(f, self->buffer, sizeof(self->buffer), &off);
+    
+    if(self->ctx.version == 1U){
+        
+        if(f->optsLen > 0U){
+            
+            LDL_SM_ctr(self->sm, LORA_SM_KEY_NWKSENC, &iv, &self->buffer[off.opts], f->optsLen);    
+        }
+        else{
+                        
+            LDL_SM_ctr(self->sm, (f->port == 0U) ? LORA_SM_KEY_NWKSENC : LORA_SM_KEY_APPS, &iv, &self->buffer[off.data], f->dataLen);                
+        }
+        
+        /* not handling the acknowledge case */
+        mic = LDL_OPS_micDataUp2(self, 0U, self->tx.rate, self->tx.chIndex, f->devAddr, f->counter, self->buffer, self->bufferLen-sizeof(mic));//do mic
+    }
+    else{
+        
+        LDL_SM_ctr(self->sm, (f->port == 0U) ? LORA_SM_KEY_NWKSENC : LORA_SM_KEY_APPS, &iv, &self->buffer[off.data], f->dataLen);                
+        
+        mic = LDL_OPS_micDataUp(self, f->devAddr, f->counter, self->buffer, self->bufferLen-sizeof(mic));
+    }
+    
+    LDL_Frame_updateMIC(self->buffer, self->bufferLen, mic);        
+}
+
+void LDL_OPS_prepareJoinRequest(struct lora_mac *self, const struct lora_frame_join_request *f)
+{
+    uint32_t mic;
+    
+    self->bufferLen = LDL_Frame_putJoinRequest(f, self->buffer, sizeof(self->buffer));
+    
+    mic = LDL_OPS_micJoinRequest(self, self->buffer, self->bufferLen - sizeof(f->mic));
+    
+    LDL_Frame_updateMIC(self->buffer, self->bufferLen, mic);
+}
+
 bool LDL_OPS_receiveFrame(struct lora_mac *self, struct lora_frame_down *f, uint8_t *in, uint8_t len)
 {
     bool retval = false;
@@ -163,6 +190,7 @@ bool LDL_OPS_receiveFrame(struct lora_mac *self, struct lora_frame_down *f, uint
     uint32_t mic;
     enum lora_frame_type type;
     struct lora_system_identity id;
+    struct lora_block iv;
     
     switch(self->op){
     default:
@@ -241,7 +269,7 @@ bool LDL_OPS_receiveFrame(struct lora_mac *self, struct lora_frame_down *f, uint
             
                 if(self->ctx.devAddr == f->devAddr){
                     
-                    uint32_t counter = LDL_OPS_deriveDownCounter(self, f->port, f->counter);
+                    uint32_t counter = deriveDownCounter(self, f->port, f->counter);
             
                     if((self->ctx.version == 1U) && f->ack){
                     
@@ -255,17 +283,22 @@ bool LDL_OPS_receiveFrame(struct lora_mac *self, struct lora_frame_down *f, uint
         
                     if(mic == f->mic){
                         
-                        LDL_OPS_syncDownCounter(self, f->port, f->counter);    
+                        dataIV(&iv, f->devAddr, false, f->counter);
                         
-                        LDL_OPS_decryptData(self->app, f);                            
+                        /* V1.1 seems to have snuck this breaking change in */
+                        if((self->ctx.version == 1U) && (f->optsLen > 0)){
+                            
+                            LDL_SM_ctr(self->sm, LORA_SM_KEY_NWKSENC, &iv, f->opts, f->optsLen);    
+                        }
                         
+                        LDL_SM_ctr(self->sm, (f->port == 0U) ? LORA_SM_KEY_NWKSENC : LORA_SM_KEY_APPS, &iv, f->data, f->dataLen);
+                       
                         retval = true;
                     }
                     else{
                                             
                         LORA_INFO(NULL, "mic failed")
-                    }       
-                    
+                    }                           
                 }
                 else{
                     
@@ -316,37 +349,6 @@ void LDL_OPS_encryptData(struct lora_mac *self, void *buf, uint8_t bufLen)
     }
 }
 
-void LDL_OPS_decryptData(struct lora_mac *self, struct lora_frame_down *f)
-{
-    LORA_PEDANTIC(self != NULL)
-    
-    struct lora_block iv;
-    
-    iv.value[0] = 1U;
-    iv.value[1] = 0U;
-    iv.value[2] = 0U;
-    iv.value[3] = 0U;
-    iv.value[4] = 0U;    
-    iv.value[5] = 1U;
-    iv.value[6] = f->devAddr;
-    iv.value[7] = f->devAddr >> 8;
-    iv.value[8] = f->devAddr >> 16;
-    iv.value[9] = f->devAddr >> 24;
-    iv.value[10] = f->counter;
-    iv.value[11] = f->counter >> 8;
-    iv.value[12] = f->counter >> 16;
-    iv.value[13] = f->counter >> 24;
-    iv.value[14] = 0U;
-    iv.value[15] = 0U;
-    
-    /* V1.1 seems to have snuck this breaking change in */
-    if((self->ctx.version == 1U) && (f->optsLen > 0)){
-        
-        LDL_SM_ctr(self->sm, LORA_SM_KEY_NWKSENC, &iv, f->opts, f->optsLen);    
-    }
-    
-    LDL_SM_ctr(self->sm, (f->port == 0U) ? LORA_SM_KEY_NWKSENC : LORA_SM_KEY_APPS, &iv, f->data, f->dataLen);
-}
 
 uint32_t LDL_OPS_micDataUp(struct lora_mac *self, uint32_t devAddr, uint32_t upCounter, const void *data, uint8_t len)
 {    
@@ -465,4 +467,44 @@ static void hdrDataDown2(struct lora_block *iv, uint16_t upCounter, uint32_t dev
 {
     hdrDataUp2(iv, upCounter, 0U, 0U, devAddr, downCounter, len);
     iv->value[5] = 1U;
+}
+
+static void dataIV(struct lora_block *iv, uint32_t devAddr, bool upstream, uint32_t counter)
+{
+    iv->value[0] = 1U;
+    iv->value[1] = 0U;
+    iv->value[2] = 0U;
+    iv->value[3] = 0U;
+    iv->value[4] = 0U;    
+    iv->value[5] = upstream ? 0U : 1U;
+    iv->value[6] = devAddr;
+    iv->value[7] = devAddr >> 8;
+    iv->value[8] = devAddr >> 16;
+    iv->value[9] = devAddr >> 24;
+    iv->value[10] = counter;
+    iv->value[11] = counter >> 8;
+    iv->value[12] = counter >> 16;
+    iv->value[13] = counter >> 24;
+    iv->value[14] = 0U;
+    iv->value[15] = 0U;
+}
+
+static uint32_t deriveDownCounter(struct lora_mac *self, uint8_t port, uint16_t counter)
+{
+    LORA_PEDANTIC(self != NULL)
+    
+    uint32_t mine = ((self->ctx.version > 0U) && (port == 0U)) ? (uint32_t)self->ctx.nwkDown : (uint32_t)self->ctx.appDown;
+    
+    mine = mine << 16;
+    
+    if((uint32_t)counter < mine){
+        
+        mine = mine + 0x10000UL + (uint32_t)counter;
+    }
+    else{
+        
+        mine = mine + (uint32_t)counter;
+    }    
+    
+    return mine;
 }

@@ -43,6 +43,8 @@ enum lora_frame_type {
 
 struct lora_frame_data {
     
+    enum lora_frame_type type;
+    
     uint32_t devAddr;
     uint16_t counter;
     bool ack;
@@ -59,6 +61,12 @@ struct lora_frame_data {
     uint8_t dataLen;
     
     uint32_t mic;
+};
+
+struct lora_frame_data_offset {
+
+    uint8_t opts;
+    uint8_t data;
 };
 
 enum lora_frame_rejoin_type {
@@ -121,7 +129,8 @@ struct lora_frame_down {
 
 /* function prototypes ************************************************/
 
-uint8_t LDL_Frame_putData(enum lora_frame_type type, const struct lora_frame_data *f, void *out, uint8_t max);
+void LDL_Frame_updateMIC(void *msg, uint8_t len, uint32_t mic);
+uint8_t LDL_Frame_putData(const struct lora_frame_data *f, void *out, uint8_t max, struct lora_frame_data_offset *off);
 uint8_t LDL_Frame_putJoinRequest(const struct lora_frame_join_request *f, void *out, uint8_t max);
 uint8_t LDL_Frame_putRejoinRequest(const struct lora_frame_rejoin_request *f, void *out, uint8_t max);
 bool LDL_Frame_peek(const void *in, uint8_t len, enum lora_frame_type *type);

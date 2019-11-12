@@ -3,9 +3,11 @@
 #include <stdlib.h>
 #include "lora_radio.h"
 #include "lora_mac.h"
+#include "lora_sm.h"
 
 struct lora_radio radio;
 struct lora_mac mac;
+struct lora_sm sm;
 
 /* a pointer to be passed back to the application (anything you like) */
 void *app_pointer;
@@ -57,8 +59,18 @@ int main(void)
      * 
      * */
     LDL_Radio_setPA(&radio, LORA_RADIO_PA_RFO);
+    
+    
+    
+    struct lora_mac_init_arg arg = {
+        
+        .radio = &radio,
+        .handler = app_handler,
+        .app = NULL, 
+        .sm = &sm
+    };
 
-    LDL_MAC_init(&mac, app_pointer, EU_863_870, &radio, app_handler);
+    LDL_MAC_init(&mac, EU_863_870, &arg);
 
     /* Ensure a maximum aggregated duty cycle of ~1%
      * 

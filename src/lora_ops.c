@@ -318,11 +318,11 @@ bool LDL_OPS_receiveFrame(struct lora_mac *self, struct lora_frame_down *f, uint
                     
                     if((self->ctx.version == 1U) && f->ack){
                     
-                        hdrDataDown2(&hdr, (self->ctx.up-1U), f->devAddr, counter, len);
+                        hdrDataDown2(&hdr, (self->ctx.up-1U), f->devAddr, counter, len-sizeof(mic));
                     }                    
                     else{
                         
-                        hdrDataDown(&hdr, f->devAddr, counter, len);
+                        hdrDataDown(&hdr, f->devAddr, counter, len-sizeof(mic));
                     }
                     
                     mic = LDL_SM_mic(self->sm, LORA_SM_KEY_SNWKSINT, hdr.value, sizeof(hdr.value), in, len-sizeof(mic));
@@ -457,7 +457,7 @@ static uint32_t micDataUp2(struct lora_mac *self, uint16_t confirmCounter, uint8
     struct lora_block hdr;
     hdrDataUp2(&hdr, confirmCounter, rate, chIndex, devAddr, upCounter, len);
     
-    micS = LDL_SM_mic(self->sm, LORA_SM_KEY_FNWKSINT, hdr.value, sizeof(hdr.value), data, len);
+    micS = LDL_SM_mic(self->sm, LORA_SM_KEY_SNWKSINT, hdr.value, sizeof(hdr.value), data, len);
     micF = micDataUp(self, devAddr, upCounter, data, len);
     
     return (micS << 16) | (micF & 0xffffUL);

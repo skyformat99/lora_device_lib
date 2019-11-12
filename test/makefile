@@ -40,6 +40,7 @@ TESTS += tc_frame
 TESTS += tc_mac_commands
 TESTS += tc_input
 TESTS += tc_timer
+TESTS += tc_frame_with_encryption
 
 
 LINE := ================================================================
@@ -88,6 +89,12 @@ $(DIR_BIN)/tc_cmac: $(addprefix $(DIR_BUILD)/, tc_cmac.o lora_cmac.o lora_aes.o 
 	@ $(CC) $(LDFLAGS) $^ -o $@
 
 $(DIR_BIN)/tc_frame: $(addprefix $(DIR_BUILD)/, tc_frame.o lora_frame.o lora_stream.o $(OBJ_CMOCKA))
+	@ echo linking $@
+	@ $(CC) $(LDFLAGS) $^ -o $@
+
+$(DIR_BIN)/tc_frame_with_encryption: CFLAGS += -DLORA_ENABLE_SX1272
+$(DIR_BIN)/tc_frame_with_encryption: CFLAGS += -DLORA_ENABLE_SX1276
+$(DIR_BIN)/tc_frame_with_encryption: $(addprefix $(DIR_BUILD)/, $(OBJ) tc_frame_with_encryption.o mock_lora_system.o mock_lora_chip.o $(OBJ_CMOCKA))
 	@ echo linking $@
 	@ $(CC) $(LDFLAGS) $^ -o $@
 

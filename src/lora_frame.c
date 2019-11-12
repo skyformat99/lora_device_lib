@@ -51,29 +51,22 @@ uint8_t LDL_Frame_putData(const struct lora_frame_data *f, void *out, uint8_t ma
     
     LDL_Stream_init(&s, out, max);
     
-    if(f->optsLen <= 0xfU){
+    LDL_Stream_putU8(&s, ((uint8_t)f->type) << 5);
+    LDL_Stream_putU32(&s, f->devAddr);
+    LDL_Stream_putU8(&s, (f->adr ? 0x80U : 0U) | (f->adrAckReq ? 0x40U : 0U) | (f->ack ? 0x20U : 0U) | (f->pending ? 0x10U : 0U) | (f->optsLen & 0xfU));
+    LDL_Stream_putU16(&s, f->counter);
+    
+    off->opts = LDL_Stream_tell(&s);
+    LDL_Stream_write(&s, f->opts, f->optsLen & 0xfU);
+    
+    if(f->data != NULL){
 
-        LDL_Stream_putU8(&s, ((uint8_t)f->type) << 5);
-        LDL_Stream_putU32(&s, f->devAddr);
-        LDL_Stream_putU8(&s, (f->adr ? 0x80U : 0U) | (f->adrAckReq ? 0x40U : 0U) | (f->ack ? 0x20U : 0U) | (f->pending ? 0x10U : 0U) | (f->optsLen & 0xfU));
-        LDL_Stream_putU16(&s, f->counter);
-        
-        off->opts = LDL_Stream_tell(&s);
-        LDL_Stream_write(&s, f->opts, f->optsLen);
-        
-        if(f->data != NULL){
-
-            LDL_Stream_putU8(&s, f->port);            
-            off->data = LDL_Stream_tell(&s);            
-            LDL_Stream_write(&s, f->data, f->dataLen);        
-        }
-        
-        LDL_Stream_putU32(&s, f->mic);                
+        LDL_Stream_putU8(&s, f->port);            
+        off->data = LDL_Stream_tell(&s);            
+        LDL_Stream_write(&s, f->data, f->dataLen);        
     }
-    else{
-
-        LORA_INFO(NULL, "foptslen must be in range (0..15)")
-    }
+    
+    LDL_Stream_putU32(&s, f->mic);                
     
     return LDL_Stream_tell(&s);
 }
@@ -135,10 +128,10 @@ bool LDL_Frame_decode(struct lora_frame_down *f, void *in, uint8_t len)
     uint8_t dlSettings = 0U;
     struct lora_stream s;    
     
+    (void)memset(f, 0, sizeof(*f));    
+    
     LDL_Stream_initReadOnly(&s, in, len);
 
-    (void)memset(f, 0, sizeof(*f));
-    
     if(LDL_Stream_getU8(&s, &tag)){
     
         if(getFrameType(tag, &f->type)){
@@ -147,46 +140,45 @@ bool LDL_Frame_decode(struct lora_frame_down *f, void *in, uint8_t len)
             default:  
             case FRAME_TYPE_REJOIN_REQ:            
             case FRAME_TYPE_JOIN_REQ:
-                LORA_INFO(NULL, "unsupported frame type")
+            case FRAME_TYPE_DATA_UNCONFIRMED_UP:
+            case FRAME_TYPE_DATA_CONFIRMED_UP:
                 break;
                 
             case FRAME_TYPE_JOIN_ACCEPT:
             
-                if((len == LDL_Frame_sizeofJoinAccept(false)) || (len == LDL_Frame_sizeofJoinAccept(true))){
-                    
-                    LDL_Stream_getU24(&s, &f->joinNonce);
-                    LDL_Stream_getU24(&s, &f->netID);
-                    LDL_Stream_getU32(&s, &f->devAddr);
-                    LDL_Stream_getU8(&s, &dlSettings);
-                    LDL_Stream_getU8(&s, &f->rxDelay);
-                    
-                    f->optNeg =             ((dlSettings & 0x80U) != 0);
-                    f->rx1DataRateOffset =  (dlSettings >> 4) & 0x7U;
-                    f->rx2DataRate =        dlSettings & 0xfU;                    
-                    
-                    f->rxDelay = ( f->rxDelay == 0U) ? 1U : f->rxDelay;
-                    
-                    /* cflist is included */
-                    if(len == LDL_Frame_sizeofJoinAccept(true)){
-                    
-                        f->cfList = &ptr[LDL_Stream_tell(&s)];
-                        f->cfListLen = 16U;
-                        LDL_Stream_seekCur(&s, f->cfListLen);
-                    }
-                    
-                    LDL_Stream_getU32(&s, &f->mic);
-                    
-                    retval = true;
+                LDL_Stream_getU24(&s, &f->joinNonce);
+                LDL_Stream_getU24(&s, &f->netID);
+                LDL_Stream_getU32(&s, &f->devAddr);
+                LDL_Stream_getU8(&s, &dlSettings);
+                LDL_Stream_getU8(&s, &f->rxDelay);
+                
+                f->optNeg =             ((dlSettings & 0x80U) != 0);
+                f->rx1DataRateOffset =  (dlSettings >> 4) & 0x7U;
+                f->rx2DataRate =        dlSettings & 0xfU;                    
+                
+                f->rxDelay = ( f->rxDelay == 0U) ? 1U : f->rxDelay;
+                
+                /* cflist is included */
+                if(LDL_Stream_remaining(&s) > sizeof(f->mic)){
+                
+                    f->cfList = &ptr[LDL_Stream_tell(&s)];
+                    f->cfListLen = 16U;
+                    LDL_Stream_seekCur(&s, f->cfListLen);
                 }
-                else{
+                
+                LDL_Stream_getU32(&s, &f->mic);
                     
-                    LORA_INFO(NULL, "unexpected frame length for join accept")
-                }                
+                if(!LDL_Stream_error(&s)){
+                    
+                    /* buffer should only be this size */
+                    if(LDL_Stream_remaining(&s) == 0U){
+                        
+                        retval = true;                    
+                    }                    
+                }
                 break;
 
-            case FRAME_TYPE_DATA_UNCONFIRMED_UP:
-            case FRAME_TYPE_DATA_UNCONFIRMED_DOWN:
-            case FRAME_TYPE_DATA_CONFIRMED_UP:
+            case FRAME_TYPE_DATA_UNCONFIRMED_DOWN:            
             case FRAME_TYPE_DATA_CONFIRMED_DOWN:
 
                 LDL_Stream_getU32(&s, &f->devAddr);
@@ -205,9 +197,11 @@ bool LDL_Frame_decode(struct lora_frame_down *f, void *in, uint8_t len)
                 
                 if(LDL_Stream_remaining(&s) > sizeof(f->mic)){
                     
+                    f->dataPresent = true;
+                    
                     LDL_Stream_getU8(&s, &f->port);
-                    f->data = &ptr[LDL_Stream_tell(&s)];
                     f->dataLen = LDL_Stream_remaining(&s) - sizeof(f->mic);                                                
+                    f->data = (f->dataLen == 0U) ? NULL : &ptr[LDL_Stream_tell(&s)];                    
                     LDL_Stream_seekCur(&s, f->dataLen);
                 }
                 
@@ -215,19 +209,11 @@ bool LDL_Frame_decode(struct lora_frame_down *f, void *in, uint8_t len)
                 
                 if(!LDL_Stream_error(&s)){
                     
-                    /* see spec 4.3.1.6 Frame options (FOptsLen in FCtrl, FOpts) */
-                    if((f->data != NULL) && (f->optsLen > 0) && (f->port == 0U)){
-                        
-                        LORA_INFO(NULL, "cannot have options and port 0")                            
-                    }
-                    else{
+                    /* cannot have fopts when data is present and port == 0 */
+                    if(!(f->dataPresent && (f->optsLen > 0) && (f->port == 0U))){
                         
                         retval = true;
                     }                                
-                }
-                else{
-                    
-                    LORA_INFO(NULL, "frame too short")            
                 }
                 break;
             }
@@ -256,11 +242,7 @@ static bool getFrameType(uint8_t tag, enum lora_frame_type *type)
 {
     bool retval = false;
     
-    if((tag & 0x1fU) != 0U){
-        
-        LORA_INFO(NULL, "unsupported MHDR")
-    }
-    else{
+    if((tag & 0x1fU) == 0U){
         
         retval = true;
         
@@ -287,7 +269,6 @@ static bool getFrameType(uint8_t tag, enum lora_frame_type *type)
             *type = FRAME_TYPE_REJOIN_REQ;
             break;
         default:
-            LORA_INFO(NULL, "unknown frame type")
             retval = false;
             break;
         }

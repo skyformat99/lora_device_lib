@@ -116,13 +116,15 @@ struct lora_frame_down {
     bool adrAckReq;
     bool pending;
 
-    uint8_t *opts;
-    uint8_t optsLen;
+    uint8_t *opts;      /* NULL when not present */
+    uint8_t optsLen;    /* 0..15; 0 when not present */
 
-    uint8_t port;
+    bool dataPresent;   /* possible to have port without data */
+
+    uint8_t port;       /* valid when dataPresent is true */
     
-    uint8_t *data;
-    uint8_t dataLen;
+    uint8_t *data;      /* NULL when not present */
+    uint8_t dataLen;    /* 0 when not present */
     
     uint32_t mic;    
 };

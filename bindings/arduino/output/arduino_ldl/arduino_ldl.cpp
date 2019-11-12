@@ -143,7 +143,7 @@ MAC::MAC(Radio& radio, enum lora_region region, get_identity_fn get_id) :
     
     get_id(&id);
     
-    LDL_SM_init(&sm, id.appKey, id.nwkKey, id.devEUI);
+    LDL_SM_init(&sm, id.appKey, id.nwkKey);
     
     struct lora_mac_init_arg arg = {0};
     

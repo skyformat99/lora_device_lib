@@ -29,13 +29,13 @@ struct lora_block;
 /** SM key descriptor */
 enum lora_sm_key {
     
-    LORA_SM_KEY_FNWKSINT = 1,  /**< FNwkSInt forwarding/uplink (also used as NwkSKey) */
-    LORA_SM_KEY_APPS  = 2,  /**< AppSKey */
-    LORA_SM_KEY_SNWKSINT = 3,  /**< SNwkSInt serving/downlink */
-    LORA_SM_KEY_NWKSENC  = 4,  /**< NwkSEnc */
+    LORA_SM_KEY_FNWKSINT,   /**< FNwkSInt forwarding/uplink (also used as NwkSKey) */
+    LORA_SM_KEY_APPS,       /**< AppSKey */
+    LORA_SM_KEY_SNWKSINT,   /**< SNwkSInt serving/downlink */
+    LORA_SM_KEY_NWKSENC,    /**< NwkSEnc */
     
-    LORA_SM_KEY_JSENC = 5,  /**< JSEncKey */
-    LORA_SM_KEY_JSINT = 6,  /**< JSIntKey */
+    LORA_SM_KEY_JSENC,      /**< JSEncKey */
+    LORA_SM_KEY_JSINT,      /**< JSIntKey */
     
     LORA_SM_KEY_APP,        /**< application root key */
     LORA_SM_KEY_NWK         /**< network root key */        

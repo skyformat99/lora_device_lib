@@ -27,7 +27,9 @@ struct lora_sm {
     struct lora_key keys[8U];    
 };
 
-void LDL_SM_init(struct lora_sm *self, const void *appKey, const void *nwkKey, const void *devEUI);
+void LDL_SM_init(struct lora_sm *self, const void *appKey, const void *nwkKey);
+
+void *LDL_SM_getKey(struct lora_sm *self, enum lora_sm_key key);
 
 #ifdef __cplusplus
 }

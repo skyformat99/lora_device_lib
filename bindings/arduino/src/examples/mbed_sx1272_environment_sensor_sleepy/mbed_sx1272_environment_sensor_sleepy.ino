@@ -24,11 +24,6 @@
 #include <avr/sleep.h>
 #include <avr/wdt.h>
 
-/* dug out of wiring */
-#define MICROSECONDS_PER_TIMER0_OVERFLOW (clockCyclesToMicroseconds(64 * 256))
-extern unsigned long timer0_millis;
-extern unsigned long timer0_overflow_count;
-
 static void get_identity(struct arduino_ldl_id *id)
 {       
     static const struct arduino_ldl_id _id = {
@@ -105,55 +100,14 @@ void loop()
     }
     
     ldl.process();            
-    
+
+    /* will sleep for up to 1ms */
     {
-        uint32_t next_event = ldl.ticksUntilNextEvent();        
-        
-        /* power down will use the WDT to wake up approx 8s from now */
-        if(next_event >= (8UL * ldl.ticksPerSecond())){
-        
-            /* any active serial will not continue in power down mode so flush it */
-            Serial.flush();
-            
-            set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-            
-            cli();
-            
-            wdt_enable(WDTO_8S);
-            WDTCSR |= (1 << WDIE);
-            
-            sleep_enable();
-            sleep_bod_disable();
-            
-            sei();
-            
-            sleep_cpu();
-            sleep_disable();
-            
-            wdt_disable();
-            
-            /* fix micros and millis */
-            cli();            
-            timer0_overflow_count += (8000000UL / MICROSECONDS_PER_TIMER0_OVERFLOW);
-            timer0_millis += 8000UL;
-            sei();            
-        }
-        else{
-        
-            /* idle will be woken by the micros() ticker overflow in the next millisecond */
-            if(next_event >= ldl.ticksPerMilliSecond()){
-                
-                set_sleep_mode(SLEEP_MODE_IDLE);
-                cli();
-                sleep_enable();
-                sei();
-                sleep_cpu();
-                sleep_disable();
-            }
-            else{
-                
-                /* if you sleep here you might be too late to an event! */
-            }            
-        }
+        set_sleep_mode(SLEEP_MODE_IDLE);
+        cli();
+        sleep_enable();
+        sei();
+        sleep_cpu();
+        sleep_disable();
     }
 }

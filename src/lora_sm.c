@@ -27,44 +27,22 @@
 
 #include <string.h>
 
-//void LDL_SM_updateSessionKey(struct lora_sm *self, enum lora_sm_key key, enum lora_sm_key root, const struct lora_block *iv) __attribute__((weak));
-//uint32_t LDL_SM_mic(struct lora_sm *self, enum lora_sm_key key, const void *hdr, uint8_t hdrLen, const void *data, uint8_t dataLen) __attribute__((weak));
-//void LDL_SM_ecb(struct lora_sm *self, enum lora_sm_key key, void *b) __attribute__((weak));
-//void LDL_SM_ctr(struct lora_sm *self, enum lora_sm_key key, const struct lora_block *iv, void *data, uint8_t len) __attribute__((weak));
+void LDL_SM_init(struct lora_sm *self, const void *appKey, const void *nwkKey) __attribute__((weak));
+bool LDL_SM_restore(struct lora_sm *self) __attribute__((weak));
+void LDL_SM_beginUpdateSessionKey(struct lora_sm *self) __attribute__((weak));
+void LDL_SM_endUpdateSessionKey(struct lora_sm *self) __attribute__((weak));
+void LDL_SM_updateSessionKey(struct lora_sm *self, enum lora_sm_key key, enum lora_sm_key root, const struct lora_block *iv) __attribute__((weak));
+uint32_t LDL_SM_mic(struct lora_sm *self, enum lora_sm_key key, const void *hdr, uint8_t hdrLen, const void *data, uint8_t dataLen) __attribute__((weak));
+void LDL_SM_ecb(struct lora_sm *self, enum lora_sm_key key, void *b) __attribute__((weak));
+void LDL_SM_ctr(struct lora_sm *self, enum lora_sm_key key, const struct lora_block *iv, void *data, uint8_t len) __attribute__((weak));
+void *LDL_SM_getKey(struct lora_sm *self, enum lora_sm_key key) __attribute__((weak));
 
 /* functions **********************************************************/
 
-void LDL_SM_init(struct lora_sm *self, const void *appKey, const void *nwkKey, const void *devEUI)
+void LDL_SM_init(struct lora_sm *self, const void *appKey, const void *nwkKey)
 {
-    struct lora_block iv;
-    const uint8_t *eui = devEUI;
-    
     (void)memcpy(self->keys[LORA_SM_KEY_APP].value, appKey, sizeof(self->keys[LORA_SM_KEY_APP].value)); 
     (void)memcpy(self->keys[LORA_SM_KEY_NWK].value, nwkKey, sizeof(self->keys[LORA_SM_KEY_NWK].value)); 
-    
-    iv.value[1] = eui[7];
-    iv.value[2] = eui[6];
-    iv.value[3] = eui[5];            
-    iv.value[4] = eui[4];
-    iv.value[5] = eui[3];
-    iv.value[6] = eui[2];
-    iv.value[7] = eui[1];
-    iv.value[8] = eui[0];            
-    iv.value[9] = 0U;
-    iv.value[10] = 0U;
-    iv.value[11] = 0U;            
-    iv.value[12] = 0U;    
-    iv.value[13] = 0U;            
-    iv.value[14] = 0U;
-    iv.value[15] = 0U;
-    
-    iv.value[0] = LORA_SM_KEY_JSINT;
-    (void)memcpy(self->keys[LORA_SM_KEY_JSINT].value, iv.value, sizeof(self->keys[LORA_SM_KEY_JSINT].value)); 
-    LDL_SM_ecb(self, LORA_SM_KEY_NWK, self->keys[LORA_SM_KEY_JSINT].value);
-        
-    iv.value[0] = LORA_SM_KEY_JSENC;
-    (void)memcpy(self->keys[LORA_SM_KEY_JSENC].value, iv.value, sizeof(self->keys[LORA_SM_KEY_JSENC].value)); 
-    LDL_SM_ecb(self, LORA_SM_KEY_NWK, self->keys[LORA_SM_KEY_JSENC].value);
 }
 
 /**! [LDL_SM_restore] */
@@ -90,33 +68,18 @@ void LDL_SM_endUpdateSessionKey(struct lora_sm *self)
 void LDL_SM_updateSessionKey(struct lora_sm *self, enum lora_sm_key key, enum lora_sm_key root, const struct lora_block *iv)
 {
     struct lora_aes_ctx ctx;
-    const struct lora_key *rkey;
-    
-    switch(root){
-    default:    
-    case LORA_SM_KEY_NWK:
-        rkey = &self->keys[LORA_SM_KEY_NWK];
-        break;
-    case LORA_SM_KEY_APP:
-    case LORA_SM_KEY_FNWKSINT:
-    case LORA_SM_KEY_APPS:
-    case LORA_SM_KEY_SNWKSINT:
-    case LORA_SM_KEY_NWKSENC:    
-    case LORA_SM_KEY_JSENC:
-    case LORA_SM_KEY_JSINT:
-        rkey = &self->keys[root];    
-        break;    
-    }
     
     switch(key){
     case LORA_SM_KEY_FNWKSINT:
     case LORA_SM_KEY_APPS:
     case LORA_SM_KEY_SNWKSINT:
-    case LORA_SM_KEY_NWKSENC:    
+    case LORA_SM_KEY_NWKSENC: 
+    case LORA_SM_KEY_JSINT:   
+    case LORA_SM_KEY_JSENC:  
     
-        LDL_AES_init(&ctx, rkey->value);
+        LDL_AES_init(&ctx, LDL_SM_getKey(self, root));    
         
-        (void)memcpy(self->keys[key].value, iv->value, sizeof(self->keys[key].value));
+        (void)memcpy(self->keys[key].value, iv->value, sizeof(self->keys[key].value));        
         
         LDL_AES_encrypt(&ctx, self->keys[key].value);
         break;
@@ -136,16 +99,20 @@ uint32_t LDL_SM_mic(struct lora_sm *self, enum lora_sm_key key, const void *hdr,
     struct lora_aes_ctx aes_ctx;
     struct lora_cmac_ctx ctx;    
     
-    LDL_AES_init(&aes_ctx, self->keys[key].value);
+    LDL_AES_init(&aes_ctx, LDL_SM_getKey(self, key));
     LDL_CMAC_init(&ctx, &aes_ctx);
     LDL_CMAC_update(&ctx, hdr, hdrLen);
     LDL_CMAC_update(&ctx, data, dataLen);
     LDL_CMAC_finish(&ctx, &mic, sizeof(mic));
     
+#if 1
+    retval = mic;
+#else    
     retval = ((mic>>24)&0xffUL)       |
              ((mic<<8)&0xff0000UL)    |
              ((mic>>8)&0xff00UL)      |
              ((mic<<24)&0xff000000UL);
+#endif             
     
     return retval;
 }
@@ -156,7 +123,7 @@ void LDL_SM_ecb(struct lora_sm *self, enum lora_sm_key key, void *b)
 {
     struct lora_aes_ctx ctx;
     
-    LDL_AES_init(&ctx, self->keys[key].value);
+    LDL_AES_init(&ctx, LDL_SM_getKey(self, key));
     LDL_AES_encrypt(&ctx, b);
 }
 /**! [LDL_SM_ecb] */
@@ -166,7 +133,13 @@ void LDL_SM_ctr(struct lora_sm *self, enum lora_sm_key key, const struct lora_bl
 {
     struct lora_aes_ctx ctx;
 
-    LDL_AES_init(&ctx, self->keys[key].value);
+    LDL_AES_init(&ctx, LDL_SM_getKey(self, key));
     LDL_CTR_encrypt(&ctx, iv->value, data, data, len);
 }
 /**! [LDL_SM_ctr] */
+
+
+void *LDL_SM_getKey(struct lora_sm *self, enum lora_sm_key key)
+{
+    return self->keys[key].value;
+}

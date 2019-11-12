@@ -39,10 +39,10 @@ struct lora_block {
 void LDL_OPS_deriveKeys(struct lora_mac *self, uint32_t joinNonce, uint32_t netID, uint16_t devNonce);
 void LDL_OPS_deriveKeys2(struct lora_mac *self, uint32_t joinNonce, const uint8_t *joinEUI, const uint8_t *devEUI, uint16_t devNonce);
 
-/* decode and verify a frame (does not update any lora_mac state) */
+/* decode and verify a frame (depends on lora_mac state but does not modify directly) */
 bool LDL_OPS_receiveFrame(struct lora_mac *self, struct lora_frame_down *f, uint8_t *in, uint8_t len);
 
-/* encode a frame */
+/* encode a frame  (depends on lora_mac state but does not modify directly)  */
 uint8_t LDL_OPS_prepareData(struct lora_mac *self, const struct lora_frame_data *f, uint8_t *out, uint8_t max);
 uint8_t LDL_OPS_prepareJoinRequest(struct lora_mac *self, const struct lora_frame_join_request *f, uint8_t *out, uint8_t max);
 

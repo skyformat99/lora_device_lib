@@ -380,6 +380,8 @@ struct lora_mac_session {
     
     uint32_t devAddr;
     
+    uint8_t netID;
+    
     struct lora_mac_channel chConfig[16U];
     
     uint8_t chMask[72U / 8U];

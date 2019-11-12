@@ -167,6 +167,26 @@ static void decode_join_accept_with_cf_list(void **user)
     assert_int_equal(FRAME_TYPE_JOIN_ACCEPT, f.type);    
 }
 
+/* generate by ttn */
+static void decode_unconfirmed_down(void **user)
+{
+    const uint8_t nwkSKey[] = {0xB0,0x53,0x62,0xA0,0xD6,0x31,0xB1,0xCE,0x16,0xB1,0xE3,0x30,0x5A,0x9D,0xB4,0x92};
+    uint8_t input[] = {0x60,0x9B,0x21,0x01,0x26,0xA5,0x00,0x00,0x03,0x51,0xFF,0x00,0x01,0xD6,0x60,0x97,0x9F};
+    bool retval;
+    
+    struct lora_mac mac;
+    init_mac(&mac, nwkSKey, LORA_OP_DATA_UNCONFIRMED);
+    
+    mac.ctx.devAddr = 0x2601219BUL;
+    
+    struct lora_frame_down f;
+    
+    retval = LDL_OPS_receiveFrame(&mac, &f, input, sizeof(input));
+    
+    assert_true(retval);    
+    
+    assert_int_equal(FRAME_TYPE_DATA_UNCONFIRMED_DOWN, f.type);    
+}
 
 int main(void)
 {
@@ -178,7 +198,8 @@ int main(void)
         cmocka_unit_test(encode_random_internet_join_request_example),        
         
         cmocka_unit_test(decode_join_accept),        
-        cmocka_unit_test(decode_join_accept_with_cf_list)
+        cmocka_unit_test(decode_join_accept_with_cf_list),
+        cmocka_unit_test(decode_unconfirmed_down)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

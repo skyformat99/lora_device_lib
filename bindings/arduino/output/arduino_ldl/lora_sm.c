@@ -95,7 +95,7 @@ void LDL_SM_updateSessionKey(struct lora_sm *self, enum lora_sm_key key, enum lo
 uint32_t LDL_SM_mic(struct lora_sm *self, enum lora_sm_key key, const void *hdr, uint8_t hdrLen, const void *data, uint8_t dataLen)
 {
     uint32_t retval;
-    uint32_t mic;
+    uint8_t mic[sizeof(retval)];
     struct lora_aes_ctx aes_ctx;
     struct lora_cmac_ctx ctx;    
     
@@ -104,16 +104,17 @@ uint32_t LDL_SM_mic(struct lora_sm *self, enum lora_sm_key key, const void *hdr,
     LDL_CMAC_update(&ctx, hdr, hdrLen);
     LDL_CMAC_update(&ctx, data, dataLen);
     LDL_CMAC_finish(&ctx, &mic, sizeof(mic));
-    
-#if 1
-    retval = mic;
-#else    
-    retval = ((mic>>24)&0xffUL)       |
-             ((mic<<8)&0xff0000UL)    |
-             ((mic>>8)&0xff00UL)      |
-             ((mic<<24)&0xff000000UL);
-#endif             
-    
+  
+    /* intepret the 4th byte as most significant */
+    retval = mic[3];
+    retval <<= 8;
+    retval |= mic[2];
+    retval <<= 8;
+    retval |= mic[1];
+    retval <<= 8;
+    retval |= mic[0];
+
+    /* LoRaWAN will encode this least significant byte first */
     return retval;
 }
 /**! [LDL_SM_mic] */

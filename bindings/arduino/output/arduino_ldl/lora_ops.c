@@ -86,10 +86,10 @@ void LDL_OPS_deriveKeys(struct lora_mac *self, uint32_t joinNonce, uint32_t netI
     
     LDL_SM_beginUpdateSessionKey(self->sm); 
     {    
-        iv.value[0] = (uint8_t)LORA_SM_KEY_APPS;
+        iv.value[0] = 2U;
         LDL_SM_updateSessionKey(self->sm, LORA_SM_KEY_APPS, LORA_SM_KEY_NWK, &iv);
         
-        iv.value[0] = (uint8_t)LORA_SM_KEY_FNWKSINT;
+        iv.value[0] = 1U;
         LDL_SM_updateSessionKey(self->sm, LORA_SM_KEY_FNWKSINT, LORA_SM_KEY_NWK, &iv);    
         LDL_SM_updateSessionKey(self->sm, LORA_SM_KEY_SNWKSINT, LORA_SM_KEY_NWK, &iv);
         LDL_SM_updateSessionKey(self->sm, LORA_SM_KEY_NWKSENC, LORA_SM_KEY_NWK, &iv);
@@ -318,11 +318,11 @@ bool LDL_OPS_receiveFrame(struct lora_mac *self, struct lora_frame_down *f, uint
                     
                     if((self->ctx.version == 1U) && f->ack){
                     
-                        hdrDataDown2(&hdr, (self->ctx.up-1U), f->devAddr, counter, len);
+                        hdrDataDown2(&hdr, (self->ctx.up-1U), f->devAddr, counter, len-sizeof(mic));
                     }                    
                     else{
                         
-                        hdrDataDown(&hdr, f->devAddr, counter, len);
+                        hdrDataDown(&hdr, f->devAddr, counter, len-sizeof(mic));
                     }
                     
                     mic = LDL_SM_mic(self->sm, LORA_SM_KEY_SNWKSINT, hdr.value, sizeof(hdr.value), in, len-sizeof(mic));
@@ -331,7 +331,7 @@ bool LDL_OPS_receiveFrame(struct lora_mac *self, struct lora_frame_down *f, uint
                         
                         dataIV(&hdr, f->devAddr, false, f->counter);
                         
-                        /* V1.1 seems to have snuck this breaking change in */
+                        /* V1.1 seems to now encrypt the opts field */
                         if((self->ctx.version == 1U) && (f->optsLen > 0)){
                             
                             LDL_SM_ctr(self->sm, LORA_SM_KEY_NWKSENC, &hdr, f->opts, f->optsLen);    
@@ -457,8 +457,28 @@ static uint32_t micDataUp2(struct lora_mac *self, uint16_t confirmCounter, uint8
     struct lora_block hdr;
     hdrDataUp2(&hdr, confirmCounter, rate, chIndex, devAddr, upCounter, len);
     
-    micS = LDL_SM_mic(self->sm, LORA_SM_KEY_FNWKSINT, hdr.value, sizeof(hdr.value), data, len);
+    micS = LDL_SM_mic(self->sm, LORA_SM_KEY_SNWKSINT, hdr.value, sizeof(hdr.value), data, len);
     micF = micDataUp(self, devAddr, upCounter, data, len);
     
-    return (micS << 16) | (micF & 0xffffUL);
+    /* Hey, this might be wrong.
+     * 
+     * MIC = cmacS[0..1] | cmacF[0..1]
+     * 
+     * I don't know what this means since LoRaWAN has byte order for all
+     * multi-byte fields. Is [0] the first byte on the wire, or the last
+     * byte since LoRaWAN gives it order?
+     * 
+     * - cmacS[0..3] would be micS encoded using LDL_Stream_putU32(), this is confirmed working
+     * with other implementations
+     * - also see how the mic integer is made in LDL_SM_mic()
+     * 
+     * My intepretation of the above is:
+     * 
+     * - two least significant bytes of both integers
+     * - arranged so that micF is the most significant because it comes last
+     * 
+     * FFS
+     * 
+     * */
+    return (micF << 16) | (micS & 0xffffUL);
 }

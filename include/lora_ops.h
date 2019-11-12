@@ -35,26 +35,18 @@ struct lora_block {
     uint8_t value[16U];
 };
 
-
+/* derive all session keys and write to lora_sm */
 void LDL_OPS_deriveKeys(struct lora_mac *self, uint32_t joinNonce, uint32_t netID, uint16_t devNonce);
-void LDL_OPS_deriveKeys2(struct lora_mac *self, uint32_t joinNonce, const uint8_t *joinEUI, uint16_t devNonce);
+void LDL_OPS_deriveKeys2(struct lora_mac *self, uint32_t joinNonce, const uint8_t *joinEUI, const uint8_t *devEUI, uint16_t devNonce);
 
+/* decode and verify a frame (does not update any lora_mac state) */
 bool LDL_OPS_receiveFrame(struct lora_mac *self, struct lora_frame_down *f, uint8_t *in, uint8_t len);
 
-void LDL_OPS_prepareData(struct lora_mac *self, const struct lora_frame_data *f);
-void LDL_OPS_prepareJoinRequest(struct lora_mac *self, const struct lora_frame_join_request *f);
+/* encode a frame */
+uint8_t LDL_OPS_prepareData(struct lora_mac *self, const struct lora_frame_data *f, uint8_t *out, uint8_t max);
+uint8_t LDL_OPS_prepareJoinRequest(struct lora_mac *self, const struct lora_frame_join_request *f, uint8_t *out, uint8_t max);
 
-uint32_t LDL_OPS_micDataUp(struct lora_mac *self, uint32_t devAddr, uint32_t upCounter, const void *data, uint8_t len);
-uint32_t LDL_OPS_micDataUp2(struct lora_mac *self, uint16_t downCounter, uint8_t rate, uint8_t chIndex, uint32_t devAddr, uint32_t upCounter, const void *data, uint8_t len);
-
-uint32_t LDL_OPS_micDataDown(struct lora_mac *self, uint32_t devAddr, uint32_t downCounter, const void *data, uint8_t len);
-uint32_t LDL_OPS_micDataDown2(struct lora_mac *self, uint16_t downCounter, uint32_t devAddr, uint32_t upCounter, const void *data, uint8_t len);
-
-uint32_t LDL_OPS_micJoinAccept(struct lora_mac *self, const void *joinAccept, uint8_t len);
-uint32_t LDL_OPS_micJoinAccept2(struct lora_mac *self, uint8_t joinReqType, const uint8_t *joinEUI, uint16_t devNonce, const void *joinAccept, uint8_t len);
-
-uint32_t LDL_OPS_micJoinRequest(struct lora_mac *self, const void *joinRequest, uint8_t len);
-
+/* derive expected 32 bit downcounter from 16 least significant bits and update the copy in lora_mac */
 void LDL_OPS_syncDownCounter(struct lora_mac *self, uint8_t port, uint16_t counter);
 
 #endif

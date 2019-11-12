@@ -696,6 +696,7 @@ void LDL_MAC_process(struct lora_mac *self)
                     }
                     
                     self->ctx.devAddr = frame.devAddr;    
+                    self->ctx.netID = frame.netID;
                     
 #ifndef LORA_DISABLE_JOIN_COMPLETE_EVENT                    
                     self->handler(self->app, LORA_MAC_JOIN_COMPLETE, NULL);                    

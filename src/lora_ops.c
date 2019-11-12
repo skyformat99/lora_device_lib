@@ -86,10 +86,10 @@ void LDL_OPS_deriveKeys(struct lora_mac *self, uint32_t joinNonce, uint32_t netI
     
     LDL_SM_beginUpdateSessionKey(self->sm); 
     {    
-        iv.value[0] = (uint8_t)LORA_SM_KEY_APPS;
+        iv.value[0] = 2U;
         LDL_SM_updateSessionKey(self->sm, LORA_SM_KEY_APPS, LORA_SM_KEY_NWK, &iv);
         
-        iv.value[0] = (uint8_t)LORA_SM_KEY_FNWKSINT;
+        iv.value[0] = 1U;
         LDL_SM_updateSessionKey(self->sm, LORA_SM_KEY_FNWKSINT, LORA_SM_KEY_NWK, &iv);    
         LDL_SM_updateSessionKey(self->sm, LORA_SM_KEY_SNWKSINT, LORA_SM_KEY_NWK, &iv);
         LDL_SM_updateSessionKey(self->sm, LORA_SM_KEY_NWKSENC, LORA_SM_KEY_NWK, &iv);

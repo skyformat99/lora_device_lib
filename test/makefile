@@ -76,6 +76,9 @@ clean:
 sqeaky_clean: clean
 	rm -f $(DIR_BIN)/*
 
+mccabe: 
+	pmccabe -vt $(addprefix $(DIR_ROOT)/src/, $(SRC))
+
 check: CC := clang
 check: CFLAGS += --analyze -Xanalyzer -analyzer-output=text
 check: $(addprefix $(DIR_BUILD)/, $(OBJ))

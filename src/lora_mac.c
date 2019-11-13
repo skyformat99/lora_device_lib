@@ -1376,7 +1376,6 @@ bool LDL_MAC_priority(const struct lora_mac *self, uint8_t interval)
     bool retval;
     
     uint32_t error;
-    uint32_t until;
     
     LDL_MAC_timerTicksUntil(self, LORA_TIMER_WAITA, &error);
     
@@ -1384,17 +1383,8 @@ bool LDL_MAC_priority(const struct lora_mac *self, uint8_t interval)
     default:
         retval = false;
         break;
-    case LORA_STATE_TX:
-    
-        if(interval > 0){
-            retval = true;
-        }
-        break;
-    
+    case LORA_STATE_TX:    
     case LORA_STATE_WAIT_RX1:
-    
-        if(until < 
-        
     case LORA_STATE_RX1:
     case LORA_STATE_WAIT_RX2:
     case LORA_STATE_RX2:

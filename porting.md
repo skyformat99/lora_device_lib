@@ -72,11 +72,11 @@ hardened implementations.
 
 LDL depends on the following modes:
 
-- AES128-ECB (default: lora_aes.c)
-- AES128-CTR (default: lora_ctr.c)
-- AES128-CMAC (default: lora_cmac.c)
+- AES128-ECB (default: [lora_aes.c](src/lora_aes.c))
+- AES128-CTR (default: [lora_ctr.c](src/lora_aes.c))
+- AES128-CMAC (default: [lora_cmac.c](src/lora_aes.c))
 
-These are integrated in the default security module (lora_sm.c). The default SM
+These are integrated in the default security module ([lora_sm.c](src/lora_sm.c)). The default SM
 functions are marked as "weak" for the linker.
 
 If your toolchain supports weak symbols, replacing some or all of the
@@ -123,6 +123,5 @@ that keeps working in sleep mode
 
 LDL is designed to work in a mainloop style application.
 
-If another task is expected to run for an excessive period of time (e.g. >1 second),
-a simple scheduler can use LDL_MAC_critical() to check if now is a good time to run
-that task.
+A simple scheduler can use LDL_MAC_priority() to check if LDL is 
+expecting to handle a time sensitive event in the next n seconds.

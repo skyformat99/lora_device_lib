@@ -68,34 +68,50 @@ static uint32_t msUntilNextChannel(const struct lora_mac *self, uint8_t rate);
 static uint32_t rand32(void *app);
 static uint32_t getRetryDuty(uint32_t seconds_since);
 static uint32_t timerDelta(uint32_t timeout, uint32_t time);
+#ifndef LORA_DISABLE_SESSION_UPDATE
+static void pushSessionUpdate(struct lora_mac *self);
+#endif
+static void dummyResponseHandler(void *app, enum lora_mac_response_type type, const union lora_mac_response_arg *arg);
 
 /* functions **********************************************************/
 
 void LDL_MAC_init(struct lora_mac *self, enum lora_region region, const struct lora_mac_init_arg *arg)
 {
     LORA_PEDANTIC(self != NULL)
-    LORA_PEDANTIC(arg != NULL)
-    LORA_PEDANTIC(arg->handler != NULL)
     LORA_PEDANTIC(LDL_System_tps() >= 1000UL)
     
     (void)memset(self, 0, sizeof(*self));
     
     self->tx.chIndex = UINT8_MAX;
     
-    self->app = arg->app;
     self->region = region;
-    self->handler = arg->handler;
-    self->radio = arg->radio;
-    self->sm = arg->sm;
     
-    LDL_Radio_setHandler(self->radio, self, LDL_MAC_radioEvent);
+    if(arg != NULL){
     
-    if(LDL_SM_restore(self->sm)){
+        self->app = arg->app;    
+        self->handler = arg->handler ? arg->handler : dummyResponseHandler;
+        self->radio = arg->radio;
+        self->sm = arg->sm;        
+    }
+    else{
         
-        if(!LDL_System_restoreContext(self->app, &self->ctx)){
-            
-            restoreDefaults(self, false);
-        }
+        self->handler = dummyResponseHandler;
+        
+        LORA_INFO(self->app, "arg is undefined")
+    }
+        
+    if(self->radio != NULL){
+        
+        LDL_Radio_setHandler(self->radio, self, LDL_MAC_radioEvent);
+    }
+    else{
+        
+        LORA_INFO(self->app, "radio is undefined")
+    }
+    
+    if(LDL_SM_restore(self->sm) && (arg->session != NULL)){
+        
+        (void)memcpy(&self->ctx, arg->session, sizeof(self->ctx));
     }
     else{
         
@@ -233,7 +249,10 @@ void LDL_MAC_forget(struct lora_mac *self)
     if(self->ctx.joined){
     
         restoreDefaults(self, true);    
-        LDL_System_saveContext(self->app, &self->ctx);
+        
+#ifndef LORA_DISABLE_SESSION_UPDATE        
+        pushSessionUpdate(self);   
+#endif
     }
 }
 
@@ -804,14 +823,14 @@ void LDL_MAC_process(struct lora_mac *self)
                     break;
                 }
                 
-                LDL_System_saveContext(self->app, &self->ctx);     
+#ifndef LORA_DISABLE_SESSION_UPDATE
+                pushSessionUpdate(self);    
+#endif                
             }
             else{
                 
                 downlinkMissingHandler(self);
             }
-            
-            LDL_System_saveContext(self->app, &self->ctx);             
         }
         else if(LDL_MAC_inputCheck(self, LORA_INPUT_RX_TIMEOUT, &error)){
             
@@ -867,8 +886,11 @@ void LDL_MAC_process(struct lora_mac *self)
     
         if(LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error)){
             
-            downlinkMissingHandler(self);            
-            LDL_System_saveContext(self->app, &self->ctx); 
+            downlinkMissingHandler(self);  
+            
+#ifndef LORA_DISABLE_SESSION_UPDATE              
+            pushSessionUpdate(self);
+#endif            
         }
         break;
     
@@ -940,7 +962,10 @@ bool LDL_MAC_setRate(struct lora_mac *self, uint8_t rate)
     if(rateSettingIsValid(self->region, rate)){
         
         self->ctx.rate = rate;
-        LDL_System_saveContext(self->app, &self->ctx);
+        
+#ifndef LORA_DISABLE_SESSION_UPDATE        
+        pushSessionUpdate(self);
+#endif        
         retval = true;        
     }
     else{
@@ -968,7 +993,9 @@ bool LDL_MAC_setPower(struct lora_mac *self, uint8_t power)
     if(LDL_Region_validateTXPower(self->region, power)){
         
         self->ctx.power = power;
-        LDL_System_saveContext(self->app, &self->ctx);        
+#ifndef LORA_DISABLE_SESSION_UPDATE        
+        pushSessionUpdate(self);        
+#endif        
         retval = true;
     }
     else{
@@ -991,7 +1018,10 @@ void LDL_MAC_enableADR(struct lora_mac *self)
     LORA_PEDANTIC(self != NULL)
     
     self->ctx.adr = true;
-    LDL_System_saveContext(self->app, &self->ctx);        
+    
+#ifndef LORA_DISABLE_SESSION_UPDATE    
+    pushSessionUpdate(self);       
+#endif    
 }
 
 bool LDL_MAC_adr(const struct lora_mac *self)
@@ -1006,7 +1036,10 @@ void LDL_MAC_disableADR(struct lora_mac *self)
     LORA_PEDANTIC(self != NULL)
     
     self->ctx.adr = false;
-    LDL_System_saveContext(self->app, &self->ctx);        
+    
+#ifndef LORA_DISABLE_SESSION_UPDATE    
+    pushSessionUpdate(self);       
+#endif     
 }
 
 bool LDL_MAC_ready(const struct lora_mac *self)
@@ -1112,7 +1145,10 @@ void LDL_MAC_setMaxDCycle(struct lora_mac *self, uint8_t maxDCycle)
     LORA_PEDANTIC(self != NULL)
     
     self->ctx.maxDutyCycle = maxDCycle & 0xfU;
-    LDL_System_saveContext(self->app, &self->ctx);          
+    
+#ifndef LORA_DISABLE_SESSION_UPDATE    
+    pushSessionUpdate(self);        
+#endif    
 }
 
 uint8_t LDL_MAC_getMaxDCycle(const struct lora_mac *self)
@@ -1127,7 +1163,10 @@ void LDL_MAC_setNbTrans(struct lora_mac *self, uint8_t nbTrans)
     LORA_PEDANTIC(self != NULL)
     
     self->ctx.nbTrans = nbTrans & 0xfU;
-    LDL_System_saveContext(self->app, &self->ctx);      
+    
+#ifndef LORA_DISABLE_SESSION_UPDATE
+    pushSessionUpdate(self);     
+#endif        
 }
 
 uint8_t LDL_MAC_getNbTrans(const struct lora_mac *self)
@@ -1328,6 +1367,42 @@ void LDL_MAC_inputClear(struct lora_mac *self)
 bool LDL_MAC_inputPending(const struct lora_mac *self)
 {
     return (self->inputs.state != 0U);
+}
+
+bool LDL_MAC_priority(const struct lora_mac *self, uint8_t interval)
+{
+    LORA_PEDANTIC(self != NULL)
+    
+    bool retval;
+    
+    uint32_t error;
+    uint32_t until;
+    
+    LDL_MAC_timerTicksUntil(self, LORA_TIMER_WAITA, &error);
+    
+    switch(self->state){
+    default:
+        retval = false;
+        break;
+    case LORA_STATE_TX:
+    
+        if(interval > 0){
+            retval = true;
+        }
+        break;
+    
+    case LORA_STATE_WAIT_RX1:
+    
+        if(until < 
+        
+    case LORA_STATE_RX1:
+    case LORA_STATE_WAIT_RX2:
+    case LORA_STATE_RX2:
+        retval = true;
+        break;
+    }
+    
+    return retval;
 }
 
 /* static functions ***************************************************/
@@ -2410,7 +2485,7 @@ static void downlinkMissingHandler(struct lora_mac *self)
     
         if(self->trials < nbTrans){
             
-            if((self->band[LORA_BAND_GLOBAL] < LORA_REDUNANCY_OFFTIME_LIMIT) && selectChannel(self, self->tx.rate, self->tx.chIndex, LORA_REDUNANCY_OFFTIME_LIMIT, &self->tx.chIndex, &self->tx.freq)){
+            if((self->band[LORA_BAND_GLOBAL] < LDL_Region_getMaxDCycleOffLimit(self->region)) && selectChannel(self, self->tx.rate, self->tx.chIndex, LDL_Region_getMaxDCycleOffLimit(self->region), &self->tx.chIndex, &self->tx.freq)){
             
                 LDL_MAC_timerSet(self, LORA_TIMER_WAITA, 0U);
                 self->state = LORA_STATE_WAIT_TX;
@@ -2498,4 +2573,17 @@ static uint32_t rand32(void *app)
     retval |= LDL_System_rand(app);
     
     return retval;
+}
+
+#ifndef LORA_DISABLE_SESSION_UPDATE
+static void pushSessionUpdate(struct lora_mac *self)
+{
+    union lora_mac_response_arg arg;     
+    arg.session_updated.session = &self->ctx;
+    self->handler(self->app, LORA_MAC_SESSION_UPDATED, &arg);        
+}
+#endif
+
+static void dummyResponseHandler(void *app, enum lora_mac_response_type type, const union lora_mac_response_arg *arg)
+{
 }

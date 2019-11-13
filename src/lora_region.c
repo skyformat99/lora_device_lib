@@ -901,6 +901,18 @@ uint8_t LDL_Region_getJoinRate(enum lora_region region, uint32_t trial)
     return retval;
 }
 
+uint32_t LDL_Region_getMaxDCycleOffLimit(enum lora_region region)
+{
+    /* I've only checked this for ETSI:
+     * 
+     * duty-cycle is evaluated over one hour therefore we can effectively
+     * limit ourselves by never accumulating more than one hour of 
+     * off-time.
+     * 
+     * */
+    return (60UL*60UL*1000UL);
+}
+
 /* static functions ***************************************************/
 
 static bool upRateRange(enum lora_region region, uint8_t chIndex, uint8_t *minRate, uint8_t *maxRate)

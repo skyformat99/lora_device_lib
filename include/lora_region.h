@@ -85,7 +85,7 @@ uint8_t LDL_Region_getRX2Rate(enum lora_region region);
 uint8_t LDL_Region_getJoinRate(enum lora_region region, uint32_t trial);
 void LDL_Region_getDefaultChannels(enum lora_region region, struct lora_mac *mac);
 void LDL_Region_processCFList(enum lora_region region, struct lora_mac *mac, const uint8_t *cfList, uint8_t cfListLen);
-
+uint32_t LDL_Region_getMaxDCycleOffLimit(enum lora_region region);
 
 #ifdef __cplusplus
 }

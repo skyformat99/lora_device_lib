@@ -193,7 +193,16 @@ enum lora_mac_response_type {
     
     /** diagnostic event: transmit begin */
     LORA_MAC_TX_BEGIN,
+    
+    /** #lora_mac_session has changed 
+     * 
+     * The application can choose to save the session at this point
+     * 
+     * */
+    LORA_MAC_SESSION_UPDATED
 };
+
+struct lora_mac_session;
 
 /** Event arguments sent to application
  * 
@@ -259,6 +268,13 @@ union lora_mac_response_arg {
         unsigned int entropy;               /**< srand seed from radio driver */
         
     } startup;
+    
+    /** #LORA_MAC_SESSION_UPDATED argument */
+    struct { 
+        
+        const struct lora_mac_session *session;
+        
+    } session_updated;
 };
 
 /** LDL calls this function pointer to notify application of events
@@ -500,6 +516,9 @@ struct lora_mac_init_arg {
     
     /** application callback #lora_mac_response_fn */
     lora_mac_response_fn handler;
+    
+    /** #lora_mac_session to load (NULL if not available) */
+    const struct lora_mac_session *session;    
 };
 
 
@@ -627,7 +646,7 @@ void LDL_MAC_process(struct lora_mac *self);
  * 
  * @retval UINT32_MAX   there are no future events at this time
  * 
- * @note this function is safe to call from mainloop and interrupt if LORA_SYSTEM_ENTER_CRITICAL() and LORA_SYSTEM_ENTER_CRITICAL() have been defined
+ * @note interrupt safe if LORA_SYSTEM_ENTER_CRITICAL() and LORA_SYSTEM_ENTER_CRITICAL() have been defined
  * 
  * */
 uint32_t LDL_MAC_ticksUntilNextEvent(const struct lora_mac *self);
@@ -864,6 +883,23 @@ void LDL_MAC_setNbTrans(struct lora_mac *self, uint8_t nbTrans);
  * 
  * */
 uint8_t LDL_MAC_getNbTrans(const struct lora_mac *self);
+
+/** Return true to indicate that LDL is expecting to handle
+ * a time sensitive event in the next interval.
+ * 
+ * This can be used by an application to ensure long-running tasks
+ * do not cause LDL to miss important events.
+ * 
+ * @param[in] self      #lora_mac
+ * @param[in] interval  seconds
+ * 
+ * 
+ * @retval true    
+ * @retval false    
+ * 
+ * */
+bool LDL_MAC_priority(const struct lora_mac *self, uint8_t interval);
+
 
 /* for internal use only */
 void LDL_MAC_radioEvent(struct lora_mac *self, enum lora_radio_event event);

@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef LORA_DEBUG_H
-#define LORA_DEBUG_H
+#ifndef __LORA_DEBUG_H
+#define __LORA_DEBUG_H
 
 /** @file */
 

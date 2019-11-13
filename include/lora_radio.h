@@ -165,7 +165,7 @@ void LDL_Radio_setPA(struct lora_radio *self, enum lora_radio_pa pa);
  * 
  * @ingroup ldl_radio_connector
  * 
- * @note this function is safe to call from an interrupt if LORA_SYSTEM_ENTER_CRITICAL() and LORA_SYSTEM_ENTER_CRITICAL() have been defined
+ * @note interrupt safe if LORA_SYSTEM_ENTER_CRITICAL() and LORA_SYSTEM_ENTER_CRITICAL() have been defined
  * 
  * */
 void LDL_Radio_interrupt(struct lora_radio *self, uint8_t n);

@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef LORA_RADIO_DEFS_H
-#define LORA_RADIO_DEFS_H
+#ifndef __LORA_RADIO_DEFS_H
+#define __LORA_RADIO_DEFS_H
 
 /** @file */
 

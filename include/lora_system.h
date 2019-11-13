@@ -45,8 +45,6 @@
  * - LDL_System_advance()
  * - LDL_System_getBatteryLevel()
  * - LDL_System_rand()
- * - LDL_System_saveContext()
- * - LDL_System_restoreContext()
  * 
  * The following macros *MUST* be defined if LDL_MAC_interrupt() or LDL_MAC_ticksUntilNextEvent() are called from an interrupt:
  * 
@@ -89,6 +87,8 @@ void LDL_System_getIdentity(void *app, struct lora_system_identity *value);
  * 
  * LDL uses this changing value to track of the passage of time and perform
  * scheduling. 
+ * 
+ * @note this may be called from mainloop or interrupt
  * 
  * @param[in]   app     from LDL_MAC_init()
  * 
@@ -161,40 +161,6 @@ uint8_t LDL_System_getBatteryLevel(void *app);
  * 
  * */
 uint32_t LDL_System_advance(void);
-
-/** Called once during LDL_MAC_init() to restore saved session data
- * 
- * Returning false indicates to LDL that there is no saved context
- * and that LDL should restore from defaults.
- * 
- * Note that #lora_mac_session does not contain secrets.
- * 
- * @param[in] app       from LDL_MAC_init()
- * @param[out] value    session data
- * 
- * @retval true     restored
- * @retval false    not-restored
- * 
- * 
- * LDL includes the following weak implementation:
- * @snippet src/lora_system.c LDL_System_restoreContext
- * 
- * */
-bool LDL_System_restoreContext(void *app, struct lora_mac_session *value);
-
-/** Called by LDL every time #lora_mac_session changes
- * 
- * Note that #lora_mac_session does not contain secrets.
- * 
- * @param[in] app       from LDL_MAC_init()
- * @param[in] value     session data
- * 
- * 
- * LDL includes the following weak implementation:
- * @snippet src/lora_system.c LDL_System_saveContext
- * 
- * */
-void LDL_System_saveContext(void *app, const struct lora_mac_session *value);
 
 #ifndef LORA_SYSTEM_ENTER_CRITICAL
 

@@ -22,6 +22,19 @@
 #ifndef __LORA_OPS_H
 #define __LORA_OPS_H
 
+/* "operations" 
+ * 
+ * For lack of a better name, this connects the mac to the security module
+ * and frame codec.
+ * 
+ * It also provides some handy interfaces for testing that the MIC
+ * and encryption works as expected.
+ * 
+ * For our sanity these functions depend on state in lora_mac but
+ * they should never change it directly.
+ * 
+ * */
+
 #include <stdint.h>
 #include <stdbool.h>
 

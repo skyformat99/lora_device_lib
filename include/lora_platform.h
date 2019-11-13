@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef LORA_PLATFORM_H
-#define LORA_PLATFORM_H
+#ifndef __LORA_PLATFORM_H
+#define __LORA_PLATFORM_H
 
 /** @file */
 
@@ -77,20 +77,6 @@
      * 
      * */
     #define LORA_REDUNDANCY_MAX 0xfU
-#endif
-
-#ifndef LORA_REDUNANCY_OFFTIME_LIMIT
-    /** This value is the limit which accumulated off-time must not
-     * exceed when redundant unconfirmed data frames are sent
-     * back-to-back.
-     * 
-     * The default is one hour. This is appropriate for EU_863_870
-     * where duty cycle is evaluated over one hour.
-     * 
-     * Units are milliseconds.
-     * 
-     * */
-    #define LORA_REDUNANCY_OFFTIME_LIMIT (60UL*60UL*1000UL)
 #endif
 
 #ifdef DOXYGEN
@@ -289,6 +275,15 @@
     #define LORA_ENABLE_POINT_ONE
     #undef LORA_ENABLE_POINT_ONE
     
+    
+    /**
+     * Define to remove the #LORA_MAC_SESSION_UPDATED event
+     * 
+     * This event is useful when session is saved to non-volatile memory
+     * 
+     * */
+    #define LORA_DISABLE_SESSION_UPDATE
+    #undef LORA_DISABLE_SESSION_UPDATE
 
 #endif
 

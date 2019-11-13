@@ -121,7 +121,10 @@ that keeps working in sleep mode
 
 ### Co-operative Scheduling
 
-LDL is designed to work in a mainloop style application.
+LDL is designed to share a thread of execution with other tasks.
 
-A simple scheduler can use LDL_MAC_priority() to check if LDL is 
-expecting to handle a time sensitive event in the next n seconds.
+LDL sometimes schedules events which might be missed if another task 
+takes too long to complete. A simple scheduler can use 
+LDL_MAC_priority() to check if LDL is expecting to handle a sensitive 
+event in the next n seconds, and hold back disruptive tasks
+until the priority interval has passed.

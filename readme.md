@@ -9,8 +9,9 @@ This project is experimental, which means:
 - formal conformance testing has not been completed
 - it should not be trusted
 
-|--------------------------------------------------------------------------------------------------------------------------------|--------------------------|
-| [![Build Status](https://travis-ci.org/cjhdev/lora_device_lib.svg?branch=master)](https://travis-ci.org/cjhdev/lora_device_lib)|[history file](history.md)|
+See [history file](history.md) for releases.
+
+[![Build Status](https://travis-ci.org/cjhdev/lora_device_lib.svg?branch=master)](https://travis-ci.org/cjhdev/lora_device_lib)
 
 ## Features
 
@@ -21,6 +22,7 @@ This project is experimental, which means:
     - per invocation options (overriding global settings)
         - redundancy (nbTrans)
         - piggy-back LinkCheckReq
+        - transmit start time dither
     - deferred duty cycle limit for redundant transmissions
 - ADR
 - Supported MAC commands
@@ -37,7 +39,6 @@ This project is experimental, which means:
     - requires read access to a free-running counter incrementing at a rate in the range of 1KHz to 1MHz
     - requires a psuedorandom number generator (e.g. rand())
     - requires access to the radio
-        - for SX1272/6 this is via SPI and GPIO
 - Supported regions (run-time option)
     - EU_868_870
     - EU_433
@@ -46,9 +47,7 @@ This project is experimental, which means:
 - Supported radios (run-time option)
     - SX1272
     - SX1276
-- Build time options    
-    - [build optimisations](https://cjhdev.github.io/lora_device_lib_api/group__ldl__build__options.html)
-    - built-in cryptography is simple to replace
+- Build time [options](https://cjhdev.github.io/lora_device_lib_api/group__ldl__build__options.html)
 - [API documentation](https://cjhdev.github.io/lora_device_lib_api/)
 - Examples
     - [Arduino wrapper](bindings/arduino/output/arduino_ldl)
@@ -82,7 +81,7 @@ LDL should be able to share a single thread of execution with other tasks. It sh
 
 - not block
 - indicate when it requires prioritisation (critical timing window)
-- indicate ticks until the next event
+- indicate time until the next event
 - calculate how late it is to handling an event
 - compensate for timing jitter
 - push events to the application asynchronously

@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef __LORA_FRAME_H
-#define __LORA_FRAME_H
+#ifndef LDL_FRAME_H
+#define LDL_FRAME_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +31,7 @@ extern "C" {
 
 /* types **************************************************************/
 
-enum lora_frame_type {
+enum ldl_frame_type {
     FRAME_TYPE_JOIN_REQ = 0,
     FRAME_TYPE_JOIN_ACCEPT,
     FRAME_TYPE_DATA_UNCONFIRMED_UP,
@@ -41,9 +41,9 @@ enum lora_frame_type {
     FRAME_TYPE_REJOIN_REQ
 };
 
-struct lora_frame_data {
+struct ldl_frame_data {
     
-    enum lora_frame_type type;
+    enum ldl_frame_type type;
     
     uint32_t devAddr;
     uint16_t counter;
@@ -63,29 +63,29 @@ struct lora_frame_data {
     uint32_t mic;
 };
 
-struct lora_frame_data_offset {
+struct ldl_frame_data_offset {
 
     uint8_t opts;
     uint8_t data;
 };
 
-enum lora_frame_rejoin_type {
+enum ldl_frame_rejoin_type {
         
-    LORA_REJOIN_TYPE_1,
-    LORA_REJOIN_TYPE_2,
-    LORA_REJOIN_TYPE_3
+    LDL_REJOIN_TYPE_1,
+    LDL_REJOIN_TYPE_2,
+    LDL_REJOIN_TYPE_3
 };
 
-struct lora_frame_rejoin_request {
+struct ldl_frame_rejoin_request {
     
-    enum lora_frame_rejoin_type type;
+    enum ldl_frame_rejoin_type type;
     uint32_t netID;
     uint8_t devEUI[8U];
     uint16_t rjCount;    
     uint32_t mic;
 };
 
-struct lora_frame_join_request {
+struct ldl_frame_join_request {
     
     uint8_t joinEUI[8U];
     uint8_t devEUI[8U];
@@ -93,9 +93,9 @@ struct lora_frame_join_request {
     uint32_t mic;
 };
 
-struct lora_frame_down {
+struct ldl_frame_down {
 
-    enum lora_frame_type type;
+    enum ldl_frame_type type;
     
     /* join accept */
     uint32_t joinNonce;
@@ -132,11 +132,11 @@ struct lora_frame_down {
 /* function prototypes ************************************************/
 
 void LDL_Frame_updateMIC(void *msg, uint8_t len, uint32_t mic);
-uint8_t LDL_Frame_putData(const struct lora_frame_data *f, void *out, uint8_t max, struct lora_frame_data_offset *off);
-uint8_t LDL_Frame_putJoinRequest(const struct lora_frame_join_request *f, void *out, uint8_t max);
-uint8_t LDL_Frame_putRejoinRequest(const struct lora_frame_rejoin_request *f, void *out, uint8_t max);
-bool LDL_Frame_peek(const void *in, uint8_t len, enum lora_frame_type *type);
-bool LDL_Frame_decode(struct lora_frame_down *f, void *in, uint8_t len);
+uint8_t LDL_Frame_putData(const struct ldl_frame_data *f, void *out, uint8_t max, struct ldl_frame_data_offset *off);
+uint8_t LDL_Frame_putJoinRequest(const struct ldl_frame_join_request *f, void *out, uint8_t max);
+uint8_t LDL_Frame_putRejoinRequest(const struct ldl_frame_rejoin_request *f, void *out, uint8_t max);
+bool LDL_Frame_peek(const void *in, uint8_t len, enum ldl_frame_type *type);
+bool LDL_Frame_decode(struct ldl_frame_down *f, void *in, uint8_t len);
 
 uint8_t LDL_Frame_sizeofJoinAccept(bool withCFList);
 uint8_t LDL_Frame_getPhyPayloadSize(uint8_t dataLen, uint8_t optsLen);

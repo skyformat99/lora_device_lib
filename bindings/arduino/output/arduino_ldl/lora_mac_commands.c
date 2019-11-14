@@ -26,40 +26,32 @@
 struct type_to_tag {
   
     uint8_t tag;    
-    enum lora_mac_cmd_type type;    
+    enum ldl_mac_cmd_type type;    
 };
 
-static uint8_t typeToTag(enum lora_mac_cmd_type type);    
-static bool tagToType(uint8_t tag, enum lora_mac_cmd_type *type);
-
-static bool getLinkCheckAns(struct lora_stream *s, struct lora_link_check_ans *value);
-static bool getLinkADRReq(struct lora_stream *s, struct lora_link_adr_req *value);
-static bool getRXParamSetupReq(struct lora_stream *s, struct lora_rx_param_setup_req *value);
-static bool getNewChannelReq(struct lora_stream *s, struct lora_new_channel_req *value);
-static bool getDLChannelReq(struct lora_stream *s, struct lora_dl_channel_req *value);
-static bool getRXTimingSetupReq(struct lora_stream *s, struct lora_rx_timing_setup_req *value);
-static bool getTXParamSetupReq(struct lora_stream *s, struct lora_tx_param_setup_req *value);
-static bool getDutyCycleReq(struct lora_stream *s, struct lora_duty_cycle_req *value);
+static uint8_t typeToTag(enum ldl_mac_cmd_type type);    
+static bool tagToType(uint8_t tag, enum ldl_mac_cmd_type *type);
 
 static const struct type_to_tag tags[] = {
-    {2U, LINK_CHECK},
-    {3U, LINK_ADR},
-    {4U, DUTY_CYCLE},
-    {5U, RX_PARAM_SETUP},
-    {6U, DEV_STATUS},
-    {7U, NEW_CHANNEL},
-    {8U, RX_TIMING_SETUP},
-    {9U, TX_PARAM_SETUP},
-    {10U, DL_CHANNEL},
-    {16U, PING_SLOT_INFO},
-    {17U, PING_SLOT_CHANNEL},
-    {18U, BEACON_TIMING},
-    {19U, BEACON_FREQ}
+    {2U, LDL_CMD_LINK_CHECK},
+    {3U, LDL_CMD_LINK_ADR},
+    {4U, LDL_CMD_DUTY_CYCLE},
+    {5U, LDL_CMD_RX_PARAM_SETUP},
+    {6U, LDL_CMD_DEV_STATUS},
+    {7U, LDL_CMD_NEW_CHANNEL},
+    {8U, LDL_CMD_RX_TIMING_SETUP},
+    {9U, LDL_CMD_TX_PARAM_SETUP},
+    {10U, LDL_CMD_DL_CHANNEL},    
+    {11U, LDL_CMD_REKEY},
+    {12U, LDL_CMD_ADR_PARAM_SETUP},
+    {13U, LDL_CMD_DEVICE_TIME},
+    {14U, LDL_CMD_FORCE_REJOIN},
+    {15U, LDL_CMD_REJOIN_PARAM_SETUP}   
 };
 
 /* functions **********************************************************/
 
-bool LDL_MAC_peekNextCommand(struct lora_stream *s, enum lora_mac_cmd_type *type)
+bool LDL_MAC_peekNextCommand(struct ldl_stream *s, enum ldl_mac_cmd_type *type)
 {
     uint8_t tag;
     bool retval = false;
@@ -72,27 +64,31 @@ bool LDL_MAC_peekNextCommand(struct lora_stream *s, enum lora_mac_cmd_type *type
     return retval;
 }
 
-uint8_t LDL_MAC_sizeofCommandUp(enum lora_mac_cmd_type type)
+uint8_t LDL_MAC_sizeofCommandUp(enum ldl_mac_cmd_type type)
 {
     uint8_t retval = 0U;
     
-    switch(type){
-    case LINK_CHECK:
+    switch(type){        
+    case LDL_CMD_LINK_CHECK:
+    case LDL_CMD_DUTY_CYCLE:
+    case LDL_CMD_RX_TIMING_SETUP:
+    case LDL_CMD_TX_PARAM_SETUP:
+    case LDL_CMD_ADR_PARAM_SETUP:
+    case LDL_CMD_DEVICE_TIME:
         retval = 1U;
         break;
-    case LINK_ADR:
-    case DUTY_CYCLE:
-    case RX_PARAM_SETUP:
-    case DEV_STATUS:
-    case NEW_CHANNEL:
-    case RX_TIMING_SETUP:
-    case TX_PARAM_SETUP:
-    case DL_CHANNEL:
-    case PING_SLOT_INFO:
-    case PING_SLOT_CHANNEL:
-    case PING_SLOT_FREQ:
-    case BEACON_TIMING:
-    case BEACON_FREQ:
+    case LDL_CMD_LINK_ADR:
+    case LDL_CMD_RX_PARAM_SETUP:
+    case LDL_CMD_NEW_CHANNEL:
+    case LDL_CMD_DL_CHANNEL:
+    case LDL_CMD_REKEY:
+    case LDL_CMD_REJOIN_PARAM_SETUP:
+        retval = 2U;
+        break;        
+    case LDL_CMD_DEV_STATUS:
+        retval = 3U;
+        break;    
+    case LDL_CMD_FORCE_REJOIN:
     default:      
         break;
     }
@@ -100,79 +96,99 @@ uint8_t LDL_MAC_sizeofCommandUp(enum lora_mac_cmd_type type)
     return retval;
 }
 
-void LDL_MAC_putLinkCheckReq(struct lora_stream *s)
+void LDL_MAC_putLinkCheckReq(struct ldl_stream *s)
 {
-    (void)LDL_Stream_putU8(s, typeToTag(LINK_CHECK));
+    LDL_Stream_putU8(s, typeToTag(LDL_CMD_LINK_CHECK));
 }
 
-void LDL_MAC_putLinkADRAns(struct lora_stream *s, const struct lora_link_adr_ans *value)
+void LDL_MAC_putLinkADRAns(struct ldl_stream *s, const struct ldl_link_adr_ans *value)
 {
     uint8_t buf;
     
     buf = (value->powerOK ? 4U : 0U) | (value->dataRateOK ? 2U : 0U) | (value->channelMaskOK ? 1U : 0U);
     
-    (void)LDL_Stream_putU8(s, typeToTag(LINK_ADR));        
-    (void)LDL_Stream_putU8(s, buf);
+    LDL_Stream_putU8(s, typeToTag(LDL_CMD_LINK_ADR));        
+    LDL_Stream_putU8(s, buf);
 }
 
-void LDL_MAC_putDutyCycleAns(struct lora_stream *s)
+void LDL_MAC_putDutyCycleAns(struct ldl_stream *s)
 {
-    (void)LDL_Stream_putU8(s, typeToTag(DUTY_CYCLE));
+    LDL_Stream_putU8(s, typeToTag(LDL_CMD_DUTY_CYCLE));
 }
 
-void LDL_MAC_putRXParamSetupAns(struct lora_stream *s, const struct lora_rx_param_setup_ans *value)
+void LDL_MAC_putRXParamSetupAns(struct ldl_stream *s, const struct ldl_rx_param_setup_ans *value)
 {
     uint8_t buf;
     
     buf = (value->rx1DROffsetOK ? 4U : 0U) | (value->rx2DataRateOK ? 2U : 0U) | (value->channelOK ? 1U : 0U);
     
-    (void)LDL_Stream_putU8(s, typeToTag(RX_PARAM_SETUP));
-    (void)LDL_Stream_putU8(s, buf);
+    LDL_Stream_putU8(s, typeToTag(LDL_CMD_RX_PARAM_SETUP));
+    LDL_Stream_putU8(s, buf);
 }
 
-void LDL_MAC_putDevStatusAns(struct lora_stream *s, const struct lora_dev_status_ans *value)
+void LDL_MAC_putDevStatusAns(struct ldl_stream *s, const struct ldl_dev_status_ans *value)
 {
-    (void)LDL_Stream_putU8(s, typeToTag(DEV_STATUS));
-    (void)LDL_Stream_putU8(s, value->battery);
-    (void)LDL_Stream_putU8(s, value->margin);           
+    LDL_Stream_putU8(s, typeToTag(LDL_CMD_DEV_STATUS));
+    LDL_Stream_putU8(s, value->battery);
+    LDL_Stream_putU8(s, value->margin);           
 }
 
-
-void LDL_MAC_putNewChannelAns(struct lora_stream *s, const struct lora_new_channel_ans *value)
+void LDL_MAC_putNewChannelAns(struct ldl_stream *s, const struct ldl_new_channel_ans *value)
 {
     uint8_t buf;
     
     buf = (value->dataRateRangeOK ? 2U : 0U) | (value->channelFrequencyOK ? 1U : 0U);
     
-    (void)LDL_Stream_putU8(s, typeToTag(NEW_CHANNEL));
-    (void)LDL_Stream_putU8(s, buf);           
+    LDL_Stream_putU8(s, typeToTag(LDL_CMD_NEW_CHANNEL));
+    LDL_Stream_putU8(s, buf);           
 }
 
 
-void LDL_MAC_putDLChannelAns(struct lora_stream *s, const struct lora_dl_channel_ans *value)
+void LDL_MAC_putDLChannelAns(struct ldl_stream *s, const struct ldl_dl_channel_ans *value)
 {
     uint8_t buf;
     
     buf = (value->uplinkFreqOK ? 2U : 0U) | (value->channelFrequencyOK ? 1U : 0U);
     
-    (void)LDL_Stream_putU8(s, typeToTag(DL_CHANNEL));
-    (void)LDL_Stream_putU8(s, buf);    
+    LDL_Stream_putU8(s, typeToTag(LDL_CMD_DL_CHANNEL));
+    LDL_Stream_putU8(s, buf);    
 }
 
-void LDL_MAC_putRXTimingSetupAns(struct lora_stream *s)
+void LDL_MAC_putRXTimingSetupAns(struct ldl_stream *s)
 {
-    (void)LDL_Stream_putU8(s, typeToTag(RX_TIMING_SETUP));
+    LDL_Stream_putU8(s, typeToTag(LDL_CMD_RX_TIMING_SETUP));
 }
 
-void LDL_MAC_putTXParamSetupAns(struct lora_stream *s)
+void LDL_MAC_putTXParamSetupAns(struct ldl_stream *s)
 {
-    (void)LDL_Stream_putU8(s, typeToTag(TX_PARAM_SETUP));
+    LDL_Stream_putU8(s, typeToTag(LDL_CMD_TX_PARAM_SETUP));
 }
 
-bool LDL_MAC_getDownCommand(struct lora_stream *s, struct lora_downstream_cmd *cmd)
+void LDL_MAC_putRekeyInd(struct ldl_stream *s, const struct ldl_rekey_ind *value)
+{
+    LDL_Stream_putU8(s, typeToTag(LDL_CMD_REKEY));
+    LDL_Stream_putU8(s, value->version);
+}
+
+void LDL_MAC_putADRParamSetupAns(struct ldl_stream *s)
+{
+    LDL_Stream_putU8(s, typeToTag(LDL_CMD_ADR_PARAM_SETUP));
+}
+
+void LDL_MAC_putDeviceTimeReq(struct ldl_stream *s)
+{
+    LDL_Stream_putU8(s, typeToTag(LDL_CMD_DEVICE_TIME));
+}
+
+void LDL_MAC_putRejoinParamSetupAns(struct ldl_stream *s, struct ldl_rejoin_param_setup_ans *value)
+{
+    LDL_Stream_putU8(s, typeToTag(LDL_CMD_REJOIN_PARAM_SETUP));
+    LDL_Stream_putU8(s, value->timeOK);
+}
+
+bool LDL_MAC_getDownCommand(struct ldl_stream *s, struct ldl_downstream_cmd *cmd)
 {
     uint8_t tag;
-    bool retval = false;
     
     if(LDL_Stream_getU8(s, &tag)){
         
@@ -180,65 +196,148 @@ bool LDL_MAC_getDownCommand(struct lora_stream *s, struct lora_downstream_cmd *c
             
             switch(cmd->type){
             default:
-            case LINK_CHECK:
-            
-                retval = getLinkCheckAns(s, &cmd->fields.linkCheckAns);
+                /* impossible */
                 break;
                 
-            case LINK_ADR:                    
-            
-                retval = getLinkADRReq(s, &cmd->fields.linkADRReq);
-                break;
-            
-            case DUTY_CYCLE:                
-            
-                retval = getDutyCycleReq(s, &cmd->fields.dutyCycleReq);
-                break;
-            
-            case RX_PARAM_SETUP:
-            
-                retval = getRXParamSetupReq(s, &cmd->fields.rxParamSetupReq);
-                break;
-            
-            case DEV_STATUS:
-            
-                retval = true;
-                break;
-            
-            case NEW_CHANNEL:
-            
-                retval = getNewChannelReq(s, &cmd->fields.newChannelReq);
+            case LDL_CMD_LINK_CHECK:
+                
+                LDL_Stream_getU8(s, &cmd->fields.linkCheck.margin);
+                LDL_Stream_getU8(s, &cmd->fields.linkCheck.gwCount);    
                 break;
                 
-            case DL_CHANNEL:
-            
-                retval = getDLChannelReq(s, &cmd->fields.dlChannelReq);
+            case LDL_CMD_LINK_ADR:                    
+            {
+                uint8_t buf;
+                
+                LDL_Stream_getU8(s, &buf);
+                
+                cmd->fields.linkADR.dataRate = buf >> 4;
+                cmd->fields.linkADR.txPower = buf & 0xfU;
+                
+                LDL_Stream_getU16(s, &cmd->fields.linkADR.channelMask);
+                        
+                LDL_Stream_getU8(s, &buf);
+                        
+                cmd->fields.linkADR.channelMaskControl = (buf >> 4) & 0x7U;
+                cmd->fields.linkADR.nbTrans = buf & 0xfU;
+            }
                 break;
             
-            case RX_TIMING_SETUP:
+            case LDL_CMD_DUTY_CYCLE:                
             
-                retval = getRXTimingSetupReq(s, &cmd->fields.rxTimingSetupReq);
+                LDL_Stream_getU8(s, &cmd->fields.dutyCycle.maxDutyCycle);
+                cmd->fields.dutyCycle.maxDutyCycle &= 0xfU;             
                 break;
             
-            case TX_PARAM_SETUP:
+            case LDL_CMD_RX_PARAM_SETUP:
             
-                retval = getTXParamSetupReq(s, &cmd->fields.txParamSetupReq);
+                LDL_Stream_getU8(s, &cmd->fields.rxParamSetup.rx1DROffset);
+                LDL_Stream_getU24(s, &cmd->fields.rxParamSetup.freq);                 
+                break;
+            
+            case LDL_CMD_DEV_STATUS:
+            
+                // no args
+                break;
+            
+            case LDL_CMD_NEW_CHANNEL:
+            {
+                uint8_t buf;
+    
+                LDL_Stream_getU8(s, &cmd->fields.newChannel.chIndex);        
+                LDL_Stream_getU24(s, &cmd->fields.newChannel.freq);
+                LDL_Stream_getU8(s, &buf);
+
+                cmd->fields.newChannel.maxDR = buf >> 4;
+                cmd->fields.newChannel.minDR = buf & 0xfU;           
+            }
+                break;
+                
+            case LDL_CMD_DL_CHANNEL:
+            
+                LDL_Stream_getU8(s, &cmd->fields.dlChannel.chIndex);
+                LDL_Stream_getU24(s, &cmd->fields.dlChannel.freq);     
+                break;
+            
+            case LDL_CMD_RX_TIMING_SETUP:
+            
+                LDL_Stream_getU8(s, &cmd->fields.rxTimingSetup.delay);
+                cmd->fields.rxTimingSetup.delay &= 0xfU;   
+                break;
+            
+            case LDL_CMD_TX_PARAM_SETUP:
+            {
+                uint8_t buf;
+                
+                LDL_Stream_getU8(s, &buf);
+                
+                cmd->fields.txParamSetup.downlinkDwell = ((buf & 0x20U) == 0x20U); 
+                cmd->fields.txParamSetup.uplinkDwell = ((buf & 0x10U) == 0x10U); 
+                cmd->fields.txParamSetup.maxEIRP = buf & 0xfU; 
+            }
+                break;
+            
+            case LDL_CMD_REKEY:
+            
+                LDL_Stream_getU8(s, &cmd->fields.rekey.version);
+                cmd->fields.rekey.version &= 0xfU; 
+                break;
+            
+            case LDL_CMD_ADR_PARAM_SETUP:
+            {
+                uint8_t buf;
+                
+                LDL_Stream_getU8(s, &buf);
+    
+                cmd->fields.adrParamSetup.limit_exp = buf >> 4;
+                cmd->fields.adrParamSetup.delay_exp = buf & 0xfU;
+            }
+                break;
+            
+            case LDL_CMD_DEVICE_TIME:
+            
+                LDL_Stream_getU32(s, &cmd->fields.deviceTime.seconds);
+                LDL_Stream_getU8(s, &cmd->fields.deviceTime.fractions);
+                break;
+            
+            case LDL_CMD_FORCE_REJOIN:
+            {
+                uint16_t buf;
+    
+                LDL_Stream_getU16(s, &buf);
+                
+                cmd->fields.forceRejoin.period = (buf >> 10) & 0x7U;
+                cmd->fields.forceRejoin.max_retries = (buf >> 7) & 0x7U;
+                cmd->fields.forceRejoin.rejoin_type = (buf >> 4) & 0x7U;
+                cmd->fields.forceRejoin.dr = buf & 0xfU;
+            }
+                break;
+            
+            case LDL_CMD_REJOIN_PARAM_SETUP:
+            {
+                uint8_t buf;
+    
+                LDL_Stream_getU8(s, &buf);
+                
+                cmd->fields.rejoinParamSetup.maxTimeN = buf >> 4;
+                cmd->fields.rejoinParamSetup.maxCountN = buf & 0xfU;
+            }
                 break;
             }
         }
     }
     
-    return retval;
+    return !LDL_Stream_error(s);
 }
 
 /* static functions ***************************************************/
 
-static uint8_t typeToTag(enum lora_mac_cmd_type type)
+static uint8_t typeToTag(enum ldl_mac_cmd_type type)
 {
     return tags[type].tag;
 }
 
-static bool tagToType(uint8_t tag, enum lora_mac_cmd_type *type)
+static bool tagToType(uint8_t tag, enum ldl_mac_cmd_type *type)
 {
     bool retval = false;
     uint8_t i;
@@ -255,171 +354,3 @@ static bool tagToType(uint8_t tag, enum lora_mac_cmd_type *type)
     
     return retval;
 }
-
-static bool getLinkCheckAns(struct lora_stream *s, struct lora_link_check_ans *value)
-{
-    bool retval;
-    
-    (void)LDL_Stream_getU8(s, &value->margin);
-    retval = LDL_Stream_getU8(s, &value->gwCount);    
-    
-    return retval;
-}
-
-static bool getLinkADRReq(struct lora_stream *s, struct lora_link_adr_req *value)
-{
-    uint8_t buf;
-    bool retval;
-    
-    (void)LDL_Stream_getU8(s, &buf);
-    
-    value->dataRate = buf >> 4;
-    value->txPower = buf & 0xfU;
-    
-    (void)LDL_Stream_getU16(s, &value->channelMask);
-            
-    retval = LDL_Stream_getU8(s, &buf);
-            
-    value->channelMaskControl = (buf >> 4) & 0x7U;
-    value->nbTrans = buf & 0xfU;
-    
-    return retval;
-}
-
-static bool getDutyCycleReq(struct lora_stream *s, struct lora_duty_cycle_req *value)
-{
-    bool retval;
-    
-    retval = LDL_Stream_getU8(s, &value->maxDutyCycle);
-    
-    value->maxDutyCycle = value->maxDutyCycle & 0xfU;        
-    
-    return retval;
-}
-
-static bool getRXParamSetupReq(struct lora_stream *s, struct lora_rx_param_setup_req *value)
-{
-    bool retval;
-    
-    (void)LDL_Stream_getU8(s, &value->rx1DROffset);
-    retval = LDL_Stream_getU24(s, &value->freq);        
-    
-    return retval;
-}
-
-static bool getNewChannelReq(struct lora_stream *s, struct lora_new_channel_req *value)
-{
-    bool retval;
-    uint8_t buf;
-    
-    (void)LDL_Stream_getU8(s, &value->chIndex);        
-    (void)LDL_Stream_getU24(s, &value->freq);
-    retval = LDL_Stream_getU8(s, &buf);
-
-    value->maxDR = buf >> 4;
-    value->minDR = buf & 0xfU;                        
-    
-    return retval;
-}
-
-static bool getDLChannelReq(struct lora_stream *s, struct lora_dl_channel_req *value)
-{
-    bool retval;
-    
-    (void)LDL_Stream_getU8(s, &value->chIndex);
-    retval = LDL_Stream_getU24(s, &value->freq);        
-    
-    return retval;
-}
-
-static bool getRXTimingSetupReq(struct lora_stream *s, struct lora_rx_timing_setup_req *value)
-{
-    bool retval;
-    
-    retval = LDL_Stream_getU8(s, &value->delay);
-    value->delay &= 0xfU;        
-    
-    return retval;
-}
-
-static bool getTXParamSetupReq(struct lora_stream *s, struct lora_tx_param_setup_req *value)
-{
-    bool retval;
-    uint8_t buf;
-    
-    retval = LDL_Stream_getU8(s, &buf);
-            
-    value->downlinkDwell = ((buf & 0x20U) == 0x20U); 
-    value->uplinkDwell = ((buf & 0x10U) == 0x10U); 
-    value->maxEIRP = buf & 0xfU; 
-
-    return retval;
-}
-
-#if 0
-
-static bool getPingSlotInfoReq(struct lora_stream *s, struct lora_ping_slot_info_req *value)
-{
-    bool retval = false;
-    uint8_t buf;
-    
-    if(LDL_Stream_getU8(s, &buf)){
-        
-        value->periodicity = (buf >> 4U) & 0x7U;
-        value->dataRate = buf & 0xfU;
-        
-        retval = true;
-    }
-    
-    return retval
-}
-
-static bool getPingSlotChannelReq(struct lora_stream *s, struct lora_ping_slot_channel_req *value)
-{
-    bool retval = false;
-    
-    
-    return retval
-}
-
-static bool getPingSlotFreqAns(struct lora_stream *s, struct lora_ping_slot_freq_ans *value)
-{
-    bool retval = false;
-    
-    
-    return retval
-}
-
-static bool getBeaconTimingReq(struct lora_stream *s, struct lora_beacon_timing_req *value)
-{
-    bool retval = false;
-    
-    
-    return retval
-}
-
-static bool getBeaconTimingAns(struct lora_stream *s, struct lora_beacon_timing_ans *value)
-{
-    bool retval = false;
-    
-    
-    return retval
-}
-
-static bool getBeaconFreqReq(struct lora_stream *s, struct lora_beacon_freq_req *value)
-{
-    bool retval = false;
-    
-    
-    return retval
-}
-
-static bool getBeaconFreqAns(struct lora_stream *s, struct lora_beacon_freq_ans *value)
-{
-    bool retval = false;
-    
-    
-    return retval
-}
-
-#endif

@@ -26,8 +26,6 @@
 
 uint8_t LDL_System_rand(void *app) __attribute__((weak));
 uint8_t LDL_System_getBatteryLevel(void *app) __attribute__((weak));
-bool LDL_System_restoreContext(void *app, struct lora_mac_session *value) __attribute__((weak));
-void LDL_System_saveContext(void *app, const struct lora_mac_session *value) __attribute__((weak));
 uint32_t LDL_System_advance(void) __attribute__((weak));
 
 /**! [LDL_System_rand] */
@@ -43,19 +41,6 @@ uint8_t LDL_System_getBatteryLevel(void *app)
     return 255U;    /* not available */
 }
 /**! [LDL_System_getBatteryLevel] */
-
-/**! [LDL_System_restoreContext] */
-bool LDL_System_restoreContext(void *app, struct lora_mac_session *value)
-{
-    return false;
-}
-/**! [LDL_System_restoreContext] */
-
-/**! [LDL_System_saveContext] */
-void LDL_System_saveContext(void *app, const struct lora_mac_session *value)
-{
-}
-/**! [LDL_System_saveContext] */
 
 /**! [LDL_System_advance] */
 uint32_t LDL_System_advance(void)

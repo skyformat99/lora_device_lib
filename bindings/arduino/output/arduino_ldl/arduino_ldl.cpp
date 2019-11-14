@@ -44,14 +44,14 @@ uint32_t LDL_System_ticks(void *app)
     return micros();
 }
 
-void LDL_System_getIdentity(void *app, struct lora_system_identity *value)
+void LDL_System_getIdentity(void *app, struct ldl_system_identity *value)
 {
-    struct arduino_ldl_id id;
+    const struct arduino_ldl_id *id;
     
-    MAC::getIdentity(app, &id);   
+    id = MAC::getIdentity(app);   
     
-    (void)memcpy(value->joinEUI, id.joinEUI, sizeof(value->joinEUI));
-    (void)memcpy(value->devEUI, id.devEUI, sizeof(value->devEUI));     
+    (void)memcpy(value->joinEUI, id->joinEUI, sizeof(value->joinEUI));
+    (void)memcpy(value->devEUI, id->devEUI, sizeof(value->devEUI));     
 }
 
 uint32_t LDL_System_tps(void)
@@ -100,7 +100,7 @@ ISR(PCINT2_vect, ISR_ALIASOF(PCINT0_vect));
 
 /* constructors *******************************************************/
 
-Radio::Radio(enum lora_radio_type type, enum lora_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1) : 
+Radio::Radio(enum ldl_radio_type type, enum ldl_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1) : 
     dio0(dio0, 0, radio), dio1(dio1, 1, radio), nreset(nreset), nselect(nselect)
 {
     pinMode(nreset, INPUT);
@@ -120,32 +120,30 @@ Radio::Radio(enum lora_radio_type type, enum lora_radio_pa pa, uint8_t nreset, u
     PCICR |= _BV(PCIE0) |_BV(PCIE1) |_BV(PCIE2);  
 }
 
-#ifdef LORA_ENABLE_SX1272
-SX1272::SX1272(enum lora_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1) : 
-    Radio(LORA_RADIO_SX1272, pa, nreset, nselect, dio0, dio1) 
+#ifdef LDL_ENABLE_SX1272
+SX1272::SX1272(enum ldl_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1) : 
+    Radio(LDL_RADIO_SX1272, pa, nreset, nselect, dio0, dio1) 
 {    
 }
 #endif
 
-#ifdef LORA_ENABLE_SX1276
-SX1276::SX1276(enum lora_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1) : 
-    Radio(LORA_RADIO_SX1276, pa, nreset, nselect, dio0, dio1) 
+#ifdef LDL_ENABLE_SX1276
+SX1276::SX1276(enum ldl_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1) : 
+    Radio(LDL_RADIO_SX1276, pa, nreset, nselect, dio0, dio1) 
 {
 }
 #endif
 
-MAC::MAC(Radio& radio, enum lora_region region, get_identity_fn get_id) : 
+MAC::MAC(Radio& radio, enum ldl_region region, get_identity_fn get_id) : 
     radio(radio), get_id(get_id)
 {
     handle_rx = NULL;
     
-    struct arduino_ldl_id id;
+    struct ldl_mac_init_arg arg = {0};
     
-    get_id(&id);
+    const struct arduino_ldl_id *id = get_id();
     
-    LDL_SM_init(&sm, id.appKey, id.nwkKey);
-    
-    struct lora_mac_init_arg arg = {0};
+    LDL_SM_init(&sm, id->appKey, id->nwkKey);
     
     arg.app = this;
     arg.radio = &radio.radio;
@@ -196,22 +194,22 @@ uint32_t MAC::ticks()
     return LDL_System_ticks(NULL);
 }
 
-bool MAC::unconfirmedData(uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts)
+bool MAC::unconfirmedData(uint8_t port, const void *data, uint8_t len, const struct ldl_mac_data_opts *opts)
 {
     return LDL_MAC_unconfirmedData(&mac, port, data, len, opts); 
 }
 
-bool MAC::unconfirmedData(uint8_t port, const struct lora_mac_data_opts *opts)
+bool MAC::unconfirmedData(uint8_t port, const struct ldl_mac_data_opts *opts)
 {
     return LDL_MAC_unconfirmedData(&mac, port, NULL, 0U, opts); 
 }
 
-bool MAC::confirmedData(uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts)
+bool MAC::confirmedData(uint8_t port, const void *data, uint8_t len, const struct ldl_mac_data_opts *opts)
 {
     return LDL_MAC_confirmedData(&mac, port, data, len, opts); 
 }
 
-bool MAC::confirmedData(uint8_t port, const struct lora_mac_data_opts *opts)
+bool MAC::confirmedData(uint8_t port, const struct ldl_mac_data_opts *opts)
 {
     return LDL_MAC_confirmedData(&mac, port, NULL, 0U, opts); 
 }
@@ -251,7 +249,7 @@ uint8_t MAC::getPower()
     return LDL_MAC_getPower(&mac);
 }
 
-enum lora_mac_errno MAC::getErrno()
+enum ldl_mac_errno MAC::getErrno()
 {
     return LDL_MAC_errno(&mac);
 }    
@@ -266,12 +264,12 @@ bool MAC::ready()
     return LDL_MAC_ready(&mac);
 }
 
-enum lora_mac_operation MAC::getOP()
+enum ldl_mac_operation MAC::getOP()
 {
     return LDL_MAC_op(&mac);
 }
 
-enum lora_mac_state MAC::getState()
+enum ldl_mac_state MAC::getState()
 {
     return LDL_MAC_state(&mac);
 }
@@ -300,9 +298,9 @@ void Radio::interrupt()
     }
 }
 
-void MAC::getIdentity(void *ptr, struct arduino_ldl_id *value)
+const struct arduino_ldl_id * MAC::getIdentity(void *ptr)
 {
-    to_obj(ptr)->get_id(value);    
+    return to_obj(ptr)->get_id();    
 }
 
 void MAC::enableADR()
@@ -427,17 +425,17 @@ Radio *Radio::to_obj(void *ptr)
     return static_cast<Radio *>(ptr);
 }
 
-void MAC::adapter(void *receiver, enum lora_mac_response_type type, const union lora_mac_response_arg *arg)
+void MAC::adapter(void *receiver, enum ldl_mac_response_type type, const union ldl_mac_response_arg *arg)
 {
     MAC *self = to_obj(receiver);
     
     /* need to seed rand on startup */
-    if(type == LORA_MAC_STARTUP){
+    if(type == LDL_MAC_STARTUP){
 
         srand(arg->startup.entropy);                        
     }
 
-    if((type == LORA_MAC_RX) && (self->handle_rx != NULL)){
+    if((type == LDL_MAC_RX) && (self->handle_rx != NULL)){
         
         self->handle_rx(arg->rx.counter, arg->rx.port, arg->rx.data, arg->rx.size);
     }
@@ -448,7 +446,7 @@ void MAC::adapter(void *receiver, enum lora_mac_response_type type, const union 
     }
 }
 
-void MAC::eventDebug(enum lora_mac_response_type type, const union lora_mac_response_arg *arg)
+void MAC::eventDebug(enum ldl_mac_response_type type, const union ldl_mac_response_arg *arg)
 {
     const char *bw125 PROGMEM = "125";
     const char *bw250 PROGMEM = "250";
@@ -465,47 +463,47 @@ void MAC::eventDebug(enum lora_mac_response_type type, const union lora_mac_resp
     Serial.print(']');
     
     switch(type){
-    case LORA_MAC_STARTUP:
+    case LDL_MAC_STARTUP:
         Serial.print(F("STARTUP"));
         break;            
-    case LORA_MAC_LINK_STATUS:
+    case LDL_MAC_LINK_STATUS:
         Serial.print(F("LINK_STATUS"));
         break;
-    case LORA_MAC_CHIP_ERROR:
+    case LDL_MAC_CHIP_ERROR:
         Serial.print(F("CHIP_ERROR"));
         break;            
-    case LORA_MAC_RESET:
+    case LDL_MAC_RESET:
         Serial.print(F("RESET"));
         break;            
-    case LORA_MAC_TX_BEGIN:
+    case LDL_MAC_TX_BEGIN:
         Serial.print(F("TX_BEGIN"));
         break;
-    case LORA_MAC_TX_COMPLETE:
+    case LDL_MAC_TX_COMPLETE:
         Serial.print(F("TX_COMPLETE"));        
         break;
-    case LORA_MAC_RX1_SLOT:
-    case LORA_MAC_RX2_SLOT:
-        Serial.print((type == LORA_MAC_RX1_SLOT) ? F("RX1_SLOT") : F("RX2_SLOT"));
+    case LDL_MAC_RX1_SLOT:
+    case LDL_MAC_RX2_SLOT:
+        Serial.print((type == LDL_MAC_RX1_SLOT) ? F("RX1_SLOT") : F("RX2_SLOT"));
         break;
-    case LORA_MAC_DOWNSTREAM:
+    case LDL_MAC_DOWNSTREAM:
         Serial.print(F("DOWNSTREAM"));
         break;
-    case LORA_MAC_JOIN_COMPLETE:
+    case LDL_MAC_JOIN_COMPLETE:
         Serial.print(F("JOIN_COMPLETE"));
         break;
-    case LORA_MAC_JOIN_TIMEOUT:
+    case LDL_MAC_JOIN_TIMEOUT:
         Serial.print(F("JOIN_TIMEOUT"));
         break;
-    case LORA_MAC_RX:
+    case LDL_MAC_RX:
         Serial.print(F("RX"));
         break;
-    case LORA_MAC_DATA_COMPLETE:
+    case LDL_MAC_DATA_COMPLETE:
         Serial.print(F("DATA_COMPLETE"));
         break;
-    case LORA_MAC_DATA_TIMEOUT:
+    case LDL_MAC_DATA_TIMEOUT:
         Serial.print(F("DATA_TIMEOUT"));
         break;
-    case LORA_MAC_DATA_NAK:
+    case LDL_MAC_DATA_NAK:
         Serial.print(F("DATA_NAK"));
         break;            
     default:
@@ -515,7 +513,7 @@ void MAC::eventDebug(enum lora_mac_response_type type, const union lora_mac_resp
     Serial.print('\n');
 }
 
-void MAC::eventDebugVerbose(enum lora_mac_response_type type, const union lora_mac_response_arg *arg)
+void MAC::eventDebugVerbose(enum ldl_mac_response_type type, const union ldl_mac_response_arg *arg)
 {
     const char *bw125 PROGMEM = "125";
     const char *bw250 PROGMEM = "250";
@@ -532,23 +530,23 @@ void MAC::eventDebugVerbose(enum lora_mac_response_type type, const union lora_m
     Serial.print(']');
     
     switch(type){
-    case LORA_MAC_STARTUP:
+    case LDL_MAC_STARTUP:
         Serial.print(F("STARTUP"));
         break;            
-    case LORA_MAC_LINK_STATUS:
+    case LDL_MAC_LINK_STATUS:
         Serial.print(F("LINK_STATUS"));   
         Serial.print(F(": M="));
         Serial.print(arg->link_status.margin);
         Serial.print(F(" GW="));
         Serial.print(arg->link_status.gwCount);                
         break;
-    case LORA_MAC_CHIP_ERROR:
+    case LDL_MAC_CHIP_ERROR:
         Serial.print(F("CHIP_ERROR"));
         break;            
-    case LORA_MAC_RESET:
+    case LDL_MAC_RESET:
         Serial.print(F("RESET"));
         break;            
-    case LORA_MAC_TX_BEGIN:
+    case LDL_MAC_TX_BEGIN:
         Serial.print(F("TX_BEGIN"));
         Serial.print(F(": SZ="));
         Serial.print(arg->tx_begin.size);
@@ -561,12 +559,12 @@ void MAC::eventDebugVerbose(enum lora_mac_response_type type, const union lora_m
         Serial.print(F(" P="));
         Serial.print(arg->tx_begin.power);
         break;
-    case LORA_MAC_TX_COMPLETE:
+    case LDL_MAC_TX_COMPLETE:
         Serial.print(F("TX_COMPLETE"));        
         break;
-    case LORA_MAC_RX1_SLOT:
-    case LORA_MAC_RX2_SLOT:
-        Serial.print((type == LORA_MAC_RX1_SLOT) ? F("RX1_SLOT") : F("RX2_SLOT"));
+    case LDL_MAC_RX1_SLOT:
+    case LDL_MAC_RX2_SLOT:
+        Serial.print((type == LDL_MAC_RX1_SLOT) ? F("RX1_SLOT") : F("RX2_SLOT"));
         Serial.print(F(": F="));
         Serial.print(arg->rx_slot.freq);
         Serial.print(F(" SF="));
@@ -574,7 +572,7 @@ void MAC::eventDebugVerbose(enum lora_mac_response_type type, const union lora_m
         Serial.print(F(" BW="));
         Serial.print(bw[arg->rx_slot.bw]);                
         break;
-    case LORA_MAC_DOWNSTREAM:
+    case LDL_MAC_DOWNSTREAM:
         Serial.print(F("DOWNSTREAM"));
         Serial.print(F(": SZ="));
         Serial.print(arg->downstream.size);
@@ -583,13 +581,13 @@ void MAC::eventDebugVerbose(enum lora_mac_response_type type, const union lora_m
         Serial.print(F(" SNR="));
         Serial.print(arg->downstream.snr);                
         break;
-    case LORA_MAC_JOIN_COMPLETE:
+    case LDL_MAC_JOIN_COMPLETE:
         Serial.print(F("JOIN_COMPLETE"));
         break;
-    case LORA_MAC_JOIN_TIMEOUT:
+    case LDL_MAC_JOIN_TIMEOUT:
         Serial.print(F("JOIN_TIMEOUT"));        
         break;
-    case LORA_MAC_RX:
+    case LDL_MAC_RX:
         Serial.print(F("RX"));
         Serial.print(F(": PORT="));
         Serial.print(arg->rx.port);
@@ -598,13 +596,13 @@ void MAC::eventDebugVerbose(enum lora_mac_response_type type, const union lora_m
         Serial.print(F(" SZ="));
         Serial.print(arg->rx.size);
         break;
-    case LORA_MAC_DATA_COMPLETE:
+    case LDL_MAC_DATA_COMPLETE:
         Serial.print(F("DATA_COMPLETE"));
         break;
-    case LORA_MAC_DATA_TIMEOUT:
+    case LDL_MAC_DATA_TIMEOUT:
         Serial.print(F("DATA_TIMEOUT"));
         break;
-    case LORA_MAC_DATA_NAK:
+    case LDL_MAC_DATA_NAK:
         Serial.print(F("DATA_NAK"));
         break;            
     default:

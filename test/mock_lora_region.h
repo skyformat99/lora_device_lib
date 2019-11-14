@@ -3,7 +3,7 @@
 
 #include "lora_region.h"
 
-struct lora_region {
+struct ldl_region {
 };
 
 #endif

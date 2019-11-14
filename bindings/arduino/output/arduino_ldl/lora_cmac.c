@@ -21,8 +21,6 @@
 
 /* includes ***********************************************************/
 
-#ifndef LORA_ENABLE_PLATFORM_CMAC
-
 #include "lora_aes.h"
 #include "lora_cmac.h"
 #include "lora_debug.h"
@@ -57,19 +55,19 @@ static void leftShift128(uint8_t *v);
 
 /* functions  *********************************************************/
 
-void LDL_CMAC_init(struct lora_cmac_ctx *ctx, const struct lora_aes_ctx *aes_ctx)
+void LDL_CMAC_init(struct ldl_cmac_ctx *ctx, const struct ldl_aes_ctx *aes_ctx)
 {    
-    LORA_PEDANTIC(ctx != NULL)
-    LORA_PEDANTIC(aes_ctx != NULL)
+    LDL_PEDANTIC(ctx != NULL)
+    LDL_PEDANTIC(aes_ctx != NULL)
 
     (void)memset(ctx, 0, sizeof(*ctx));
     ctx->aes_ctx = aes_ctx;
 }
 
-void LDL_CMAC_update(struct lora_cmac_ctx *ctx, const void *data, uint8_t len)
+void LDL_CMAC_update(struct ldl_cmac_ctx *ctx, const void *data, uint8_t len)
 {
-    LORA_PEDANTIC(ctx != NULL)
-    LORA_PEDANTIC((len == 0U) || (data != NULL))
+    LDL_PEDANTIC(ctx != NULL)
+    LDL_PEDANTIC((len == 0U) || (data != NULL))
 
     size_t part;
     size_t i;
@@ -118,9 +116,9 @@ void LDL_CMAC_update(struct lora_cmac_ctx *ctx, const void *data, uint8_t len)
     }
 }
 
-void LDL_CMAC_finish(const struct lora_cmac_ctx *ctx, void *out, uint8_t outMax)
+void LDL_CMAC_finish(const struct ldl_cmac_ctx *ctx, void *out, uint8_t outMax)
 {
-    LORA_PEDANTIC(ctx != NULL)
+    LDL_PEDANTIC(ctx != NULL)
 
     uint8_t k[BLOCK_SIZE];
     
@@ -222,5 +220,3 @@ static void xor128(uint8_t *acc, const uint8_t *mask)
     acc[14] ^= mask[14];
     acc[15] ^= mask[15];        
 }
-
-#endif

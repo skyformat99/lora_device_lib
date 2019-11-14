@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef __LORA_RADIO_H
-#define __LORA_RADIO_H
+#ifndef LDL_RADIO_H
+#define LDL_RADIO_H
 
 /** @file */
 
@@ -51,11 +51,11 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 
-enum lora_radio_event {    
-    LORA_RADIO_EVENT_TX_COMPLETE,
-    LORA_RADIO_EVENT_RX_READY,
-    LORA_RADIO_EVENT_RX_TIMEOUT,    
-    LORA_RADIO_EVENT_NONE,
+enum ldl_radio_event {    
+    LDL_RADIO_EVENT_TX_COMPLETE,
+    LDL_RADIO_EVENT_RX_READY,
+    LDL_RADIO_EVENT_RX_TIMEOUT,    
+    LDL_RADIO_EVENT_NONE,
 };
 
 /** Radio driver type
@@ -65,66 +65,66 @@ enum lora_radio_event {
  * 
  * Drivers are included in the build by defining:
  * 
- * - #LORA_ENABLE_SX1272
- * - #LORA_ENABLE_SX1276
+ * - #LDL_ENABLE_SX1272
+ * - #LDL_ENABLE_SX1276
  * 
  * */
-enum lora_radio_type {
-#ifdef LORA_ENABLE_SX1272    
-    LORA_RADIO_SX1272,      /**< SX1272 */
+enum ldl_radio_type {
+#ifdef LDL_ENABLE_SX1272    
+    LDL_RADIO_SX1272,      /**< SX1272 */
 #endif    
-#ifdef LORA_ENABLE_SX1276   
-    LORA_RADIO_SX1276,      /**< SX1276 */
+#ifdef LDL_ENABLE_SX1276   
+    LDL_RADIO_SX1276,      /**< SX1276 */
 #endif    
-    LORA_RADIO_NONE         /**< no radio */
+    LDL_RADIO_NONE         /**< no radio */
 };
 
-struct lora_radio_tx_setting {
+struct ldl_radio_tx_setting {
     
     uint32_t freq;
-    enum lora_signal_bandwidth bw;
-    enum lora_spreading_factor sf;
+    enum ldl_signal_bandwidth bw;
+    enum ldl_spreading_factor sf;
     int16_t dbm;        
 };
 
-struct lora_radio_rx_setting {
+struct ldl_radio_rx_setting {
     
     bool continuous;
     uint32_t freq;                  
-    enum lora_signal_bandwidth bw;
-    enum lora_spreading_factor sf;
+    enum ldl_signal_bandwidth bw;
+    enum ldl_spreading_factor sf;
     uint8_t timeout;
     uint8_t max;
 };
 
-struct lora_radio_packet_metadata {
+struct ldl_radio_packet_metadata {
     
     int16_t rssi;
     int8_t snr;
-    enum lora_signal_bandwidth bw;
-    enum lora_spreading_factor sf;
+    enum ldl_signal_bandwidth bw;
+    enum ldl_spreading_factor sf;
     uint32_t freq;
 };
 
 /** Power amplifier configuration */
-enum lora_radio_pa {
-    LORA_RADIO_PA_RFO,      /**< RFO pin */
-    LORA_RADIO_PA_BOOST     /**< BOOST pin */
+enum ldl_radio_pa {
+    LDL_RADIO_PA_RFO,      /**< RFO pin */
+    LDL_RADIO_PA_BOOST     /**< BOOST pin */
 };
 
-struct lora_mac;
+struct ldl_mac;
 
-typedef void (*lora_radio_event_fn)(struct lora_mac *self, enum lora_radio_event event);
+typedef void (*ldl_radio_event_fn)(struct ldl_mac *self, enum ldl_radio_event event);
 
 /** Radio data */
-struct lora_radio {
+struct ldl_radio {
     
     void *board;
-    enum lora_radio_pa pa;
+    enum ldl_radio_pa pa;
     uint8_t dio_mapping1;    
-    enum lora_radio_type type;
-    struct lora_mac *mac;
-    lora_radio_event_fn handler;    
+    enum ldl_radio_type type;
+    struct ldl_mac *mac;
+    ldl_radio_event_fn handler;    
 };
 
 
@@ -137,56 +137,56 @@ struct lora_radio {
  * @param[in] board passed to board interface functions (e.g. LDL_Chip_write())
  * 
  * */
-void LDL_Radio_init(struct lora_radio *self, enum lora_radio_type type, void *board);
+void LDL_Radio_init(struct ldl_radio *self, enum ldl_radio_type type, void *board);
 
 /** Select power amplifier
  * 
  * This setting applies to the following radio drivers:
  * 
- * - LORA_RADIO_SX1272
- * - LORA_RADIO_SX1276
+ * - LDL_RADIO_SX1272
+ * - LDL_RADIO_SX1276
  * 
  * These radios have different hardware connections for different
  * power amplifiers. This setting tells the driver which one is connected.
  * 
- * For example, the Semtech SX1272MB2xAS MBED shield uses the #LORA_RADIO_PA_RFO connection,
- * while the HopeRF RFM96W uses the #LORA_RADIO_PA_BOOST connection.
+ * For example, the Semtech SX1272MB2xAS MBED shield uses the #LDL_RADIO_PA_RFO connection,
+ * while the HopeRF RFM96W uses the #LDL_RADIO_PA_BOOST connection.
  * 
  * @param[in] self
  * @param[in] pa power amplifier setting
  * 
  * */
-void LDL_Radio_setPA(struct lora_radio *self, enum lora_radio_pa pa);
+void LDL_Radio_setPA(struct ldl_radio *self, enum ldl_radio_pa pa);
 
 /** Receive an interrupt from the chip
  * 
- * @param[in] self  #lora_radio
+ * @param[in] self  #ldl_radio
  * @param[in] n     DIO number
  * 
  * @ingroup ldl_radio_connector
  * 
- * @note this function is safe to call from an interrupt if LORA_SYSTEM_ENTER_CRITICAL() and LORA_SYSTEM_ENTER_CRITICAL() have been defined
+ * @note interrupt safe if LDL_SYSTEM_ENTER_CRITICAL() and LDL_SYSTEM_ENTER_CRITICAL() have been defined
  * 
  * */
-void LDL_Radio_interrupt(struct lora_radio *self, uint8_t n);
+void LDL_Radio_interrupt(struct ldl_radio *self, uint8_t n);
 
-void LDL_Radio_setHandler(struct lora_radio *self, struct lora_mac *mac, lora_radio_event_fn handler);
+void LDL_Radio_setHandler(struct ldl_radio *self, struct ldl_mac *mac, ldl_radio_event_fn handler);
 
-void LDL_Radio_entropyBegin(struct lora_radio *self);
-unsigned int LDL_Radio_entropyEnd(struct lora_radio *self);
-enum lora_radio_event LDL_Radio_signal(struct lora_radio *self, uint8_t n);
-void LDL_Radio_reset(struct lora_radio *self, bool state);
-uint8_t LDL_Radio_collect(struct lora_radio *self, struct lora_radio_packet_metadata *meta, void *data, uint8_t max);
-void LDL_Radio_sleep(struct lora_radio *self);
-void LDL_Radio_transmit(struct lora_radio *self, const struct lora_radio_tx_setting *settings, const void *data, uint8_t len);
-void LDL_Radio_receive(struct lora_radio *self, const struct lora_radio_rx_setting *settings);
-void LDL_Radio_clearInterrupt(struct lora_radio *self);
+void LDL_Radio_entropyBegin(struct ldl_radio *self);
+unsigned int LDL_Radio_entropyEnd(struct ldl_radio *self);
+enum ldl_radio_event LDL_Radio_signal(struct ldl_radio *self, uint8_t n);
+void LDL_Radio_reset(struct ldl_radio *self, bool state);
+uint8_t LDL_Radio_collect(struct ldl_radio *self, struct ldl_radio_packet_metadata *meta, void *data, uint8_t max);
+void LDL_Radio_sleep(struct ldl_radio *self);
+void LDL_Radio_transmit(struct ldl_radio *self, const struct ldl_radio_tx_setting *settings, const void *data, uint8_t len);
+void LDL_Radio_receive(struct ldl_radio *self, const struct ldl_radio_rx_setting *settings);
+void LDL_Radio_clearInterrupt(struct ldl_radio *self);
 
-#ifdef LORA_ENABLE_RADIO_TEST
-void LDL_Radio_setFreq(struct lora_radio *self, uint32_t freq);
-void LDL_Radio_setModemConfig(struct lora_radio *self, enum lora_signal_bandwidth bw, enum lora_spreading_factor sf);
-void LDL_Radio_setPower(struct lora_radio *self, int16_t dbm);
-void LDL_Radio_enableLora(struct lora_radio *self);
+#ifdef LDL_ENABLE_RADIO_TEST
+void LDL_Radio_setFreq(struct ldl_radio *self, uint32_t freq);
+void LDL_Radio_setModemConfig(struct ldl_radio *self, enum ldl_signal_bandwidth bw, enum ldl_spreading_factor sf);
+void LDL_Radio_setPower(struct ldl_radio *self, int16_t dbm);
+void LDL_Radio_enableLora(struct ldl_radio *self);
 #endif
 
 

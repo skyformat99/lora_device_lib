@@ -36,7 +36,7 @@ static void get_identity(struct arduino_ldl_id *id)
 LDL::MAC& get_ldl()
 {
     static LDL::SX1276 radio(
-        LORA_RADIO_PA_BOOST,  /* specify power amplifier */
+        LDL_RADIO_PA_BOOST,  /* specify power amplifier */
         A0,                 /* radio reset pin */
         10,                 /* radio select pin */
         2,                  /* radio dio0 pin */
@@ -45,7 +45,7 @@ LDL::MAC& get_ldl()
     
     static LDL::MAC mac(
         radio,              /* mac needs a radio */
-        EU_863_870,         /* specify region */
+        LDL_EU_863_870,         /* specify region */
         get_identity        /* specify name of function that returns euis and keys */               
     );
     

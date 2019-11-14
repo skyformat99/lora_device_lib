@@ -13,7 +13,7 @@ struct mock_lora_chip {
 struct user_data {
     
     struct mock_lora_chip chip;
-    struct lora_radio radio;    
+    struct ldl_radio radio;    
 };
     
 #endif

@@ -5,21 +5,9 @@ Porting Guide
 
 - LDL interfaces, except those marked as interrupt safe, must be accessed from a single thread of execution. 
 - If interrupt safe interfaces are accessed from ISRs
-    - LORA_SYSTEM_ENTER_CRITICAL() and LORA_SYSTEM_LEAVE_CRITICAL() must be defined
+    - LDL_SYSTEM_ENTER_CRITICAL() and LDL_SYSTEM_LEAVE_CRITICAL() must be defined
     - the ISR must have a higher priority than the non-interrupt thread of execution
     - bear in mind that interrupt-safe interfaces never block and return as quickly as possible
-
-## Compiling Doxygen
-
-Doxygen generated documentation for the master branch is always available
-online. Doxygen can be generated locally for branches and old releases:
-
-- `cd doxygen && make`
-- open doxygen/output/index.html in browser
-
-If you find Doxygen offensive you can read the documentation directly
-from the headers. Group descriptions can be found by searching 
-for @defgroup markup.
 
 ## Checklist
 
@@ -38,20 +26,20 @@ for @defgroup markup.
 
 3. Define the following macros (if interrupt-safe functions are called from ISRs)
 
-    - LORA_SYSTEM_ENTER_CRITICAL()
-    - LORA_SYSTEM_LEAVE_CRITICAL()
+    - LDL_SYSTEM_ENTER_CRITICAL()
+    - LDL_SYSTEM_LEAVE_CRITICAL()
 
 4. Define at least one region via build options
 
-    - LORA_ENABLE_EU_863_870
-    - LORA_ENABLE_US_902_928
-    - LORA_ENABLE_AU_915_928
-    - LORA_ENABLE_EU_433
+    - LDL_ENABLE_EU_863_870
+    - LDL_ENABLE_US_902_928
+    - LDL_ENABLE_AU_915_928
+    - LDL_ENABLE_EU_433
 
 5. Define at least one radio driver via build options
 
-    - LORA_ENABLE_SX1272
-    - LORA_ENABLE_SX1276
+    - LDL_ENABLE_SX1272
+    - LDL_ENABLE_SX1276
 
 6. Implement the radio connector
 
@@ -91,7 +79,7 @@ module (i.e. HSM) is required.
 ### Persistent Sessions
 
 LDL notifies the application of changes to session state
-via the LORA_MAC_SESSION_UPDATED event. A pointer to the new session
+via the LDL_MAC_SESSION_UPDATED event. A pointer to the new session
 state is passed with this event.
 
 To initialise LDL from a cached state, a pointer can be passed 

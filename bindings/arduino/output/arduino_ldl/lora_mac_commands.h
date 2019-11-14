@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef __LORA_MAC_COMMANDS_H
-#define __LORA_MAC_COMMANDS_H
+#ifndef LDL_MAC_COMMANDS_H
+#define LDL_MAC_COMMANDS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,34 +29,34 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 
-struct lora_stream;
+struct ldl_stream;
 
-enum lora_mac_cmd_type {
+enum ldl_mac_cmd_type {
     
-    LINK_CHECK,
-    LINK_ADR,
-    DUTY_CYCLE,
-    RX_PARAM_SETUP,
-    DEV_STATUS,
-    NEW_CHANNEL,
-    RX_TIMING_SETUP,
-    TX_PARAM_SETUP,
-    DL_CHANNEL,
+    LDL_CMD_LINK_CHECK,
+    LDL_CMD_LINK_ADR,
+    LDL_CMD_DUTY_CYCLE,
+    LDL_CMD_RX_PARAM_SETUP,
+    LDL_CMD_DEV_STATUS,
+    LDL_CMD_NEW_CHANNEL,
+    LDL_CMD_RX_TIMING_SETUP,
+    LDL_CMD_TX_PARAM_SETUP,
+    LDL_CMD_DL_CHANNEL,
     
-    PING_SLOT_INFO,
-    PING_SLOT_CHANNEL,
-    PING_SLOT_FREQ,
-    BEACON_TIMING,
-    BEACON_FREQ,
+    LDL_CMD_REKEY,
+    LDL_CMD_ADR_PARAM_SETUP,
+    LDL_CMD_DEVICE_TIME,
+    LDL_CMD_FORCE_REJOIN,
+    LDL_CMD_REJOIN_PARAM_SETUP
 };
 
-struct lora_link_check_ans {
+struct ldl_link_check_ans {
                 
     uint8_t margin;
     uint8_t gwCount;
 };
 
-struct lora_link_adr_req {
+struct ldl_link_adr_req {
     
     uint8_t dataRate;
     uint8_t txPower;
@@ -65,39 +65,39 @@ struct lora_link_adr_req {
     uint8_t nbTrans;        
 };
 
-struct lora_link_adr_ans {
+struct ldl_link_adr_ans {
     
     bool powerOK;
     bool dataRateOK;
     bool channelMaskOK;
 };
 
-struct lora_duty_cycle_req {
+struct ldl_duty_cycle_req {
     
     uint8_t maxDutyCycle;
 };
 
-struct lora_rx_param_setup_req {
+struct ldl_rx_param_setup_req {
     
     uint8_t rx1DROffset;
     uint8_t rx2DataRate;
     uint32_t freq;
 };
 
-struct lora_rx_param_setup_ans {
+struct ldl_rx_param_setup_ans {
     
     bool rx1DROffsetOK;
     bool rx2DataRateOK;
     bool channelOK;
 };
 
-struct lora_dev_status_ans {
+struct ldl_dev_status_ans {
     
     uint8_t battery;
     uint8_t margin;
 };
 
-struct lora_new_channel_req {
+struct ldl_new_channel_req {
     
     uint8_t chIndex;
     uint32_t freq;
@@ -105,95 +105,151 @@ struct lora_new_channel_req {
     uint8_t minDR;
 };
     
-struct lora_new_channel_ans {
+struct ldl_new_channel_ans {
     
     bool dataRateRangeOK;
     bool channelFrequencyOK;
 };
 
-struct lora_dl_channel_req {
+struct ldl_dl_channel_req {
     
     uint8_t chIndex;
     uint32_t freq;    
 };
 
-struct lora_dl_channel_ans {
+struct ldl_dl_channel_ans {
     
     bool uplinkFreqOK;
     bool channelFrequencyOK;
 };
 
-struct lora_rx_timing_setup_req {
+struct ldl_rx_timing_setup_req {
     
     uint8_t delay;
 };
 
-struct lora_tx_param_setup_req {
+struct ldl_tx_param_setup_req {
     
     bool downlinkDwell;
     bool uplinkDwell;
     uint8_t maxEIRP;
 };
 
-struct lora_downstream_cmd {
+struct ldl_rekey_ind {
+    
+    uint8_t version;
+};
+
+struct ldl_rekey_conf {
+    
+    uint8_t version;
+};
+
+struct ldl_adr_param_setup_req {
+    
+    uint8_t limit_exp;
+    uint8_t delay_exp;
+};
+
+struct ldl_device_time_ans {
+    
+    uint32_t seconds;
+    uint8_t fractions;
+};
+
+struct ldl_force_rejoin_req {
+    
+    uint8_t period;
+    uint8_t max_retries;
+    uint8_t rejoin_type;
+    uint8_t dr;
+};
+
+struct ldl_rejoin_param_setup_req {
   
-    enum lora_mac_cmd_type type;
+    uint8_t maxTimeN;
+    uint8_t maxCountN;
+};
+
+struct ldl_rejoin_param_setup_ans {
+    
+    uint8_t timeOK;
+};
+
+struct ldl_downstream_cmd {
+  
+    enum ldl_mac_cmd_type type;
   
     union {
       
-        struct lora_link_check_ans linkCheckAns;
-        struct lora_link_adr_req linkADRReq;
-        struct lora_duty_cycle_req dutyCycleReq;
-        struct lora_rx_param_setup_req rxParamSetupReq;
+        struct ldl_link_check_ans linkCheck;
+        struct ldl_link_adr_req linkADR;
+        struct ldl_duty_cycle_req dutyCycle;
+        struct ldl_rx_param_setup_req rxParamSetup;
         /* dev_status_req */
-        struct lora_new_channel_req newChannelReq;
-        struct lora_dl_channel_req dlChannelReq;
-        struct lora_rx_timing_setup_req rxTimingSetupReq;
-        struct lora_tx_param_setup_req txParamSetupReq;
+        struct ldl_new_channel_req newChannel;
+        struct ldl_dl_channel_req dlChannel;
+        struct ldl_rx_timing_setup_req rxTimingSetup;
+        struct ldl_tx_param_setup_req txParamSetup;        
+        struct ldl_rekey_conf rekey;
+        struct ldl_adr_param_setup_req adrParamSetup;
+        struct ldl_device_time_ans deviceTime;
+        struct ldl_force_rejoin_req forceRejoin;
+        struct ldl_rejoin_param_setup_req rejoinParamSetup;        
         
     } fields;    
 };
 
-struct lora_upstream_cmd {
+struct ldl_upstream_cmd {
   
-    enum lora_mac_cmd_type type;
+    enum ldl_mac_cmd_type type;
   
     union {
       
-        struct lora_link_adr_ans linkADRAns;
+        struct ldl_link_adr_ans linkADR;
         /* duty_cycle_ans */        
-        struct lora_rx_param_setup_ans rxParamSetupAns;
-        struct lora_dev_status_ans devStatusAns;
-        struct lora_new_channel_ans newChannelAns;
-        struct lora_dl_channel_ans dlChannelAns;
+        struct ldl_rx_param_setup_ans rxParamSetup;
+        struct ldl_dev_status_ans devStatus;
+        struct ldl_new_channel_ans newChannel;
+        struct ldl_dl_channel_ans dlChannel;
         /* rx_timing_setup_ans */
         /* tx_param_setup_ans */
+        struct ldl_rekey_ind rekey;
+        struct ldl_rejoin_param_setup_ans rejoinParamSetup;
         
     } fields;    
 };
 
-uint8_t LDL_MAC_sizeofCommandUp(enum lora_mac_cmd_type type);
-void LDL_MAC_putLinkCheckReq(struct lora_stream *s);
-void LDL_MAC_putLinkCheckAns(struct lora_stream *s, const struct lora_link_check_ans *value);
-void LDL_MAC_putLinkADRReq(struct lora_stream *s, const struct lora_link_adr_req *value);
-void LDL_MAC_putLinkADRAns(struct lora_stream *s, const struct lora_link_adr_ans *value);
-void LDL_MAC_putDutyCycleReq(struct lora_stream *s, const struct lora_duty_cycle_req *value);
-void LDL_MAC_putDutyCycleAns(struct lora_stream *s);
-void LDL_MAC_putRXParamSetupReq(struct lora_stream *s, const struct lora_rx_param_setup_req *value);
-void LDL_MAC_putDevStatusReq(struct lora_stream *s);
-void LDL_MAC_putDevStatusAns(struct lora_stream *s, const struct lora_dev_status_ans *value);
-void LDL_MAC_putNewChannelReq(struct lora_stream *s, const struct lora_new_channel_req *value);
-void LDL_MAC_putRXParamSetupAns(struct lora_stream *s, const struct lora_rx_param_setup_ans *value);
-void LDL_MAC_putNewChannelAns(struct lora_stream *s, const struct lora_new_channel_ans *value);
-void LDL_MAC_putDLChannelReq(struct lora_stream *s, const struct lora_dl_channel_req *value);
-void LDL_MAC_putDLChannelAns(struct lora_stream *s, const struct lora_dl_channel_ans *value);
-void LDL_MAC_putRXTimingSetupReq(struct lora_stream *s, const struct lora_rx_timing_setup_req *value);
-void LDL_MAC_putRXTimingSetupAns(struct lora_stream *s);
-void LDL_MAC_putTXParamSetupReq(struct lora_stream *s, const struct lora_tx_param_setup_req *value);
-void LDL_MAC_putTXParamSetupAns(struct lora_stream *s);
-bool LDL_MAC_getDownCommand(struct lora_stream *s, struct lora_downstream_cmd *cmd);
-bool LDL_MAC_getUpCommand(struct lora_stream *s, struct lora_upstream_cmd *cmd);
-bool LDL_MAC_peekNextCommand(struct lora_stream *s, enum lora_mac_cmd_type *type);
+
+void LDL_MAC_putLinkCheckReq(struct ldl_stream *s);
+void LDL_MAC_putLinkCheckAns(struct ldl_stream *s, const struct ldl_link_check_ans *value);
+void LDL_MAC_putLinkADRReq(struct ldl_stream *s, const struct ldl_link_adr_req *value);
+void LDL_MAC_putLinkADRAns(struct ldl_stream *s, const struct ldl_link_adr_ans *value);
+void LDL_MAC_putDutyCycleReq(struct ldl_stream *s, const struct ldl_duty_cycle_req *value);
+void LDL_MAC_putDutyCycleAns(struct ldl_stream *s);
+void LDL_MAC_putRXParamSetupReq(struct ldl_stream *s, const struct ldl_rx_param_setup_req *value);
+void LDL_MAC_putDevStatusReq(struct ldl_stream *s);
+void LDL_MAC_putDevStatusAns(struct ldl_stream *s, const struct ldl_dev_status_ans *value);
+void LDL_MAC_putNewChannelReq(struct ldl_stream *s, const struct ldl_new_channel_req *value);
+void LDL_MAC_putRXParamSetupAns(struct ldl_stream *s, const struct ldl_rx_param_setup_ans *value);
+void LDL_MAC_putNewChannelAns(struct ldl_stream *s, const struct ldl_new_channel_ans *value);
+void LDL_MAC_putDLChannelReq(struct ldl_stream *s, const struct ldl_dl_channel_req *value);
+void LDL_MAC_putDLChannelAns(struct ldl_stream *s, const struct ldl_dl_channel_ans *value);
+void LDL_MAC_putRXTimingSetupReq(struct ldl_stream *s, const struct ldl_rx_timing_setup_req *value);
+void LDL_MAC_putRXTimingSetupAns(struct ldl_stream *s);
+void LDL_MAC_putTXParamSetupReq(struct ldl_stream *s, const struct ldl_tx_param_setup_req *value);
+void LDL_MAC_putTXParamSetupAns(struct ldl_stream *s);
+void LDL_MAC_putRekeyInd(struct ldl_stream *s, const struct ldl_rekey_ind *value);
+void LDL_MAC_putADRParamSetupAns(struct ldl_stream *s);
+void LDL_MAC_putDeviceTimeReq(struct ldl_stream *s);
+void LDL_MAC_putRejoinParamSetupAns(struct ldl_stream *s, struct ldl_rejoin_param_setup_ans *value);
+
+bool LDL_MAC_getDownCommand(struct ldl_stream *s, struct ldl_downstream_cmd *cmd);
+bool LDL_MAC_getUpCommand(struct ldl_stream *s, struct ldl_upstream_cmd *cmd);
+
+bool LDL_MAC_peekNextCommand(struct ldl_stream *s, enum ldl_mac_cmd_type *type);
+
+uint8_t LDL_MAC_sizeofCommandUp(enum ldl_mac_cmd_type type);
 
 #ifdef __cplusplus
 }

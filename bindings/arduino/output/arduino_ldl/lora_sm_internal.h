@@ -1,5 +1,26 @@
-#ifndef __LORA_SM_INTERNAL_H
-#define __LORA_SM_INTERNAL_H
+/* Copyright (c) 2019 Cameron Harper
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ * */
+
+#ifndef LDL_SM_INTERNAL_H
+#define LDL_SM_INTERNAL_H
 
 /** @file */
 
@@ -23,22 +44,21 @@ extern "C" {
 #include <stdbool.h>
 
 /** SM state */
-struct lora_sm;
-struct lora_block;
+struct ldl_sm;
 
 /** SM key descriptor */
-enum lora_sm_key {
+enum ldl_sm_key {
     
-    LORA_SM_KEY_FNWKSINT,   /**< FNwkSInt forwarding/uplink (also used as NwkSKey) */
-    LORA_SM_KEY_APPS,       /**< AppSKey */
-    LORA_SM_KEY_SNWKSINT,   /**< SNwkSInt serving/downlink */
-    LORA_SM_KEY_NWKSENC,    /**< NwkSEnc */
+    LDL_SM_KEY_FNWKSINT,   /**< FNwkSInt forwarding/uplink (also used as NwkSKey) */
+    LDL_SM_KEY_APPS,       /**< AppSKey */
+    LDL_SM_KEY_SNWKSINT,   /**< SNwkSInt serving/downlink */
+    LDL_SM_KEY_NWKSENC,    /**< NwkSEnc */
     
-    LORA_SM_KEY_JSENC,      /**< JSEncKey */
-    LORA_SM_KEY_JSINT,      /**< JSIntKey */
+    LDL_SM_KEY_JSENC,      /**< JSEncKey */
+    LDL_SM_KEY_JSINT,      /**< JSIntKey */
     
-    LORA_SM_KEY_APP,        /**< application root key */
-    LORA_SM_KEY_NWK         /**< network root key */        
+    LDL_SM_KEY_APP,        /**< application root key */
+    LDL_SM_KEY_NWK         /**< network root key */        
 };
 
 /** Called from LDL_MAC_init() to either initiate restore or 
@@ -54,7 +74,7 @@ enum lora_sm_key {
  * @snippet src/lora_sm.c LDL_SM_restore
  * 
  * */
-bool LDL_SM_restore(struct lora_sm *self);
+bool LDL_SM_restore(struct ldl_sm *self);
 
 /** Update a session key and save the result in the key store
  * 
@@ -62,16 +82,16 @@ bool LDL_SM_restore(struct lora_sm *self);
  * root key. 
  * 
  * @param[in] self
- * @param[in] key   #lora_sm_key the key to update
- * @param[in] root  #lora_sm_key the key to use as root key in derivation
- * @param[in] iv    #lora_block the text to use to derive key
+ * @param[in] keyDesc   #ldl_sm_key the key to update
+ * @param[in] rootDesc  #ldl_sm_key the key to use as root key in derivation
+ * @param[in] iv        16B of text used to derive key
  * 
  * The following weak implementation is provided:
  * 
  * @snippet src/lora_sm.c LDL_SM_updateSessionKey
  * 
  * */
-void LDL_SM_updateSessionKey(struct lora_sm *self, enum lora_sm_key key, enum lora_sm_key root, const struct lora_block *iv);
+void LDL_SM_updateSessionKey(struct ldl_sm *self, enum ldl_sm_key keyDesc, enum ldl_sm_key rootDesc, const void *iv);
 
 /** Signal the beginning of session key update transaction
  * 
@@ -87,7 +107,7 @@ void LDL_SM_updateSessionKey(struct lora_sm *self, enum lora_sm_key key, enum lo
  * @snippet src/lora_sm.c LDL_SM_beginUpdateSessionKey
  * 
  * */
-void LDL_SM_beginUpdateSessionKey(struct lora_sm *self);
+void LDL_SM_beginUpdateSessionKey(struct ldl_sm *self);
 
 /** Signal the end session key update transaction
  * 
@@ -105,7 +125,7 @@ void LDL_SM_beginUpdateSessionKey(struct lora_sm *self);
  * @snippet src/lora_sm.c LDL_SM_endUpdateSessionKey
  * 
  * */
-void LDL_SM_endUpdateSessionKey(struct lora_sm *self);
+void LDL_SM_endUpdateSessionKey(struct ldl_sm *self);
 
 /** Lookup a key and use it to produce a MIC
  * 
@@ -114,8 +134,8 @@ void LDL_SM_endUpdateSessionKey(struct lora_sm *self);
  * 
  * Note that sometimes hdr will be empty (hdr=NULL and hdrLen=0).
  * 
- * @param[in] app       from LDL_MAC_init()
- * @param[in] key       #lora_sm_key
+ * @param[in] self
+ * @param[in] desc      #ldl_sm_key
  * @param[in] hdr       may be NULL
  * @param[in] hdrLen    
  * @param[in] data      
@@ -128,12 +148,12 @@ void LDL_SM_endUpdateSessionKey(struct lora_sm *self);
  * @snippet src/lora_sm.c LDL_SM_mic
  * 
  * */
-uint32_t LDL_SM_mic(struct lora_sm *self, enum lora_sm_key key, const void *hdr, uint8_t hdrLen, const void *data, uint8_t dataLen);
+uint32_t LDL_SM_mic(struct ldl_sm *self, enum ldl_sm_key desc, const void *hdr, uint8_t hdrLen, const void *data, uint8_t dataLen);
 
 /** Lookup a key and use it to perform ECB AES-128 in-place
  * 
- * @param[in] app       from LDL_MAC_init()
- * @param[in] key       #lora_sm_key
+ * @param[in] self
+ * @param[in] desc       #ldl_sm_key
  * @param[in] b         16B block to encrypt in-place (arbitrary alignment)
  * 
  * The following weak implementation is provided:
@@ -141,12 +161,12 @@ uint32_t LDL_SM_mic(struct lora_sm *self, enum lora_sm_key key, const void *hdr,
  * @snippet src/lora_sm.c LDL_SM_ecb
  * 
  * */
-void LDL_SM_ecb(struct lora_sm *self, enum lora_sm_key key, void *b);
+void LDL_SM_ecb(struct ldl_sm *self, enum ldl_sm_key desc, void *b);
 
 /** Lookup a key and use it to perform CTR AES-128 in-place
  * 
- * @param[in] app       from LDL_MAC_init()
- * @param[in] key       #lora_sm_key
+ * @param[in] self
+ * @param[in] desc       #ldl_sm_key
  * @param[in] iv        16B block to be used as a nonce/intial value (word aligned)
  * @param[in] data      
  * @param[in] len      
@@ -156,7 +176,7 @@ void LDL_SM_ecb(struct lora_sm *self, enum lora_sm_key key, void *b);
  * @snippet src/lora_sm.c LDL_SM_ctr
  * 
  * */
-void LDL_SM_ctr(struct lora_sm *self, enum lora_sm_key key, const struct lora_block *iv, void *data, uint8_t len);
+void LDL_SM_ctr(struct ldl_sm *self, enum ldl_sm_key desc, const void *iv, void *data, uint8_t len);
 
 #ifdef __cplusplus
 }

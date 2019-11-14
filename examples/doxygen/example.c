@@ -1,13 +1,13 @@
 /** @file */
 
 #include <stdlib.h>
-#include "lora_radio.h"
-#include "lora_mac.h"
-#include "lora_sm.h"
+#include "ldl_radio.h"
+#include "ldl_mac.h"
+#include "ldl_sm.h"
 
-struct lora_radio radio;
-struct lora_mac mac;
-struct lora_sm sm;
+struct ldl_radio radio;
+struct ldl_mac mac;
+struct ldl_sm sm;
 
 /* a pointer to be passed back to the application (anything you like) */
 void *app_pointer;
@@ -43,26 +43,26 @@ void handle_radio_interrupt_dio3(void)
 }
 
 /* Called from within LDL_MAC_process() to pass events back to the application */
-void app_handler(void *app, enum lora_mac_response_type type, const union lora_mac_response_arg *arg);
+void app_handler(void *app, enum ldl_mac_response_type type, const union ldl_mac_response_arg *arg);
 
 int main(void)
 {
-    LDL_Radio_init(&radio, LORA_RADIO_SX1272, radio_connector_pointer);
+    LDL_Radio_init(&radio, LDL_RADIO_SX1272, radio_connector_pointer);
     
     /* This radio has two power amplifiers. The amplifier in use
      * depends on the hardware (i.e. which pin the PCB traces connect).
      * 
      * You have to tell the driver which amplifier is connected:
      * 
-     * - The Semtech MBED SX1272 shield uses LORA_RADIO_PA_RFO
-     * - The HopeRF RFM95 SX1276 module uses LORA_RADIO_PA_BOOST
+     * - The Semtech MBED SX1272 shield uses LDL_RADIO_PA_RFO
+     * - The HopeRF RFM95 SX1276 module uses LDL_RADIO_PA_BOOST
      * 
      * */
-    LDL_Radio_setPA(&radio, LORA_RADIO_PA_RFO);
+    LDL_Radio_setPA(&radio, LDL_RADIO_PA_RFO);
     
     
     
-    struct lora_mac_init_arg arg = {
+    struct ldl_mac_init_arg arg = {
         
         .radio = &radio,
         .handler = app_handler,
@@ -113,7 +113,7 @@ int main(void)
     }
 }
 
-void app_handler(void *app, enum lora_mac_response_type type, const union lora_mac_response_arg *arg)
+void app_handler(void *app, enum ldl_mac_response_type type, const union ldl_mac_response_arg *arg)
 {
     switch(type){
         
@@ -123,29 +123,29 @@ void app_handler(void *app, enum lora_mac_response_type type, const union lora_m
      * event to seed the stdlib random generator.
      * 
      * */
-    case LORA_MAC_STARTUP:
+    case LDL_MAC_STARTUP:
     
         srand(arg->startup.entropy);
         break;
     
     
     /* this is downstream data */
-    case LORA_MAC_RX:    
+    case LDL_MAC_RX:    
         /* do something */
         break;
         
-    case LORA_MAC_CHIP_ERROR:
-    case LORA_MAC_RESET:
-    case LORA_MAC_JOIN_COMPLETE:
-    case LORA_MAC_JOIN_TIMEOUT:
-    case LORA_MAC_DATA_COMPLETE:
-    case LORA_MAC_DATA_TIMEOUT:
-    case LORA_MAC_DATA_NAK:
-    case LORA_MAC_LINK_STATUS:
-    case LORA_MAC_RX1_SLOT:
-    case LORA_MAC_RX2_SLOT:
-    case LORA_MAC_TX_COMPLETE:
-    case LORA_MAC_TX_BEGIN:
+    case LDL_MAC_CHIP_ERROR:
+    case LDL_MAC_RESET:
+    case LDL_MAC_JOIN_COMPLETE:
+    case LDL_MAC_JOIN_TIMEOUT:
+    case LDL_MAC_DATA_COMPLETE:
+    case LDL_MAC_DATA_TIMEOUT:
+    case LDL_MAC_DATA_NAK:
+    case LDL_MAC_LINK_STATUS:
+    case LDL_MAC_RX1_SLOT:
+    case LDL_MAC_RX2_SLOT:
+    case LDL_MAC_TX_COMPLETE:
+    case LDL_MAC_TX_BEGIN:
     default:
         break;    
     }

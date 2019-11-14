@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef __LORA_SYSTEM_H
-#define __LORA_SYSTEM_H
+#ifndef LDL_SYSTEM_H
+#define LDL_SYSTEM_H
 
 /** @file */
 
@@ -45,13 +45,11 @@
  * - LDL_System_advance()
  * - LDL_System_getBatteryLevel()
  * - LDL_System_rand()
- * - LDL_System_saveContext()
- * - LDL_System_restoreContext()
  * 
  * The following macros *MUST* be defined if LDL_MAC_interrupt() or LDL_MAC_ticksUntilNextEvent() are called from an interrupt:
  * 
- * - LORA_SYSTEM_ENTER_CRITICAL() 
- * - LORA_SYSTEM_LEAVE_CRITICAL()
+ * - LDL_SYSTEM_ENTER_CRITICAL() 
+ * - LDL_SYSTEM_LEAVE_CRITICAL()
  * 
  * @{
  * */
@@ -70,7 +68,7 @@ extern "C" {
 struct lora_mac_session;
 
 /** Identifiers */
-struct lora_system_identity {
+struct ldl_system_identity {
   
     uint8_t joinEUI[8U];    /**< join identifier */
     uint8_t devEUI[8U];     /**< device identifier */
@@ -79,16 +77,18 @@ struct lora_system_identity {
 /** This function returns device identifiers
  * 
  * @param[in]   app     from LDL_MAC_init()
- * @param[out]  value   #lora_system_identity
+ * @param[out]  value   #ldl_system_identity
  * 
  * */
-void LDL_System_getIdentity(void *app, struct lora_system_identity *value);
+void LDL_System_getIdentity(void *app, struct ldl_system_identity *value);
 
 /** This function reads a free-running 32 bit counter. The counter
  * is expected to increment at a rate of LDL_System_tps() ticks per second.
  * 
  * LDL uses this changing value to track of the passage of time and perform
  * scheduling. 
+ * 
+ * @note this may be called from mainloop or interrupt
  * 
  * @param[in]   app     from LDL_MAC_init()
  * 
@@ -162,56 +162,22 @@ uint8_t LDL_System_getBatteryLevel(void *app);
  * */
 uint32_t LDL_System_advance(void);
 
-/** Called once during LDL_MAC_init() to restore saved session data
- * 
- * Returning false indicates to LDL that there is no saved context
- * and that LDL should restore from defaults.
- * 
- * Note that #lora_mac_session does not contain secrets.
- * 
- * @param[in] app       from LDL_MAC_init()
- * @param[out] value    session data
- * 
- * @retval true     restored
- * @retval false    not-restored
- * 
- * 
- * LDL includes the following weak implementation:
- * @snippet src/lora_system.c LDL_System_restoreContext
- * 
- * */
-bool LDL_System_restoreContext(void *app, struct lora_mac_session *value);
-
-/** Called by LDL every time #lora_mac_session changes
- * 
- * Note that #lora_mac_session does not contain secrets.
- * 
- * @param[in] app       from LDL_MAC_init()
- * @param[in] value     session data
- * 
- * 
- * LDL includes the following weak implementation:
- * @snippet src/lora_system.c LDL_System_saveContext
- * 
- * */
-void LDL_System_saveContext(void *app, const struct lora_mac_session *value);
-
-#ifndef LORA_SYSTEM_ENTER_CRITICAL
+#ifndef LDL_SYSTEM_ENTER_CRITICAL
 
 /** Expanded inside functions which might be called from both mainloop 
  * and interrupt. At the moment only LDL_MAC_ticksUntilNextEvent() and
  * LDL_MAC_interrupt() are safe to call this way.
  * 
- * Always paired with #LORA_SYSTEM_LEAVE_CRITICAL within the same function like so:
+ * Always paired with #LDL_SYSTEM_LEAVE_CRITICAL within the same function like so:
  * 
  * @code{.c}
  * void some_function(void *app)
  * {
- *      LORA_SYSTEM_ENTER_CRITICAL(app)
+ *      LDL_SYSTEM_ENTER_CRITICAL(app)
  * 
  *      // critical section code
  * 
- *      LORA_SYSTEM_LEAVE_CRITICAL(app)
+ *      LDL_SYSTEM_LEAVE_CRITICAL(app)
  * }
  * @endcode
  * 
@@ -220,33 +186,33 @@ void LDL_System_saveContext(void *app, const struct lora_mac_session *value);
  * @code{.c}
  * #include <util/atomic.h>
  * 
- * #define LORA_SYSTEM_ENTER_CRITICAL(APP) ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
- * #define LORA_SYSTEM_LEAVE_CRITICAL(APP) }
+ * #define LDL_SYSTEM_ENTER_CRITICAL(APP) ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
+ * #define LDL_SYSTEM_LEAVE_CRITICAL(APP) }
  * @endcode
  * 
  * If you are using CMSIS:
  * @code{.c}
- * #define LORA_SYSTEM_ENTER_CRITICAL(APP) volatile uint32_t primask = __get_PRIMASK(); __disable_irq();
- * #define LORA_SYSTEM_LEAVE_CRITICAL(APP) __set_PRIMASK(primask);
+ * #define LDL_SYSTEM_ENTER_CRITICAL(APP) volatile uint32_t primask = __get_PRIMASK(); __disable_irq();
+ * #define LDL_SYSTEM_LEAVE_CRITICAL(APP) __set_PRIMASK(primask);
  * @endcode
  * 
  * @param[in] APP   app from LDL_MAC_init()   
  * 
  * */
-#define LORA_SYSTEM_ENTER_CRITICAL(APP)
+#define LDL_SYSTEM_ENTER_CRITICAL(APP)
 #endif
 
-#ifndef LORA_SYSTEM_LEAVE_CRITICAL
+#ifndef LDL_SYSTEM_LEAVE_CRITICAL
 
 /** Expanded inside functions which might be called from both mainloop 
  * and interrupt.
  * 
- * Always paired with #LORA_SYSTEM_ENTER_CRITICAL within the same function. 
+ * Always paired with #LDL_SYSTEM_ENTER_CRITICAL within the same function. 
  * 
  * @param[in] APP   app from LDL_MAC_init()
  * 
  * */
-#define LORA_SYSTEM_LEAVE_CRITICAL(APP)
+#define LDL_SYSTEM_LEAVE_CRITICAL(APP)
 #endif
 
 #ifdef __cplusplus

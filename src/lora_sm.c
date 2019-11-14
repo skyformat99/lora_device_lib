@@ -28,57 +28,57 @@
 
 #include <string.h>
 
-void LDL_SM_init(struct lora_sm *self, const void *appKey, const void *nwkKey) __attribute__((weak));
-bool LDL_SM_restore(struct lora_sm *self) __attribute__((weak));
-void LDL_SM_beginUpdateSessionKey(struct lora_sm *self) __attribute__((weak));
-void LDL_SM_endUpdateSessionKey(struct lora_sm *self) __attribute__((weak));
-void LDL_SM_updateSessionKey(struct lora_sm *self, enum lora_sm_key keyDesc, enum lora_sm_key rootDesc, const void *iv) __attribute__((weak));
-uint32_t LDL_SM_mic(struct lora_sm *self, enum lora_sm_key desc, const void *hdr, uint8_t hdrLen, const void *data, uint8_t dataLen) __attribute__((weak));
-void LDL_SM_ecb(struct lora_sm *self, enum lora_sm_key desc, void *b) __attribute__((weak));
-void LDL_SM_ctr(struct lora_sm *self, enum lora_sm_key desc, const void *iv, void *data, uint8_t len) __attribute__((weak));
-void *LDL_SM_getKey(struct lora_sm *self, enum lora_sm_key desc) __attribute__((weak));
+void LDL_SM_init(struct ldl_sm *self, const void *appKey, const void *nwkKey) __attribute__((weak));
+bool LDL_SM_restore(struct ldl_sm *self) __attribute__((weak));
+void LDL_SM_beginUpdateSessionKey(struct ldl_sm *self) __attribute__((weak));
+void LDL_SM_endUpdateSessionKey(struct ldl_sm *self) __attribute__((weak));
+void LDL_SM_updateSessionKey(struct ldl_sm *self, enum ldl_sm_key keyDesc, enum ldl_sm_key rootDesc, const void *iv) __attribute__((weak));
+uint32_t LDL_SM_mic(struct ldl_sm *self, enum ldl_sm_key desc, const void *hdr, uint8_t hdrLen, const void *data, uint8_t dataLen) __attribute__((weak));
+void LDL_SM_ecb(struct ldl_sm *self, enum ldl_sm_key desc, void *b) __attribute__((weak));
+void LDL_SM_ctr(struct ldl_sm *self, enum ldl_sm_key desc, const void *iv, void *data, uint8_t len) __attribute__((weak));
+void *LDL_SM_getKey(struct ldl_sm *self, enum ldl_sm_key desc) __attribute__((weak));
 
-static void *getKey(struct lora_sm *self, enum lora_sm_key desc);
+static void *getKey(struct ldl_sm *self, enum ldl_sm_key desc);
 
 /* functions **********************************************************/
 
-void LDL_SM_init(struct lora_sm *self, const void *appKey, const void *nwkKey)
+void LDL_SM_init(struct ldl_sm *self, const void *appKey, const void *nwkKey)
 {
-    (void)memcpy(self->keys[LORA_SM_KEY_APP].value, appKey, sizeof(self->keys[LORA_SM_KEY_APP].value)); 
-    (void)memcpy(self->keys[LORA_SM_KEY_NWK].value, nwkKey, sizeof(self->keys[LORA_SM_KEY_NWK].value)); 
+    (void)memcpy(self->keys[LDL_SM_KEY_APP].value, appKey, sizeof(self->keys[LDL_SM_KEY_APP].value)); 
+    (void)memcpy(self->keys[LDL_SM_KEY_NWK].value, nwkKey, sizeof(self->keys[LDL_SM_KEY_NWK].value)); 
 }
 
 /**! [LDL_SM_restore] */
-bool LDL_SM_restore(struct lora_sm *self)
+bool LDL_SM_restore(struct ldl_sm *self)
 {
     return false;
 }
 /**! [LDL_SM_restore] */
 
 /**! [LDL_SM_beginUpdateSessionKey] */
-void LDL_SM_beginUpdateSessionKey(struct lora_sm *self)
+void LDL_SM_beginUpdateSessionKey(struct ldl_sm *self)
 {
 }
 /**! [LDL_SM_beginUpdateSessionKey] */
 
 /**! [LDL_SM_endUpdateSessionKey] */
-void LDL_SM_endUpdateSessionKey(struct lora_sm *self)
+void LDL_SM_endUpdateSessionKey(struct ldl_sm *self)
 {
 }
 /**! [LDL_SM_endUpdateSessionKey] */
 
 /**! [LDL_SM_updateSessionKey] */
-void LDL_SM_updateSessionKey(struct lora_sm *self, enum lora_sm_key keyDesc, enum lora_sm_key rootDesc, const void *iv)
+void LDL_SM_updateSessionKey(struct ldl_sm *self, enum ldl_sm_key keyDesc, enum ldl_sm_key rootDesc, const void *iv)
 {
-    struct lora_aes_ctx ctx;
+    struct ldl_aes_ctx ctx;
     
     switch(keyDesc){
-    case LORA_SM_KEY_FNWKSINT:
-    case LORA_SM_KEY_APPS:
-    case LORA_SM_KEY_SNWKSINT:
-    case LORA_SM_KEY_NWKSENC: 
-    case LORA_SM_KEY_JSINT:   
-    case LORA_SM_KEY_JSENC:  
+    case LDL_SM_KEY_FNWKSINT:
+    case LDL_SM_KEY_APPS:
+    case LDL_SM_KEY_SNWKSINT:
+    case LDL_SM_KEY_NWKSENC: 
+    case LDL_SM_KEY_JSINT:   
+    case LDL_SM_KEY_JSENC:  
     
         LDL_AES_init(&ctx, getKey(self, rootDesc));    
         
@@ -95,12 +95,12 @@ void LDL_SM_updateSessionKey(struct lora_sm *self, enum lora_sm_key keyDesc, enu
 /**! [LDL_SM_updateSessionKey] */
 
 /**! [LDL_SM_mic] */
-uint32_t LDL_SM_mic(struct lora_sm *self, enum lora_sm_key desc, const void *hdr, uint8_t hdrLen, const void *data, uint8_t dataLen)
+uint32_t LDL_SM_mic(struct ldl_sm *self, enum ldl_sm_key desc, const void *hdr, uint8_t hdrLen, const void *data, uint8_t dataLen)
 {
     uint32_t retval;
     uint8_t mic[sizeof(retval)];
-    struct lora_aes_ctx aes_ctx;
-    struct lora_cmac_ctx ctx;    
+    struct ldl_aes_ctx aes_ctx;
+    struct ldl_cmac_ctx ctx;    
     
     LDL_AES_init(&aes_ctx, getKey(self, desc));
     LDL_CMAC_init(&ctx, &aes_ctx);
@@ -123,9 +123,9 @@ uint32_t LDL_SM_mic(struct lora_sm *self, enum lora_sm_key desc, const void *hdr
 /**! [LDL_SM_mic] */
 
 /**! [LDL_SM_ecb] */
-void LDL_SM_ecb(struct lora_sm *self, enum lora_sm_key desc, void *b)
+void LDL_SM_ecb(struct ldl_sm *self, enum ldl_sm_key desc, void *b)
 {
-    struct lora_aes_ctx ctx;
+    struct ldl_aes_ctx ctx;
     
     LDL_AES_init(&ctx, getKey(self, desc));
     LDL_AES_encrypt(&ctx, b);
@@ -133,9 +133,9 @@ void LDL_SM_ecb(struct lora_sm *self, enum lora_sm_key desc, void *b)
 /**! [LDL_SM_ecb] */
 
 /**! [LDL_SM_ctr] */
-void LDL_SM_ctr(struct lora_sm *self, enum lora_sm_key desc, const void *iv, void *data, uint8_t len)
+void LDL_SM_ctr(struct ldl_sm *self, enum ldl_sm_key desc, const void *iv, void *data, uint8_t len)
 {
-    struct lora_aes_ctx ctx;
+    struct ldl_aes_ctx ctx;
 
     LDL_AES_init(&ctx, getKey(self, desc));
     LDL_CTR_encrypt(&ctx, iv, data, data, len);
@@ -144,9 +144,9 @@ void LDL_SM_ctr(struct lora_sm *self, enum lora_sm_key desc, const void *iv, voi
 
 /* static functions ***************************************************/
 
-static void *getKey(struct lora_sm *self, enum lora_sm_key desc)
+static void *getKey(struct ldl_sm *self, enum ldl_sm_key desc)
 {
-    LORA_PEDANTIC(desc < sizeof(self->keys)/sizeof(*self->keys))
+    LDL_PEDANTIC(desc < sizeof(self->keys)/sizeof(*self->keys))
     
     return self->keys[desc].value;
 }

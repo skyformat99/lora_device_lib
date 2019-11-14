@@ -19,8 +19,6 @@
  *
  * */
 
-#ifndef LORA_ENABLE_PLATFORM_AES
-
 /* includes ***********************************************************/
 
 #include "lora_aes.h"
@@ -28,6 +26,8 @@
 #include <string.h>
 
 /* defines ************************************************************/
+
+#define AES_BLOCK_SIZE 16U
 
 #define R1 0U   
 #define R2 1U
@@ -41,7 +41,7 @@
 
 #define GALOIS_MUL2(B) ((((B) & 0x80U) == 0x80U) ? (uint8_t)(((B) << 1U) ^ 0x1bU) : (uint8_t)((B) << 1U))
 
-#ifdef LORA_ENABLE_AVR
+#ifdef LDL_ENABLE_AVR
 
     #include <avr/pgmspace.h>
     
@@ -105,7 +105,7 @@ static const uint8_t sbox[] PROGMEM = {
 
 /* functions **********************************************************/
 
-void LDL_AES_init(struct lora_aes_ctx *ctx, const void *key)
+void LDL_AES_init(struct ldl_aes_ctx *ctx, const void *key)
 {
     uint8_t p;
     uint8_t j;
@@ -119,8 +119,8 @@ void LDL_AES_init(struct lora_aes_ctx *ctx, const void *key)
         0x8dU, 0x01U, 0x02U, 0x04U, 0x08U, 0x10U, 0x20U, 0x40U, 0x80U, 0x1bU, 0x36U
     };
 
-    LORA_PEDANTIC(ctx != NULL)
-    LORA_PEDANTIC(key != NULL)
+    LDL_PEDANTIC(ctx != NULL)
+    LDL_PEDANTIC(key != NULL)
 
     ctx->r = 10U;
     b = 176U;
@@ -150,7 +150,7 @@ void LDL_AES_init(struct lora_aes_ctx *ctx, const void *key)
     }
 }
 
-void LDL_AES_encrypt(const struct lora_aes_ctx *ctx, void *s)
+void LDL_AES_encrypt(const struct ldl_aes_ctx *ctx, void *s)
 {
     uint8_t *_s = s;
     uint8_t r;    
@@ -233,8 +233,8 @@ void LDL_AES_encrypt(const struct lora_aes_ctx *ctx, void *s)
 }
 
 
-#ifndef LORA_DISABLE_FULL_CODEC
-void LDL_AES_decrypt(const struct lora_aes_ctx *ctx, void *s)
+#ifndef LDL_DISABLE_FULL_CODEC
+void LDL_AES_decrypt(const struct ldl_aes_ctx *ctx, void *s)
 {
     uint8_t *_s = s;
     uint8_t r;
@@ -364,6 +364,4 @@ void LDL_AES_decrypt(const struct lora_aes_ctx *ctx, void *s)
         p -= 16U;
     }
 }
-#endif
-
 #endif

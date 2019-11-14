@@ -36,13 +36,13 @@ struct arduino_ldl_id {
     
     uint8_t joinEUI[8U];
     uint8_t devEUI[8U];
-    uint8_t appKey[16U];
-    uint8_t nwkKey[16U];
+    uint8_t appKey[16U];    
+    uint8_t nwkKey[16U];    // note in LoRaWAN 1.0 this is is appKey
 };
 
 typedef void (*handle_rx_fn)(uint16_t counter, uint8_t port, const uint8_t *msg, uint8_t size);
-typedef void (*handle_event_fn)(enum lora_mac_response_type type, const union lora_mac_response_arg *arg);
-typedef void (*get_identity_fn)(struct arduino_ldl_id *id);
+typedef void (*handle_event_fn)(enum ldl_mac_response_type type, const union ldl_mac_response_arg *arg);
+typedef const struct arduino_ldl_id * (*get_identity_fn)(void);
 
 namespace LDL {
 
@@ -53,13 +53,13 @@ namespace LDL {
         
             struct DioInput {
 
-                struct lora_radio &radio;
+                struct ldl_radio &radio;
                 const uint8_t pin;
                 const uint8_t signal;
                 volatile bool state;
                 struct DioInput *next;                
                 
-                DioInput(uint8_t pin, uint8_t signal, struct lora_radio &radio) : 
+                DioInput(uint8_t pin, uint8_t signal, struct ldl_radio &radio) : 
                     pin(pin), signal(signal), radio(radio), state(false), next(nullptr) 
                 {}
             };
@@ -80,7 +80,7 @@ namespace LDL {
         
             static void interrupt();
         
-            struct lora_radio radio;
+            struct ldl_radio radio;
         
             Radio(const Radio&) = delete;
             void operator=(const Radio&) = delete;
@@ -88,7 +88,7 @@ namespace LDL {
             static void radioSelect(void *self, bool state);
             static void radioReset(void *self, bool state);
             
-            Radio::Radio(enum lora_radio_type type, enum lora_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1);                        
+            Radio::Radio(enum ldl_radio_type type, enum ldl_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1);                        
     };
     
     class SX1272 : public Radio {
@@ -104,7 +104,7 @@ namespace LDL {
              * @param[in] dio1      pin connected to the radio dio0 line
              * 
              * */
-            SX1272(enum lora_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1);
+            SX1272(enum ldl_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1);
     };
     
     class SX1276 : public Radio {
@@ -120,15 +120,15 @@ namespace LDL {
              * @param[in] dio1      pin connected to the radio dio0 line
              * 
              * */
-            SX1276(enum lora_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1);
+            SX1276(enum ldl_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1);
     };    
     
     class MAC {
 
         protected:
 
-            struct lora_sm sm;
-            struct lora_mac mac;
+            struct ldl_sm sm;
+            struct ldl_mac mac;
             Radio& radio;
             
             get_identity_fn get_id;
@@ -137,7 +137,7 @@ namespace LDL {
             handle_event_fn handle_event;
             
             static MAC *to_obj(void *ptr);
-            static void adapter(void *app, enum lora_mac_response_type type, const union lora_mac_response_arg *arg);
+            static void adapter(void *app, enum ldl_mac_response_type type, const union ldl_mac_response_arg *arg);
             
         public:
 
@@ -145,7 +145,7 @@ namespace LDL {
             void operator=(const MAC&) = delete;
             
             
-            static void getIdentity(void *ptr, struct arduino_ldl_id *value);
+            static const struct arduino_ldl_id *getIdentity(void *ptr);
             static uint32_t ticks();        
             
             /* create an instance of MAC
@@ -155,21 +155,21 @@ namespace LDL {
              * @param[in] get_id
              * 
              * */
-            MAC(Radio& radio, enum lora_region region, get_identity_fn get_id);
+            MAC(Radio& radio, enum ldl_region region, get_identity_fn get_id);
                  
             /* print event information to serial */
-            static void eventDebug(enum lora_mac_response_type type, const union lora_mac_response_arg *arg);
+            static void eventDebug(enum ldl_mac_response_type type, const union ldl_mac_response_arg *arg);
             
             /* print more event information to serial */
-            static void eventDebugVerbose(enum lora_mac_response_type type, const union lora_mac_response_arg *arg);
+            static void eventDebugVerbose(enum ldl_mac_response_type type, const union ldl_mac_response_arg *arg);
                  
             /* send unconfirmed data */
-            bool unconfirmedData(uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts = NULL);        
-            bool unconfirmedData(uint8_t port, const struct lora_mac_data_opts *opts = NULL);        
+            bool unconfirmedData(uint8_t port, const void *data, uint8_t len, const struct ldl_mac_data_opts *opts = NULL);        
+            bool unconfirmedData(uint8_t port, const struct ldl_mac_data_opts *opts = NULL);        
             
             /* send confirmed data */
-            bool confirmedData(uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts = NULL);        
-            bool confirmedData(uint8_t port, const struct lora_mac_data_opts *opts = NULL);        
+            bool confirmedData(uint8_t port, const void *data, uint8_t len, const struct ldl_mac_data_opts *opts = NULL);        
+            bool confirmedData(uint8_t port, const struct ldl_mac_data_opts *opts = NULL);        
             
             /* initiate join */
             bool otaa();     
@@ -196,7 +196,7 @@ namespace LDL {
             bool adr();     
             
             /* get the last error code */
-            enum lora_mac_errno getErrno();                
+            enum ldl_mac_errno getErrno();                
             
             /* is stack joined to a network? */
             bool joined();
@@ -205,10 +205,10 @@ namespace LDL {
             bool ready();
             
             /* current operation */
-            enum lora_mac_operation getOP();
+            enum ldl_mac_operation getOP();
             
             /* current state */
-            enum lora_mac_state getState();
+            enum ldl_mac_state getState();
             
             /* set a callback for receiving downstream data messages */
             void onRX(handle_rx_fn handler);

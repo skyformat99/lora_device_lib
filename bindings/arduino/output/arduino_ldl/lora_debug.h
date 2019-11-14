@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef LORA_DEBUG_H
-#define LORA_DEBUG_H
+#ifndef LDL_DEBUG_H
+#define LDL_DEBUG_H
 
 /** @file */
 
@@ -32,74 +32,74 @@
 
 #include "lora_platform.h"
 
-#ifndef LORA_ERROR
+#ifndef LDL_ERROR
     /** A printf-like function that captures run-time error level messages 
      * 
      * Example:
      * 
      * @code{.c}
-     * #define LORA_ERROR(...) do{printf(__VA_ARGS__);printf("\n");}while(0);
+     * #define LDL_ERROR(...) do{printf(__VA_ARGS__);printf("\n");}while(0);
      * @endcode
      * 
-     * If not defined, all LORA_ERROR() messages will be left out of the build.
+     * If not defined, all LDL_ERROR() messages will be left out of the build.
      * 
      * @param[in] APP app from LDL_MAC_init() or NULL if not available
      * 
      * */
-    #define LORA_ERROR(APP,...)
+    #define LDL_ERROR(APP,...)
 #endif
 
-#ifndef LORA_INFO
+#ifndef LDL_INFO
     /** A printf-like function that captures run-time info level messages 
      * 
      * Example:
      * 
      * @code{.c}
-     * #define LORA_INFO(...) do{printf(__VA_ARGS__);printf("\n");}while(0);
+     * #define LDL_INFO(...) do{printf(__VA_ARGS__);printf("\n");}while(0);
      * @endcode
      * 
-     * If not defined, all LORA_INFO() messages will be left out of the build.
+     * If not defined, all LDL_INFO() messages will be left out of the build.
      * 
      * @param[in] APP app from LDL_MAC_init() or NULL if not available
      * 
      * */
-    #define LORA_INFO(APP,...)
+    #define LDL_INFO(APP,...)
 #endif
 
-#ifndef LORA_DEBUG
+#ifndef LDL_DEBUG
     /** A printf-like function that captures run-time debug level messages with 
      * varaidic arguments 
      * 
      * Example:
      * 
      * @code{.c}
-     * #define LORA_DEBUG(APP, ...) do{printf(__VA_ARGS__);printf("\n");}while(0);
+     * #define LDL_DEBUG(APP, ...) do{printf(__VA_ARGS__);printf("\n");}while(0);
      * @endcode
      * 
-     * If not defined, all LORA_DEBUG() messages will be left out of the build.
+     * If not defined, all LDL_DEBUG() messages will be left out of the build.
      * 
      * @param[in] APP app from LDL_MAC_init() or NULL if not available
      * 
      * */
-    #define LORA_DEBUG(APP, ...)
+    #define LDL_DEBUG(APP, ...)
 #endif
 
-#ifndef LORA_ASSERT
+#ifndef LDL_ASSERT
     /** An assert-like function that performs run-time assertions on 'X' 
      * 
      * Example:
      * 
      * @code{.c}
-     * #define LORA_ASSERT(X) assert(X);
+     * #define LDL_ASSERT(X) assert(X);
      * @endcode
      * 
-     * If not defined, all LORA_ASSERT() checks will be left out of the build.
+     * If not defined, all LDL_ASSERT() checks will be left out of the build.
      * 
      * */
-    #define LORA_ASSERT(X)
+    #define LDL_ASSERT(X)
 #endif
 
-#ifndef LORA_PEDANTIC
+#ifndef LDL_PEDANTIC
     /** A assert-like function that performs run-time assertions on 'X' 
      * 
      * These assertions are considered pedantic. They are useful for development
@@ -108,13 +108,13 @@
      * Example:
      * 
      * @code{.c}
-     * #define LORA_PEDANTIC(X) assert(X);
+     * #define LDL_PEDANTIC(X) assert(X);
      * @endcode
      * 
-     * If not defined, all LORA_PEDANTIC() checks will be left out of the build.
+     * If not defined, all LDL_PEDANTIC() checks will be left out of the build.
      * 
      * */
-    #define LORA_PEDANTIC(X)
+    #define LDL_PEDANTIC(X)
 #endif
 
 /** @} */

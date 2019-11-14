@@ -2,11 +2,11 @@
 #define MOCK_LORA_SYSTEM_H
 
 #include "lora_system.h"
-
+#include "lora_mac.h"
 
 struct mock_system_param {
 
-    struct lora_system_identity identity;
+    struct ldl_system_identity identity;
     
     uint8_t battery_level;
     

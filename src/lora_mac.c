@@ -40,45 +40,45 @@ enum {
 /* static function prototypes *****************************************/
 
 static uint8_t extraSymbols(uint32_t xtal_error, uint32_t symbol_period);
-static bool externalDataCommand(struct lora_mac *self, bool confirmed, uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts);
-static bool dataCommand(struct lora_mac *self, bool confirmed, uint8_t port, const void *data, uint8_t len);
-static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t len, bool inFopts, uint8_t *out, uint8_t max);
-static bool selectChannel(const struct lora_mac *self, uint8_t rate, uint8_t prevChIndex, uint32_t limit, uint8_t *chIndex, uint32_t *freq);
-static void registerTime(struct lora_mac *self, uint32_t freq, uint32_t airTime);
-static bool getChannel(const struct lora_mac_channel *self, enum lora_region region, uint8_t chIndex, uint32_t *freq, uint8_t *minRate, uint8_t *maxRate);
-static bool isAvailable(const struct lora_mac *self, uint8_t chIndex, uint8_t rate, uint32_t limit);
-static uint32_t transmitTime(enum lora_signal_bandwidth bw, enum lora_spreading_factor sf, uint8_t size, bool crc);
-static void restoreDefaults(struct lora_mac *self, bool keep);
-static bool setChannel(struct lora_mac_channel *self, enum lora_region region, uint8_t chIndex, uint32_t freq, uint8_t minRate, uint8_t maxRate);
-static bool maskChannel(uint8_t *self, enum lora_region region, uint8_t chIndex);
-static bool unmaskChannel(uint8_t *self, enum lora_region region, uint8_t chIndex);
-static void unmaskAllChannels(uint8_t *self, enum lora_region region);
-static bool channelIsMasked(const uint8_t *self, enum lora_region region, uint8_t chIndex);
-static uint32_t symbolPeriod(enum lora_spreading_factor sf, enum lora_signal_bandwidth bw);
-static bool msUntilAvailable(const struct lora_mac *self, uint8_t chIndex, uint8_t rate, uint32_t *ms);
-static bool rateSettingIsValid(enum lora_region region, uint8_t rate);
-static void adaptRate(struct lora_mac *self);
-static uint32_t timeNow(struct lora_mac *self);
-static void processBands(struct lora_mac *self);
-static uint32_t nextBandEvent(const struct lora_mac *self);
-static void downlinkMissingHandler(struct lora_mac *self);
+static bool externalDataCommand(struct ldl_mac *self, bool confirmed, uint8_t port, const void *data, uint8_t len, const struct ldl_mac_data_opts *opts);
+static bool dataCommand(struct ldl_mac *self, bool confirmed, uint8_t port, const void *data, uint8_t len);
+static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t len, bool inFopts, uint8_t *out, uint8_t max);
+static bool selectChannel(const struct ldl_mac *self, uint8_t rate, uint8_t prevChIndex, uint32_t limit, uint8_t *chIndex, uint32_t *freq);
+static void registerTime(struct ldl_mac *self, uint32_t freq, uint32_t airTime);
+static bool getChannel(const struct ldl_mac_channel *self, enum ldl_region region, uint8_t chIndex, uint32_t *freq, uint8_t *minRate, uint8_t *maxRate);
+static bool isAvailable(const struct ldl_mac *self, uint8_t chIndex, uint8_t rate, uint32_t limit);
+static uint32_t transmitTime(enum ldl_signal_bandwidth bw, enum ldl_spreading_factor sf, uint8_t size, bool crc);
+static void restoreDefaults(struct ldl_mac *self, bool keep);
+static bool setChannel(struct ldl_mac_channel *self, enum ldl_region region, uint8_t chIndex, uint32_t freq, uint8_t minRate, uint8_t maxRate);
+static bool maskChannel(uint8_t *self, enum ldl_region region, uint8_t chIndex);
+static bool unmaskChannel(uint8_t *self, enum ldl_region region, uint8_t chIndex);
+static void unmaskAllChannels(uint8_t *self, enum ldl_region region);
+static bool channelIsMasked(const uint8_t *self, enum ldl_region region, uint8_t chIndex);
+static uint32_t symbolPeriod(enum ldl_spreading_factor sf, enum ldl_signal_bandwidth bw);
+static bool msUntilAvailable(const struct ldl_mac *self, uint8_t chIndex, uint8_t rate, uint32_t *ms);
+static bool rateSettingIsValid(enum ldl_region region, uint8_t rate);
+static void adaptRate(struct ldl_mac *self);
+static uint32_t timeNow(struct ldl_mac *self);
+static void processBands(struct ldl_mac *self);
+static uint32_t nextBandEvent(const struct ldl_mac *self);
+static void downlinkMissingHandler(struct ldl_mac *self);
 static uint32_t ticksToMS(uint32_t ticks);
 static uint32_t ticksToMSCoarse(uint32_t ticks);
-static uint32_t msUntilNextChannel(const struct lora_mac *self, uint8_t rate);
+static uint32_t msUntilNextChannel(const struct ldl_mac *self, uint8_t rate);
 static uint32_t rand32(void *app);
 static uint32_t getRetryDuty(uint32_t seconds_since);
 static uint32_t timerDelta(uint32_t timeout, uint32_t time);
-#ifndef LORA_DISABLE_SESSION_UPDATE
-static void pushSessionUpdate(struct lora_mac *self);
+#ifndef LDL_DISABLE_SESSION_UPDATE
+static void pushSessionUpdate(struct ldl_mac *self);
 #endif
-static void dummyResponseHandler(void *app, enum lora_mac_response_type type, const union lora_mac_response_arg *arg);
+static void dummyResponseHandler(void *app, enum ldl_mac_response_type type, const union ldl_mac_response_arg *arg);
 
 /* functions **********************************************************/
 
-void LDL_MAC_init(struct lora_mac *self, enum lora_region region, const struct lora_mac_init_arg *arg)
+void LDL_MAC_init(struct ldl_mac *self, enum ldl_region region, const struct ldl_mac_init_arg *arg)
 {
-    LORA_PEDANTIC(self != NULL)
-    LORA_PEDANTIC(LDL_System_tps() >= 1000UL)
+    LDL_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(LDL_System_tps() >= 1000UL)
     
     (void)memset(self, 0, sizeof(*self));
     
@@ -97,7 +97,7 @@ void LDL_MAC_init(struct lora_mac *self, enum lora_region region, const struct l
         
         self->handler = dummyResponseHandler;
         
-        LORA_INFO(self->app, "arg is undefined")
+        LDL_INFO(self->app, "arg is undefined")
     }
         
     if(self->radio != NULL){
@@ -106,7 +106,7 @@ void LDL_MAC_init(struct lora_mac *self, enum lora_region region, const struct l
     }
     else{
         
-        LORA_INFO(self->app, "radio is undefined")
+        LDL_INFO(self->app, "radio is undefined")
     }
     
     if(LDL_SM_restore(self->sm) && (arg->session != NULL)){
@@ -118,11 +118,11 @@ void LDL_MAC_init(struct lora_mac *self, enum lora_region region, const struct l
         restoreDefaults(self, false);
     }
      
-#ifndef LORA_STARTUP_DELAY
-#   define LORA_STARTUP_DELAY 0UL
+#ifndef LDL_STARTUP_DELAY
+#   define LDL_STARTUP_DELAY 0UL
 #endif
     
-    self->band[LORA_BAND_GLOBAL] = (uint32_t)LORA_STARTUP_DELAY;
+    self->band[LDL_BAND_GLOBAL] = (uint32_t)LDL_STARTUP_DELAY;
     
     self->polled_band_ticks = LDL_System_ticks(self->app);
     self->polled_time_ticks = self->polled_band_ticks;
@@ -130,55 +130,55 @@ void LDL_MAC_init(struct lora_mac *self, enum lora_region region, const struct l
     LDL_Radio_reset(self->radio, false);
 
     /* leave reset line alone for 10ms */
-    LDL_MAC_timerSet(self, LORA_TIMER_WAITA, (LDL_System_tps() + LDL_System_eps())/100UL);
+    LDL_MAC_timerSet(self, LDL_TIMER_WAITA, (LDL_System_tps() + LDL_System_eps())/100UL);
     
-    /* self->state is LORA_STATE_INIT */
+    /* self->state is LDL_STATE_INIT */
 }
 
-enum lora_mac_errno LDL_MAC_errno(const struct lora_mac *self)
+enum ldl_mac_errno LDL_MAC_errno(const struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     return self->errno;
 }
 
-enum lora_mac_operation LDL_MAC_op(const struct lora_mac *self)
+enum ldl_mac_operation LDL_MAC_op(const struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     return self->op;
 }
 
-enum lora_mac_state LDL_MAC_state(const struct lora_mac *self)
+enum ldl_mac_state LDL_MAC_state(const struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     return self->state;
 }
 
-bool LDL_MAC_unconfirmedData(struct lora_mac *self, uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts)
+bool LDL_MAC_unconfirmedData(struct ldl_mac *self, uint8_t port, const void *data, uint8_t len, const struct ldl_mac_data_opts *opts)
 {    
     return externalDataCommand(self, false, port, data, len, opts);
 }
 
-bool LDL_MAC_confirmedData(struct lora_mac *self, uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts)
+bool LDL_MAC_confirmedData(struct ldl_mac *self, uint8_t port, const void *data, uint8_t len, const struct ldl_mac_data_opts *opts)
 {    
     return externalDataCommand(self, true, port, data, len, opts);
 }
 
-bool LDL_MAC_otaa(struct lora_mac *self)
+bool LDL_MAC_otaa(struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     uint32_t delay;
-    struct lora_system_identity identity;
-    struct lora_frame_join_request f;
+    struct ldl_system_identity identity;
+    struct ldl_frame_join_request f;
     
     bool retval = false;
     
-    self->errno = LORA_ERRNO_NONE;
+    self->errno = LDL_ERRNO_NONE;
     
-    if(self->state == LORA_STATE_IDLE){
+    if(self->state == LDL_STATE_IDLE){
         
         if(self->ctx.joined){
             
@@ -188,10 +188,10 @@ bool LDL_MAC_otaa(struct lora_mac *self)
         self->trials = 0U;
         
         self->tx.rate = LDL_Region_getJoinRate(self->region, self->trials);
-        self->band[LORA_BAND_RETRY] = 0U;
+        self->band[LDL_BAND_RETRY] = 0U;
         self->tx.power = 0U;
         
-        if(self->band[LORA_BAND_GLOBAL] == 0UL){
+        if(self->band[LDL_BAND_GLOBAL] == 0UL){
         
             if(selectChannel(self, self->tx.rate, self->tx.chIndex, 0UL, &self->tx.chIndex, &self->tx.freq)){
             
@@ -208,41 +208,41 @@ bool LDL_MAC_otaa(struct lora_mac *self)
 
                 delay = rand32(self->app) % (60UL*LDL_System_tps());
                 
-                LORA_DEBUG(self->app, "sending join in %"PRIu32" ticks", delay)
+                LDL_DEBUG(self->app, "sending join in %"PRIu32" ticks", delay)
                             
-                LDL_MAC_timerSet(self, LORA_TIMER_WAITA, delay);
+                LDL_MAC_timerSet(self, LDL_TIMER_WAITA, delay);
                 
-                self->state = LORA_STATE_WAIT_TX;
-                self->op = LORA_OP_JOINING;            
+                self->state = LDL_STATE_WAIT_TX;
+                self->op = LDL_OP_JOINING;            
                 self->service_start_time = timeNow(self) + (delay / LDL_System_tps());            
                 retval = true;        
             }
             else{
                 
-                self->errno = LORA_ERRNO_NOCHANNEL;
+                self->errno = LDL_ERRNO_NOCHANNEL;
             }
         }
         else{
             
-            self->errno = LORA_ERRNO_NOCHANNEL;
+            self->errno = LDL_ERRNO_NOCHANNEL;
         }
     }
     else{
         
-        self->errno = LORA_ERRNO_BUSY;
+        self->errno = LDL_ERRNO_BUSY;
     }
     
     return retval;
 }
 
-bool LDL_MAC_joined(const struct lora_mac *self)
+bool LDL_MAC_joined(const struct ldl_mac *self)
 {
     return self->ctx.joined;
 }
 
-void LDL_MAC_forget(struct lora_mac *self)
+void LDL_MAC_forget(struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)    
+    LDL_PEDANTIC(self != NULL)    
     
     LDL_MAC_cancel(self);    
     
@@ -250,48 +250,48 @@ void LDL_MAC_forget(struct lora_mac *self)
     
         restoreDefaults(self, true);    
         
-#ifndef LORA_DISABLE_SESSION_UPDATE        
+#ifndef LDL_DISABLE_SESSION_UPDATE        
         pushSessionUpdate(self);   
 #endif
     }
 }
 
-void LDL_MAC_cancel(struct lora_mac *self)
+void LDL_MAC_cancel(struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     switch(self->state){
-    case LORA_STATE_IDLE:
-    case LORA_STATE_INIT_RESET:
-    case LORA_STATE_INIT_LOCKOUT:
-    case LORA_STATE_RECOVERY_RESET:    
-    case LORA_STATE_RECOVERY_LOCKOUT:    
-    case LORA_STATE_ENTROPY:    
+    case LDL_STATE_IDLE:
+    case LDL_STATE_INIT_RESET:
+    case LDL_STATE_INIT_LOCKOUT:
+    case LDL_STATE_RECOVERY_RESET:    
+    case LDL_STATE_RECOVERY_LOCKOUT:    
+    case LDL_STATE_ENTROPY:    
         break;
     default:
-        self->state = LORA_STATE_IDLE;
+        self->state = LDL_STATE_IDLE;
         LDL_Radio_sleep(self->radio);    
         break;
     }   
 }
 
-uint32_t LDL_MAC_transmitTimeUp(enum lora_signal_bandwidth bw, enum lora_spreading_factor sf, uint8_t size)
+uint32_t LDL_MAC_transmitTimeUp(enum ldl_signal_bandwidth bw, enum ldl_spreading_factor sf, uint8_t size)
 {
     return transmitTime(bw, sf, size, true);
 }
 
-uint32_t LDL_MAC_transmitTimeDown(enum lora_signal_bandwidth bw, enum lora_spreading_factor sf, uint8_t size)
+uint32_t LDL_MAC_transmitTimeDown(enum ldl_signal_bandwidth bw, enum ldl_spreading_factor sf, uint8_t size)
 {
     return transmitTime(bw, sf, size, false);
 }
 
-void LDL_MAC_process(struct lora_mac *self)
+void LDL_MAC_process(struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     uint32_t error;    
-    union lora_mac_response_arg arg;
-    struct lora_system_identity identity;
+    union ldl_mac_response_arg arg;
+    struct ldl_system_identity identity;
 
     (void)timeNow(self);    
     
@@ -299,89 +299,89 @@ void LDL_MAC_process(struct lora_mac *self)
     
     switch(self->state){
     default:
-    case LORA_STATE_IDLE:
+    case LDL_STATE_IDLE:
         /* do nothing */
         break;    
-    case LORA_STATE_INIT:
+    case LDL_STATE_INIT:
     
-        if(LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error)){
+        if(LDL_MAC_timerCheck(self, LDL_TIMER_WAITA, &error)){
     
             LDL_Radio_reset(self->radio, true);
         
-            self->state = LORA_STATE_INIT_RESET;
-            self->op = LORA_OP_RESET;
+            self->state = LDL_STATE_INIT_RESET;
+            self->op = LDL_OP_RESET;
             
             /* hold reset for at least 100us */
-            LDL_MAC_timerSet(self, LORA_TIMER_WAITA, ((LDL_System_tps() + LDL_System_eps())/10000UL) + 1UL);
+            LDL_MAC_timerSet(self, LDL_TIMER_WAITA, ((LDL_System_tps() + LDL_System_eps())/10000UL) + 1UL);
             
-#ifndef LORA_DISABLE_MAC_RESET_EVENT         
-            self->handler(self->app, LORA_MAC_RESET, NULL); 
+#ifndef LDL_DISABLE_MAC_RESET_EVENT         
+            self->handler(self->app, LDL_MAC_RESET, NULL); 
 #endif                    
         }
         break;
         
-    case LORA_STATE_INIT_RESET:
-    case LORA_STATE_RECOVERY_RESET:
+    case LDL_STATE_INIT_RESET:
+    case LDL_STATE_RECOVERY_RESET:
     
-        if(LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error)){
+        if(LDL_MAC_timerCheck(self, LDL_TIMER_WAITA, &error)){
         
             LDL_Radio_reset(self->radio, false);
             
-            self->op = LORA_OP_RESET;
+            self->op = LDL_OP_RESET;
             
             switch(self->state){
             default:
-            case LORA_STATE_INIT_RESET:
-                self->state = LORA_STATE_INIT_LOCKOUT;                
+            case LDL_STATE_INIT_RESET:
+                self->state = LDL_STATE_INIT_LOCKOUT;                
                 /* 10ms */
-                LDL_MAC_timerSet(self, LORA_TIMER_WAITA, ((LDL_System_tps() + LDL_System_eps())/100UL) + 1UL); 
+                LDL_MAC_timerSet(self, LDL_TIMER_WAITA, ((LDL_System_tps() + LDL_System_eps())/100UL) + 1UL); 
                 break;            
-            case LORA_STATE_RECOVERY_RESET:
-                self->state = LORA_STATE_RECOVERY_LOCKOUT;
+            case LDL_STATE_RECOVERY_RESET:
+                self->state = LDL_STATE_RECOVERY_LOCKOUT;
                 /* 60s */
-                LDL_MAC_timerSet(self, LORA_TIMER_WAITA, (LDL_System_tps() + LDL_System_eps()) * 60UL);
+                LDL_MAC_timerSet(self, LDL_TIMER_WAITA, (LDL_System_tps() + LDL_System_eps()) * 60UL);
                 break;
             }            
         }    
         break;
         
-    case LORA_STATE_INIT_LOCKOUT:
-    case LORA_STATE_RECOVERY_LOCKOUT:
+    case LDL_STATE_INIT_LOCKOUT:
+    case LDL_STATE_RECOVERY_LOCKOUT:
     
-        if(LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error)){
+        if(LDL_MAC_timerCheck(self, LDL_TIMER_WAITA, &error)){
             
-            self->op = LORA_OP_RESET;
-            self->state = LORA_STATE_ENTROPY;
+            self->op = LDL_OP_RESET;
+            self->state = LDL_STATE_ENTROPY;
             
             LDL_Radio_entropyBegin(self->radio);                 
             
             /* 100us */
-            LDL_MAC_timerSet(self, LORA_TIMER_WAITA, ((LDL_System_tps() + LDL_System_eps())/10000UL) + 1UL);
+            LDL_MAC_timerSet(self, LDL_TIMER_WAITA, ((LDL_System_tps() + LDL_System_eps())/10000UL) + 1UL);
         }
         break;
             
-    case LORA_STATE_ENTROPY:
+    case LDL_STATE_ENTROPY:
     
-        if(LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error)){
+        if(LDL_MAC_timerCheck(self, LDL_TIMER_WAITA, &error)){
     
-            self->op = LORA_OP_RESET;
+            self->op = LDL_OP_RESET;
             
             arg.startup.entropy = LDL_Radio_entropyEnd(self->radio);                    
                 
-            self->state = LORA_STATE_IDLE;
-            self->op = LORA_OP_NONE;
+            self->state = LDL_STATE_IDLE;
+            self->op = LDL_OP_NONE;
             
-#ifndef LORA_DISABLE_MAC_STARTUP_EVENT            
-            self->handler(self->app, LORA_MAC_STARTUP, &arg);        
+#ifndef LDL_DISABLE_MAC_STARTUP_EVENT            
+            self->handler(self->app, LDL_MAC_STARTUP, &arg);        
 #endif                                
         }
         break;
     
-    case LORA_STATE_WAIT_TX:
+    case LDL_STATE_WAIT_TX:
     
-        if(LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error)){
+        if(LDL_MAC_timerCheck(self, LDL_TIMER_WAITA, &error)){
             
-            struct lora_radio_tx_setting radio_setting;
+            struct ldl_radio_tx_setting radio_setting;
             uint32_t tx_time;
             uint8_t mtu;
             
@@ -394,34 +394,34 @@ void LDL_MAC_process(struct lora_mac *self)
             tx_time = transmitTime(radio_setting.bw, radio_setting.sf, self->bufferLen, true);
             
             LDL_MAC_inputClear(self);  
-            LDL_MAC_inputArm(self, LORA_INPUT_TX_COMPLETE);  
+            LDL_MAC_inputArm(self, LDL_INPUT_TX_COMPLETE);  
             
             LDL_Radio_transmit(self->radio, &radio_setting, self->buffer, self->bufferLen);
 
             registerTime(self, self->tx.freq, tx_time);
             
-            self->state = LORA_STATE_TX;
+            self->state = LDL_STATE_TX;
             
-            LORA_PEDANTIC((tx_time & 0x80000000UL) != 0x80000000UL)
+            LDL_PEDANTIC((tx_time & 0x80000000UL) != 0x80000000UL)
             
             /* reset the radio if the tx complete interrupt doesn't appear after double the expected time */      
-            LDL_MAC_timerSet(self, LORA_TIMER_WAITA, tx_time << 1UL);    
+            LDL_MAC_timerSet(self, LDL_TIMER_WAITA, tx_time << 1UL);    
             
-#ifndef LORA_DISABLE_TX_BEGIN_EVENT            
+#ifndef LDL_DISABLE_TX_BEGIN_EVENT            
             arg.tx_begin.freq = self->tx.freq;
             arg.tx_begin.power = self->tx.power;
             arg.tx_begin.sf = radio_setting.sf;
             arg.tx_begin.bw = radio_setting.bw;
             arg.tx_begin.size = self->bufferLen;
             
-            self->handler(self->app, LORA_MAC_TX_BEGIN, &arg);
+            self->handler(self->app, LDL_MAC_TX_BEGIN, &arg);
 #endif            
         }
         break;
         
-    case LORA_STATE_TX:
+    case LDL_STATE_TX:
     
-        if(LDL_MAC_inputCheck(self, LORA_INPUT_TX_COMPLETE, &error)){
+        if(LDL_MAC_inputCheck(self, LDL_INPUT_TX_COMPLETE, &error)){
         
             LDL_MAC_inputClear(self);
         
@@ -430,15 +430,15 @@ void LDL_MAC_process(struct lora_mac *self)
             uint32_t advance;
             uint32_t advanceA;
             uint32_t advanceB;
-            enum lora_spreading_factor sf;
-            enum lora_signal_bandwidth bw;
+            enum ldl_spreading_factor sf;
+            enum ldl_signal_bandwidth bw;
             uint8_t rate;
             uint8_t extra_symbols;
             uint32_t xtal_error;
             uint8_t mtu;
             
             /* the wait interval is always measured in whole seconds */
-            waitSeconds = (self->op == LORA_OP_JOINING) ? LDL_Region_getJA1Delay(self->region) : self->ctx.rx1Delay;    
+            waitSeconds = (self->op == LDL_OP_JOINING) ? LDL_Region_getJA1Delay(self->region) : self->ctx.rx1Delay;    
             
             /* add xtal error to ensure the fastest clock will not open before the earliest start time */
             waitTicks = (waitSeconds * LDL_System_tps()) + (waitSeconds * LDL_System_eps());
@@ -484,58 +484,58 @@ void LDL_MAC_process(struct lora_mac *self)
                 
             if(advanceB <= (waitTicks + (LDL_System_tps() + LDL_System_eps()))){
                 
-                LDL_MAC_timerSet(self, LORA_TIMER_WAITB, waitTicks + (LDL_System_tps() + LDL_System_eps()) - advanceB);
+                LDL_MAC_timerSet(self, LDL_TIMER_WAITB, waitTicks + (LDL_System_tps() + LDL_System_eps()) - advanceB);
                 
                 if(advanceA <= waitTicks){
                 
-                    LDL_MAC_timerSet(self, LORA_TIMER_WAITA, waitTicks - advanceA);
-                    self->state = LORA_STATE_WAIT_RX1;
+                    LDL_MAC_timerSet(self, LDL_TIMER_WAITA, waitTicks - advanceA);
+                    self->state = LDL_STATE_WAIT_RX1;
                 }
                 else{
                     
-                    LDL_MAC_timerClear(self, LORA_TIMER_WAITA);
-                    self->state = LORA_STATE_WAIT_RX2;
+                    LDL_MAC_timerClear(self, LDL_TIMER_WAITA);
+                    self->state = LDL_STATE_WAIT_RX2;
                 }
             }
             else{
                 
-                self->state = LORA_STATE_WAIT_RX2;
-                LDL_MAC_timerClear(self, LORA_TIMER_WAITA);
-                LDL_MAC_timerSet(self, LORA_TIMER_WAITB, 0U);
-                self->state = LORA_STATE_WAIT_RX2;                
+                self->state = LDL_STATE_WAIT_RX2;
+                LDL_MAC_timerClear(self, LDL_TIMER_WAITA);
+                LDL_MAC_timerSet(self, LDL_TIMER_WAITB, 0U);
+                self->state = LDL_STATE_WAIT_RX2;                
             }    
             
             LDL_Radio_clearInterrupt(self->radio);
             
-#ifndef LORA_DISABLE_TX_COMPLETE_EVENT            
-            self->handler(self->app, LORA_MAC_TX_COMPLETE, NULL);                        
+#ifndef LDL_DISABLE_TX_COMPLETE_EVENT            
+            self->handler(self->app, LDL_MAC_TX_COMPLETE, NULL);                        
 #endif            
         }
         else{
             
-            if(LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error)){
+            if(LDL_MAC_timerCheck(self, LDL_TIMER_WAITA, &error)){
                 
-#ifndef LORA_DISABLE_CHIP_ERROR_EVENT                
-                self->handler(self->app, LORA_MAC_CHIP_ERROR, NULL);                
+#ifndef LDL_DISABLE_CHIP_ERROR_EVENT                
+                self->handler(self->app, LDL_MAC_CHIP_ERROR, NULL);                
 #endif                
                 LDL_MAC_inputClear(self);
                 
-                self->state = LORA_STATE_RECOVERY_RESET;
-                self->op = LORA_OP_RESET;
+                self->state = LDL_STATE_RECOVERY_RESET;
+                self->op = LDL_OP_RESET;
                 
                 LDL_Radio_reset(self->radio, true);
                 
                 /* hold reset for at least 100us */
-                LDL_MAC_timerSet(self, LORA_TIMER_WAITA, ((LDL_System_tps() + LDL_System_eps())/10000UL) + 1UL);
+                LDL_MAC_timerSet(self, LDL_TIMER_WAITA, ((LDL_System_tps() + LDL_System_eps())/10000UL) + 1UL);
             }
         }
         break;
         
-    case LORA_STATE_WAIT_RX1:
+    case LDL_STATE_WAIT_RX1:
     
-        if(LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error)){
+        if(LDL_MAC_timerCheck(self, LDL_TIMER_WAITA, &error)){
     
-            struct lora_radio_rx_setting radio_setting;
+            struct ldl_radio_rx_setting radio_setting;
             uint32_t freq;    
             uint8_t rate;
             
@@ -546,7 +546,7 @@ void LDL_MAC_process(struct lora_mac *self)
             
             radio_setting.max += LDL_Frame_phyOverhead();
             
-            self->state = LORA_STATE_RX1;
+            self->state = LDL_STATE_RX1;
             
             if(error <= self->rx1_margin){
                 
@@ -554,20 +554,20 @@ void LDL_MAC_process(struct lora_mac *self)
                 radio_setting.timeout = self->rx1_symbols;
                 
                 LDL_MAC_inputClear(self);
-                LDL_MAC_inputArm(self, LORA_INPUT_RX_READY);
-                LDL_MAC_inputArm(self, LORA_INPUT_RX_TIMEOUT);
+                LDL_MAC_inputArm(self, LDL_INPUT_RX_READY);
+                LDL_MAC_inputArm(self, LDL_INPUT_RX_TIMEOUT);
                 
                 LDL_Radio_receive(self->radio, &radio_setting);
                 
                 /* use waitA as a guard */
-                LDL_MAC_timerSet(self, LORA_TIMER_WAITA, (LDL_System_tps()) << 4U);                                
+                LDL_MAC_timerSet(self, LDL_TIMER_WAITA, (LDL_System_tps()) << 4U);                                
             }
             else{
                 
-                self->state = LORA_STATE_WAIT_RX2;
+                self->state = LDL_STATE_WAIT_RX2;
             }
                 
-#ifndef LORA_DISABLE_SLOT_EVENT                           
+#ifndef LDL_DISABLE_SLOT_EVENT                           
             arg.rx_slot.margin = self->rx1_margin;                
             arg.rx_slot.timeout = self->rx1_symbols;                
             arg.rx_slot.error = error;
@@ -575,22 +575,22 @@ void LDL_MAC_process(struct lora_mac *self)
             arg.rx_slot.bw = radio_setting.bw;
             arg.rx_slot.sf = radio_setting.sf;
                             
-            self->handler(self->app, LORA_MAC_RX1_SLOT, &arg);                    
+            self->handler(self->app, LDL_MAC_RX1_SLOT, &arg);                    
 #endif                
         }
         break;
             
-    case LORA_STATE_WAIT_RX2:
+    case LDL_STATE_WAIT_RX2:
     
-        if(LDL_MAC_timerCheck(self, LORA_TIMER_WAITB, &error)){
+        if(LDL_MAC_timerCheck(self, LDL_TIMER_WAITB, &error)){
             
-            struct lora_radio_rx_setting radio_setting;
+            struct ldl_radio_rx_setting radio_setting;
             
             LDL_Region_convertRate(self->region, self->ctx.rx2DataRate, &radio_setting.sf, &radio_setting.bw, &radio_setting.max);
             
             radio_setting.max += LDL_Frame_phyOverhead();
             
-            self->state = LORA_STATE_RX2;
+            self->state = LDL_STATE_RX2;
             
             if(error <= self->rx2_margin){
                 
@@ -598,22 +598,22 @@ void LDL_MAC_process(struct lora_mac *self)
                 radio_setting.timeout = self->rx2_symbols;
                 
                 LDL_MAC_inputClear(self);
-                LDL_MAC_inputArm(self, LORA_INPUT_RX_READY);
-                LDL_MAC_inputArm(self, LORA_INPUT_RX_TIMEOUT);
+                LDL_MAC_inputArm(self, LDL_INPUT_RX_READY);
+                LDL_MAC_inputArm(self, LDL_INPUT_RX_TIMEOUT);
                 
                 LDL_Radio_receive(self->radio, &radio_setting);
                 
                 /* use waitA as a guard */
-                LDL_MAC_timerSet(self, LORA_TIMER_WAITA, (LDL_System_tps()) << 4U);
+                LDL_MAC_timerSet(self, LDL_TIMER_WAITA, (LDL_System_tps()) << 4U);
             }
             else{
                 
                 adaptRate(self);
                 
-                self->state = LORA_STATE_IDLE;
+                self->state = LDL_STATE_IDLE;
             }
                 
-#ifndef LORA_DISABLE_SLOT_EVENT                                    
+#ifndef LDL_DISABLE_SLOT_EVENT                                    
             arg.rx_slot.margin = self->rx2_margin;                
             arg.rx_slot.timeout = self->rx2_symbols;                
             arg.rx_slot.error = error;
@@ -621,49 +621,49 @@ void LDL_MAC_process(struct lora_mac *self)
             arg.rx_slot.bw = radio_setting.bw;
             arg.rx_slot.sf = radio_setting.sf;           
                  
-            self->handler(self->app, LORA_MAC_RX2_SLOT, &arg);                    
+            self->handler(self->app, LDL_MAC_RX2_SLOT, &arg);                    
 #endif                
         }
         break;
         
-    case LORA_STATE_RX1:    
-    case LORA_STATE_RX2:
+    case LDL_STATE_RX1:    
+    case LDL_STATE_RX2:
 
-        if(LDL_MAC_inputCheck(self, LORA_INPUT_RX_READY, &error)){
+        if(LDL_MAC_inputCheck(self, LDL_INPUT_RX_READY, &error)){
         
             LDL_MAC_inputClear(self);
     
-            struct lora_frame_down frame;
-#ifdef LORA_ENABLE_STATIC_RX_BUFFER         
+            struct ldl_frame_down frame;
+#ifdef LDL_ENABLE_STATIC_RX_BUFFER         
             uint8_t *buffer = self->rx_buffer;
 #else   
-            uint8_t buffer[LORA_MAX_PACKET];
+            uint8_t buffer[LDL_MAX_PACKET];
 #endif            
             uint8_t len;
             
-            struct lora_radio_packet_metadata meta;            
+            struct ldl_radio_packet_metadata meta;            
             uint8_t cmd_len = 0U;
             
-            LDL_MAC_timerClear(self, LORA_TIMER_WAITA);
-            LDL_MAC_timerClear(self, LORA_TIMER_WAITB);
+            LDL_MAC_timerClear(self, LDL_TIMER_WAITA);
+            LDL_MAC_timerClear(self, LDL_TIMER_WAITB);
             
-            len = LDL_Radio_collect(self->radio, &meta, buffer, LORA_MAX_PACKET);        
+            len = LDL_Radio_collect(self->radio, &meta, buffer, LDL_MAX_PACKET);        
             
             LDL_Radio_clearInterrupt(self->radio);
             
             /* notify of a downstream message */
-#ifndef LORA_DISABLE_DOWNSTREAM_EVENT            
+#ifndef LDL_DISABLE_DOWNSTREAM_EVENT            
             arg.downstream.rssi = meta.rssi;
             arg.downstream.snr = meta.snr;
             arg.downstream.size = len;
             
-            self->handler(self->app, LORA_MAC_DOWNSTREAM, &arg);      
+            self->handler(self->app, LDL_MAC_DOWNSTREAM, &arg);      
 #endif  
             self->margin = meta.snr;
                       
             LDL_System_getIdentity(self->app, &identity);
             
-            if(LDL_OPS_receiveFrame(self, &frame, buffer, len)){
+            if(LDL_OPS_receiveFrame(self, &frame, &identity, buffer, len)){
                 
                 self->last_valid_downlink = timeNow(self);
                 
@@ -689,7 +689,7 @@ void LDL_MAC_process(struct lora_mac *self)
                         
                         LDL_Region_processCFList(self->region, self, frame.cfList, frame.cfListLen);                        
                     }
-                    
+
                     if(frame.optNeg){
                     
                         LDL_OPS_deriveKeys2(
@@ -712,16 +712,16 @@ void LDL_MAC_process(struct lora_mac *self)
                         );
                         
                         self->ctx.version = 0U;
-                    }
+                    }                             
                     
                     self->ctx.devAddr = frame.devAddr;    
                     self->ctx.netID = frame.netID;
                     
-#ifndef LORA_DISABLE_JOIN_COMPLETE_EVENT                    
-                    self->handler(self->app, LORA_MAC_JOIN_COMPLETE, NULL);                    
+#ifndef LDL_DISABLE_JOIN_COMPLETE_EVENT                    
+                    self->handler(self->app, LDL_MAC_JOIN_COMPLETE, NULL);                    
 #endif                                      
-                    self->state = LORA_STATE_IDLE;           
-                    self->op = LORA_OP_NONE;                                
+                    self->state = LDL_STATE_IDLE;           
+                    self->op = LDL_OP_NONE;                                
                     break;
                 
                 case FRAME_TYPE_DATA_UNCONFIRMED_DOWN:
@@ -740,33 +740,33 @@ void LDL_MAC_process(struct lora_mac *self)
             
                         if(frame.port > 0U){
 
-                            cmd_len = processCommands(self, frame.opts, frame.optsLen, true, buffer, LORA_MAX_PACKET);      
-#ifndef LORA_DISABLE_RX_EVENT                                            
+                            cmd_len = processCommands(self, frame.opts, frame.optsLen, true, buffer, LDL_MAX_PACKET);      
+#ifndef LDL_DISABLE_RX_EVENT                                            
                             arg.rx.counter = frame.counter;
                             arg.rx.port = frame.port;
                             arg.rx.data = frame.data;
                             arg.rx.size = frame.dataLen;                                            
                             
-                            self->handler(self->app, LORA_MAC_RX, &arg);                                        
+                            self->handler(self->app, LDL_MAC_RX, &arg);                                        
 #endif                                                                                        
                         }
                         else{
                         
-                            cmd_len = processCommands(self, frame.data, frame.dataLen, false, buffer, LORA_MAX_PACKET);                                              
+                            cmd_len = processCommands(self, frame.data, frame.dataLen, false, buffer, LDL_MAX_PACKET);                                              
                         }
                     }
                     else{
                         
-                        cmd_len = processCommands(self, frame.opts, frame.optsLen, true, buffer, LORA_MAX_PACKET);      
+                        cmd_len = processCommands(self, frame.opts, frame.optsLen, true, buffer, LDL_MAX_PACKET);      
                     }
                     
-#ifndef LORA_DISABLE_DATA_COMPLETE_EVENT
-                    self->handler(self->app, LORA_MAC_DATA_COMPLETE, NULL);
+#ifndef LDL_DISABLE_DATA_COMPLETE_EVENT
+                    self->handler(self->app, LDL_MAC_DATA_COMPLETE, NULL);
 #endif                
                     /* respond to MAC command */
                     if(cmd_len > 0U){
 
-                        LORA_DEBUG(self->app, "sending mac response")
+                        LDL_DEBUG(self->app, "sending mac response")
                         
                         self->tx.rate = self->ctx.rate;
                         self->tx.power = self->ctx.power;
@@ -776,7 +776,7 @@ void LDL_MAC_process(struct lora_mac *self)
                         /* MAC command may have masked everything... */
                         if(ms_until_next != UINT32_MAX){
                     
-                            struct lora_frame_data f;
+                            struct ldl_frame_data f;
                             
                             (void)memset(&f, 0, sizeof(f));
                         
@@ -801,29 +801,29 @@ void LDL_MAC_process(struct lora_mac *self)
                             
                             self->ctx.up++;
                             
-                            self->op = LORA_OP_DATA_UNCONFIRMED;
-                            self->state = LORA_STATE_WAIT_RETRY;
-                            self->band[LORA_BAND_RETRY] = ms_until_next;                        
+                            self->op = LDL_OP_DATA_UNCONFIRMED;
+                            self->state = LDL_STATE_WAIT_RETRY;
+                            self->band[LDL_BAND_RETRY] = ms_until_next;                        
                         }
                         else{
                             
-                            LORA_DEBUG(self->app, "cannot send, all channels are masked!")
+                            LDL_DEBUG(self->app, "cannot send, all channels are masked!")
                             
-                            self->state = LORA_STATE_IDLE;           
-                            self->op = LORA_OP_NONE;
+                            self->state = LDL_STATE_IDLE;           
+                            self->op = LDL_OP_NONE;
                         }
                     }
                     else{
                         
-                        self->state = LORA_STATE_IDLE;           
-                        self->op = LORA_OP_NONE;
+                        self->state = LDL_STATE_IDLE;           
+                        self->op = LDL_OP_NONE;
                     }
                     
                     
                     break;
                 }
                 
-#ifndef LORA_DISABLE_SESSION_UPDATE
+#ifndef LDL_DISABLE_SESSION_UPDATE
                 pushSessionUpdate(self);    
 #endif                
             }
@@ -832,93 +832,93 @@ void LDL_MAC_process(struct lora_mac *self)
                 downlinkMissingHandler(self);
             }
         }
-        else if(LDL_MAC_inputCheck(self, LORA_INPUT_RX_TIMEOUT, &error)){
+        else if(LDL_MAC_inputCheck(self, LDL_INPUT_RX_TIMEOUT, &error)){
             
             LDL_MAC_inputClear(self);
             
             LDL_Radio_clearInterrupt(self->radio);
             
-            if(self->state == LORA_STATE_RX2){
+            if(self->state == LDL_STATE_RX2){
             
-                LDL_MAC_timerClear(self, LORA_TIMER_WAITB);
+                LDL_MAC_timerClear(self, LDL_TIMER_WAITB);
                 
                 uint8_t mtu;
-                enum lora_spreading_factor sf;
-                enum lora_signal_bandwidth bw;
+                enum ldl_spreading_factor sf;
+                enum ldl_signal_bandwidth bw;
                 
                 LDL_Region_convertRate(self->region, self->tx.rate, &sf, &bw, &mtu);                        
                 
-                LDL_MAC_timerSet(self, LORA_TIMER_WAITA, transmitTime(bw, sf, mtu, false));
+                LDL_MAC_timerSet(self, LDL_TIMER_WAITA, transmitTime(bw, sf, mtu, false));
                 
-                self->state = LORA_STATE_RX2_LOCKOUT;
+                self->state = LDL_STATE_RX2_LOCKOUT;
             }
             else{
                 
-                LDL_MAC_timerClear(self, LORA_TIMER_WAITA);
+                LDL_MAC_timerClear(self, LDL_TIMER_WAITA);
                 
-                self->state = LORA_STATE_WAIT_RX2;
+                self->state = LDL_STATE_WAIT_RX2;
             }   
         }
         else{
             
             /* this is a hardware failure condition */
-            if(LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error) || LDL_MAC_timerCheck(self, LORA_TIMER_WAITB, &error)){
+            if(LDL_MAC_timerCheck(self, LDL_TIMER_WAITA, &error) || LDL_MAC_timerCheck(self, LDL_TIMER_WAITB, &error)){
                 
-#ifndef LORA_DISABLE_CHIP_ERROR_EVENT                
-                self->handler(self->app, LORA_MAC_CHIP_ERROR, NULL); 
+#ifndef LDL_DISABLE_CHIP_ERROR_EVENT                
+                self->handler(self->app, LDL_MAC_CHIP_ERROR, NULL); 
 #endif                
                 LDL_MAC_inputClear(self);
-                LDL_MAC_timerClear(self, LORA_TIMER_WAITA);
-                LDL_MAC_timerClear(self, LORA_TIMER_WAITB);
+                LDL_MAC_timerClear(self, LDL_TIMER_WAITA);
+                LDL_MAC_timerClear(self, LDL_TIMER_WAITB);
                 
-                self->state = LORA_STATE_RECOVERY_RESET;
-                self->op = LORA_OP_RESET;
+                self->state = LDL_STATE_RECOVERY_RESET;
+                self->op = LDL_OP_RESET;
                 
                 LDL_Radio_reset(self->radio, true);
                 
                 /* hold reset for at least 100us */
-                LDL_MAC_timerSet(self, LORA_TIMER_WAITA, ((LDL_System_tps() + LDL_System_eps())/10000UL) + 1U);                     
+                LDL_MAC_timerSet(self, LDL_TIMER_WAITA, ((LDL_System_tps() + LDL_System_eps())/10000UL) + 1U);                     
             }
         }
         break;
     
-    case LORA_STATE_RX2_LOCKOUT:
+    case LDL_STATE_RX2_LOCKOUT:
     
-        if(LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error)){
+        if(LDL_MAC_timerCheck(self, LDL_TIMER_WAITA, &error)){
             
             downlinkMissingHandler(self);  
             
-#ifndef LORA_DISABLE_SESSION_UPDATE              
+#ifndef LDL_DISABLE_SESSION_UPDATE              
             pushSessionUpdate(self);
 #endif            
         }
         break;
     
-    case LORA_STATE_WAIT_RETRY:
+    case LDL_STATE_WAIT_RETRY:
         
-        if(self->band[LORA_BAND_RETRY] == 0U){
+        if(self->band[LDL_BAND_RETRY] == 0U){
             
             if(msUntilNextChannel(self, self->tx.rate) != UINT32_MAX){
             
-                if(self->band[LORA_BAND_GLOBAL] == 0UL){
+                if(self->band[LDL_BAND_GLOBAL] == 0UL){
             
                     if(selectChannel(self, self->tx.rate, self->tx.chIndex, 0UL, &self->tx.chIndex, &self->tx.freq)){
                                 
                         uint32_t delay = rand32(self->app) % (LDL_System_tps()*30UL);
                                 
-                        LORA_DEBUG(self->app, "dither retry by %"PRIu32" ticks", delay)
+                        LDL_DEBUG(self->app, "dither retry by %"PRIu32" ticks", delay)
                                 
-                        LDL_MAC_timerSet(self, LORA_TIMER_WAITA, delay);
-                        self->state = LORA_STATE_WAIT_TX;
+                        LDL_MAC_timerSet(self, LDL_TIMER_WAITA, delay);
+                        self->state = LDL_STATE_WAIT_TX;
                     }            
                 }
             }
             else{
                 
-                LORA_DEBUG(self->app, "no channels for retry")
+                LDL_DEBUG(self->app, "no channels for retry")
                 
-                self->op = LORA_OP_NONE;
-                self->state = LORA_STATE_IDLE;
+                self->op = LDL_OP_NONE;
+                self->state = LDL_STATE_IDLE;
             }
         }
         break;    
@@ -929,18 +929,18 @@ void LDL_MAC_process(struct lora_mac *self)
             
         if(next < ticksToMSCoarse(60UL*LDL_System_tps())){
             
-            LDL_MAC_timerSet(self, LORA_TIMER_BAND, LDL_System_tps() / 1000UL * (next+1U));                    
+            LDL_MAC_timerSet(self, LDL_TIMER_BAND, LDL_System_tps() / 1000UL * (next+1U));                    
         }
         else{
         
-            LDL_MAC_timerSet(self, LORA_TIMER_BAND, 60UL*LDL_System_tps());                    
+            LDL_MAC_timerSet(self, LDL_TIMER_BAND, 60UL*LDL_System_tps());                    
         }
     }       
 }
 
-uint32_t LDL_MAC_ticksUntilNextEvent(const struct lora_mac *self)
+uint32_t LDL_MAC_ticksUntilNextEvent(const struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     uint32_t retval = 0UL;
     
@@ -952,103 +952,103 @@ uint32_t LDL_MAC_ticksUntilNextEvent(const struct lora_mac *self)
     return retval;
 }
 
-bool LDL_MAC_setRate(struct lora_mac *self, uint8_t rate)
+bool LDL_MAC_setRate(struct ldl_mac *self, uint8_t rate)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     bool retval = false;    
-    self->errno = LORA_ERRNO_NONE;
+    self->errno = LDL_ERRNO_NONE;
     
     if(rateSettingIsValid(self->region, rate)){
         
         self->ctx.rate = rate;
         
-#ifndef LORA_DISABLE_SESSION_UPDATE        
+#ifndef LDL_DISABLE_SESSION_UPDATE        
         pushSessionUpdate(self);
 #endif        
         retval = true;        
     }
     else{
         
-        self->errno = LORA_ERRNO_RATE;
+        self->errno = LDL_ERRNO_RATE;
     }
     
     return retval;
 }
 
-uint8_t LDL_MAC_getRate(const struct lora_mac *self)
+uint8_t LDL_MAC_getRate(const struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     return self->ctx.rate;
 }
 
-bool LDL_MAC_setPower(struct lora_mac *self, uint8_t power)
+bool LDL_MAC_setPower(struct ldl_mac *self, uint8_t power)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     bool retval = false;
-    self->errno = LORA_ERRNO_NONE;
+    self->errno = LDL_ERRNO_NONE;
         
     if(LDL_Region_validateTXPower(self->region, power)){
         
         self->ctx.power = power;
-#ifndef LORA_DISABLE_SESSION_UPDATE        
+#ifndef LDL_DISABLE_SESSION_UPDATE        
         pushSessionUpdate(self);        
 #endif        
         retval = true;
     }
     else{
      
-        self->errno = LORA_ERRNO_POWER;
+        self->errno = LDL_ERRNO_POWER;
     }        
     
     return retval;
 }
 
-uint8_t LDL_MAC_getPower(const struct lora_mac *self)
+uint8_t LDL_MAC_getPower(const struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     return self->ctx.power;
 }
 
-void LDL_MAC_enableADR(struct lora_mac *self)
+void LDL_MAC_enableADR(struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     self->ctx.adr = true;
     
-#ifndef LORA_DISABLE_SESSION_UPDATE    
+#ifndef LDL_DISABLE_SESSION_UPDATE    
     pushSessionUpdate(self);       
 #endif    
 }
 
-bool LDL_MAC_adr(const struct lora_mac *self)
+bool LDL_MAC_adr(const struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     return self->ctx.adr;
 }
 
-void LDL_MAC_disableADR(struct lora_mac *self)
+void LDL_MAC_disableADR(struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     self->ctx.adr = false;
     
-#ifndef LORA_DISABLE_SESSION_UPDATE    
+#ifndef LDL_DISABLE_SESSION_UPDATE    
     pushSessionUpdate(self);       
 #endif     
 }
 
-bool LDL_MAC_ready(const struct lora_mac *self)
+bool LDL_MAC_ready(const struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     bool retval = false;
     
-    if(self->state == LORA_STATE_IDLE){
+    if(self->state == LDL_STATE_IDLE){
         
         retval = (msUntilNextChannel(self, self->ctx.rate) == 0UL);
     }
@@ -1056,19 +1056,19 @@ bool LDL_MAC_ready(const struct lora_mac *self)
     return retval;
 }
 
-uint32_t LDL_MAC_bwToNumber(enum lora_signal_bandwidth bw)
+uint32_t LDL_MAC_bwToNumber(enum ldl_signal_bandwidth bw)
 {
     uint32_t retval;
     
     switch(bw){
     default:
-    case BW_125:
+    case LDL_BW_125:
         retval = 125000UL;
         break;        
-    case BW_250:
+    case LDL_BW_250:
         retval = 250000UL;
         break;            
-    case BW_500:
+    case LDL_BW_500:
         retval = 500000UL;
         break;                
     }
@@ -1076,155 +1076,155 @@ uint32_t LDL_MAC_bwToNumber(enum lora_signal_bandwidth bw)
     return retval;
 }
 
-void LDL_MAC_radioEvent(struct lora_mac *self, enum lora_radio_event event)
+void LDL_MAC_radioEvent(struct ldl_mac *self, enum ldl_radio_event event)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     switch(event){
-    case LORA_RADIO_EVENT_TX_COMPLETE:
-        LDL_MAC_inputSignal(self, LORA_INPUT_TX_COMPLETE);
+    case LDL_RADIO_EVENT_TX_COMPLETE:
+        LDL_MAC_inputSignal(self, LDL_INPUT_TX_COMPLETE);
         break;
-    case LORA_RADIO_EVENT_RX_READY:
-        LDL_MAC_inputSignal(self, LORA_INPUT_RX_READY);
+    case LDL_RADIO_EVENT_RX_READY:
+        LDL_MAC_inputSignal(self, LDL_INPUT_RX_READY);
         break;
-    case LORA_RADIO_EVENT_RX_TIMEOUT:
-        LDL_MAC_inputSignal(self, LORA_INPUT_RX_TIMEOUT);        
+    case LDL_RADIO_EVENT_RX_TIMEOUT:
+        LDL_MAC_inputSignal(self, LDL_INPUT_RX_TIMEOUT);        
         break;
-    case LORA_RADIO_EVENT_NONE:
+    case LDL_RADIO_EVENT_NONE:
     default:
         break;
     }     
 }
 
-uint8_t LDL_MAC_mtu(const struct lora_mac *self)
+uint8_t LDL_MAC_mtu(const struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
-    enum lora_signal_bandwidth bw;
-    enum lora_spreading_factor sf;
+    enum ldl_signal_bandwidth bw;
+    enum ldl_spreading_factor sf;
     uint8_t max = 0U;
     uint8_t overhead = LDL_Frame_dataOverhead();    
     
     /* which rate?? */
     LDL_Region_convertRate(self->region, self->ctx.rate, &sf, &bw, &max);
     
-    LORA_PEDANTIC(LDL_Frame_dataOverhead() < max)
+    LDL_PEDANTIC(LDL_Frame_dataOverhead() < max)
     
     if(self->dlChannelAns_pending){
         
-        overhead += LDL_MAC_sizeofCommandUp(DL_CHANNEL);        
+        overhead += LDL_MAC_sizeofCommandUp(LDL_CMD_DL_CHANNEL);        
     }
     
     if(self->rxtimingSetupAns_pending){
         
-        overhead += LDL_MAC_sizeofCommandUp(RX_TIMING_SETUP);                       
+        overhead += LDL_MAC_sizeofCommandUp(LDL_CMD_RX_TIMING_SETUP);                       
     }
     
     if(self->rxParamSetupAns_pending){
         
-        overhead += LDL_MAC_sizeofCommandUp(RX_PARAM_SETUP);
+        overhead += LDL_MAC_sizeofCommandUp(LDL_CMD_RX_PARAM_SETUP);
     }
     
     if(self->linkCheckReq_pending){
         
-        overhead += LDL_MAC_sizeofCommandUp(LINK_CHECK);
+        overhead += LDL_MAC_sizeofCommandUp(LDL_CMD_LINK_CHECK);
     }
     
     return (overhead > max) ? 0U : (max - overhead);    
 }
 
-uint32_t LDL_MAC_timeSinceValidDownlink(struct lora_mac *self)
+uint32_t LDL_MAC_timeSinceValidDownlink(struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     return (self->last_valid_downlink == 0) ? UINT32_MAX : (timeNow(self) - self->last_valid_downlink);
 }
 
-void LDL_MAC_setMaxDCycle(struct lora_mac *self, uint8_t maxDCycle)
+void LDL_MAC_setMaxDCycle(struct ldl_mac *self, uint8_t maxDCycle)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     self->ctx.maxDutyCycle = maxDCycle & 0xfU;
     
-#ifndef LORA_DISABLE_SESSION_UPDATE    
+#ifndef LDL_DISABLE_SESSION_UPDATE    
     pushSessionUpdate(self);        
 #endif    
 }
 
-uint8_t LDL_MAC_getMaxDCycle(const struct lora_mac *self)
+uint8_t LDL_MAC_getMaxDCycle(const struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     return self->ctx.maxDutyCycle;
 }
 
-void LDL_MAC_setNbTrans(struct lora_mac *self, uint8_t nbTrans)
+void LDL_MAC_setNbTrans(struct ldl_mac *self, uint8_t nbTrans)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     self->ctx.nbTrans = nbTrans & 0xfU;
     
-#ifndef LORA_DISABLE_SESSION_UPDATE
+#ifndef LDL_DISABLE_SESSION_UPDATE
     pushSessionUpdate(self);     
 #endif        
 }
 
-uint8_t LDL_MAC_getNbTrans(const struct lora_mac *self)
+uint8_t LDL_MAC_getNbTrans(const struct ldl_mac *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     return self->ctx.nbTrans;        
 }
 
-bool LDL_MAC_addChannel(struct lora_mac *self, uint8_t chIndex, uint32_t freq, uint8_t minRate, uint8_t maxRate)
+bool LDL_MAC_addChannel(struct ldl_mac *self, uint8_t chIndex, uint32_t freq, uint8_t minRate, uint8_t maxRate)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
-    LORA_DEBUG(self->app, "adding chIndex=%u freq=%"PRIu32" minRate=%u maxRate=%u", chIndex, freq, minRate, maxRate)
+    LDL_DEBUG(self->app, "adding chIndex=%u freq=%"PRIu32" minRate=%u maxRate=%u", chIndex, freq, minRate, maxRate)
     
     return setChannel(self->ctx.chConfig, self->region, chIndex, freq, minRate, maxRate);
 }
 
-bool LDL_MAC_maskChannel(struct lora_mac *self, uint8_t chIndex)
+bool LDL_MAC_maskChannel(struct ldl_mac *self, uint8_t chIndex)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     return maskChannel(self->ctx.chMask, self->region, chIndex);
 }
 
-bool LDL_MAC_unmaskChannel(struct lora_mac *self, uint8_t chIndex)
+bool LDL_MAC_unmaskChannel(struct ldl_mac *self, uint8_t chIndex)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     return unmaskChannel(self->ctx.chMask, self->region, chIndex);
 }
 
-void LDL_MAC_timerSet(struct lora_mac *self, enum lora_timer_inst timer, uint32_t timeout)
+void LDL_MAC_timerSet(struct ldl_mac *self, enum ldl_timer_inst timer, uint32_t timeout)
 {
-    LORA_SYSTEM_ENTER_CRITICAL(self->app)
+    LDL_SYSTEM_ENTER_CRITICAL(self->app)
    
     self->timers[timer].time = LDL_System_ticks(self->app) + (timeout & INT32_MAX);
     self->timers[timer].armed = true;
     
-    LORA_SYSTEM_LEAVE_CRITICAL(self->app)
+    LDL_SYSTEM_LEAVE_CRITICAL(self->app)
 }
 
-void LDL_MAC_timerIncrement(struct lora_mac *self, enum lora_timer_inst timer, uint32_t timeout)
+void LDL_MAC_timerIncrement(struct ldl_mac *self, enum ldl_timer_inst timer, uint32_t timeout)
 {
-    LORA_SYSTEM_ENTER_CRITICAL(self->app)
+    LDL_SYSTEM_ENTER_CRITICAL(self->app)
    
     self->timers[timer].time += (timeout & INT32_MAX);
     self->timers[timer].armed = true;
     
-    LORA_SYSTEM_LEAVE_CRITICAL(self->app)
+    LDL_SYSTEM_LEAVE_CRITICAL(self->app)
 }
 
-bool LDL_MAC_timerCheck(struct lora_mac *self, enum lora_timer_inst timer, uint32_t *error)
+bool LDL_MAC_timerCheck(struct ldl_mac *self, enum ldl_timer_inst timer, uint32_t *error)
 {
     bool retval = false;
     uint32_t time;
     
-    LORA_SYSTEM_ENTER_CRITICAL(self->app)
+    LDL_SYSTEM_ENTER_CRITICAL(self->app)
         
     if(self->timers[timer].armed){
         
@@ -1238,17 +1238,17 @@ bool LDL_MAC_timerCheck(struct lora_mac *self, enum lora_timer_inst timer, uint3
         }
     }    
     
-    LORA_SYSTEM_LEAVE_CRITICAL(self->app)
+    LDL_SYSTEM_LEAVE_CRITICAL(self->app)
     
     return retval;
 }
 
-void LDL_MAC_timerClear(struct lora_mac *self, enum lora_timer_inst timer)
+void LDL_MAC_timerClear(struct ldl_mac *self, enum ldl_timer_inst timer)
 {
     self->timers[timer].armed = false;
 }
 
-uint32_t LDL_MAC_timerTicksUntilNext(const struct lora_mac *self)
+uint32_t LDL_MAC_timerTicksUntilNext(const struct ldl_mac *self)
 {
     size_t i;
     uint32_t retval = UINT32_MAX;
@@ -1258,7 +1258,7 @@ uint32_t LDL_MAC_timerTicksUntilNext(const struct lora_mac *self)
 
     for(i=0U; i < (sizeof(self->timers)/sizeof(*self->timers)); i++){
 
-        LORA_SYSTEM_ENTER_CRITICAL(self->app)
+        LDL_SYSTEM_ENTER_CRITICAL(self->app)
 
         if(self->timers[i].armed){
             
@@ -1275,7 +1275,7 @@ uint32_t LDL_MAC_timerTicksUntilNext(const struct lora_mac *self)
             }
         }
         
-        LORA_SYSTEM_LEAVE_CRITICAL(self->app)
+        LDL_SYSTEM_LEAVE_CRITICAL(self->app)
         
         if(retval == 0U){
             
@@ -1286,12 +1286,12 @@ uint32_t LDL_MAC_timerTicksUntilNext(const struct lora_mac *self)
     return retval;
 }
 
-uint32_t LDL_MAC_timerTicksUntil(const struct lora_mac *self, enum lora_timer_inst timer, uint32_t *error)
+uint32_t LDL_MAC_timerTicksUntil(const struct ldl_mac *self, enum ldl_timer_inst timer, uint32_t *error)
 {
     uint32_t retval = UINT32_MAX;
     uint32_t time;
     
-    LORA_SYSTEM_ENTER_CRITICAL(self->app)
+    LDL_SYSTEM_ENTER_CRITICAL(self->app)
     
     if(self->timers[timer].armed){
         
@@ -1309,14 +1309,14 @@ uint32_t LDL_MAC_timerTicksUntil(const struct lora_mac *self, enum lora_timer_in
         }
     }
     
-    LORA_SYSTEM_LEAVE_CRITICAL(self->app)
+    LDL_SYSTEM_LEAVE_CRITICAL(self->app)
     
     return retval;
 }
 
-void LDL_MAC_inputSignal(struct lora_mac *self, enum lora_input_type type)
+void LDL_MAC_inputSignal(struct ldl_mac *self, enum ldl_input_type type)
 {
-    LORA_SYSTEM_ENTER_CRITICAL(self->app)
+    LDL_SYSTEM_ENTER_CRITICAL(self->app)
     
     if(self->inputs.state == 0U){
     
@@ -1327,23 +1327,23 @@ void LDL_MAC_inputSignal(struct lora_mac *self, enum lora_input_type type)
         }
     }
     
-    LORA_SYSTEM_LEAVE_CRITICAL(self->app)
+    LDL_SYSTEM_LEAVE_CRITICAL(self->app)
 }
 
-void LDL_MAC_inputArm(struct lora_mac *self, enum lora_input_type type)
+void LDL_MAC_inputArm(struct ldl_mac *self, enum ldl_input_type type)
 {
-    LORA_SYSTEM_ENTER_CRITICAL(self->app) 
+    LDL_SYSTEM_ENTER_CRITICAL(self->app) 
     
     self->inputs.armed |= (1U << type);
     
-    LORA_SYSTEM_LEAVE_CRITICAL(self->app)     
+    LDL_SYSTEM_LEAVE_CRITICAL(self->app)     
 }
 
-bool LDL_MAC_inputCheck(const struct lora_mac *self, enum lora_input_type type, uint32_t *error)
+bool LDL_MAC_inputCheck(const struct ldl_mac *self, enum ldl_input_type type, uint32_t *error)
 {
     bool retval = false;
     
-    LORA_SYSTEM_ENTER_CRITICAL(self->app)     
+    LDL_SYSTEM_ENTER_CRITICAL(self->app)     
     
     if((self->inputs.state & (1U << type)) > 0U){
         
@@ -1351,45 +1351,45 @@ bool LDL_MAC_inputCheck(const struct lora_mac *self, enum lora_input_type type, 
         retval = true;
     }
     
-    LORA_SYSTEM_LEAVE_CRITICAL(self->app)    
+    LDL_SYSTEM_LEAVE_CRITICAL(self->app)    
     
     return retval;
 }
 
-void LDL_MAC_inputClear(struct lora_mac *self)
+void LDL_MAC_inputClear(struct ldl_mac *self)
 {
-    LORA_SYSTEM_ENTER_CRITICAL(self->app)     
+    LDL_SYSTEM_ENTER_CRITICAL(self->app)     
     
     self->inputs.state = 0U;
     self->inputs.armed = 0U;
     
-    LORA_SYSTEM_LEAVE_CRITICAL(self->app)   
+    LDL_SYSTEM_LEAVE_CRITICAL(self->app)   
 }
 
-bool LDL_MAC_inputPending(const struct lora_mac *self)
+bool LDL_MAC_inputPending(const struct ldl_mac *self)
 {
     return (self->inputs.state != 0U);
 }
 
-bool LDL_MAC_priority(const struct lora_mac *self, uint8_t interval)
+bool LDL_MAC_priority(const struct ldl_mac *self, uint8_t interval)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     bool retval;
     
     uint32_t error;
     
-    LDL_MAC_timerTicksUntil(self, LORA_TIMER_WAITA, &error);
+    LDL_MAC_timerTicksUntil(self, LDL_TIMER_WAITA, &error);
     
     switch(self->state){
     default:
         retval = false;
         break;
-    case LORA_STATE_TX:    
-    case LORA_STATE_WAIT_RX1:
-    case LORA_STATE_RX1:
-    case LORA_STATE_WAIT_RX2:
-    case LORA_STATE_RX2:
+    case LDL_STATE_TX:    
+    case LDL_STATE_WAIT_RX1:
+    case LDL_STATE_RX1:
+    case LDL_STATE_WAIT_RX2:
+    case LDL_STATE_RX2:
         retval = true;
         break;
     }
@@ -1399,22 +1399,22 @@ bool LDL_MAC_priority(const struct lora_mac *self, uint8_t interval)
 
 /* static functions ***************************************************/
 
-static bool externalDataCommand(struct lora_mac *self, bool confirmed, uint8_t port, const void *data, uint8_t len, const struct lora_mac_data_opts *opts)
+static bool externalDataCommand(struct ldl_mac *self, bool confirmed, uint8_t port, const void *data, uint8_t len, const struct ldl_mac_data_opts *opts)
 {
     bool retval = false;
     uint8_t maxPayload;
-    enum lora_signal_bandwidth bw;
-    enum lora_spreading_factor sf;
+    enum ldl_signal_bandwidth bw;
+    enum ldl_spreading_factor sf;
     
-    self->errno = LORA_ERRNO_NONE;
+    self->errno = LDL_ERRNO_NONE;
 
-    if(self->state == LORA_STATE_IDLE){
+    if(self->state == LDL_STATE_IDLE){
         
         if(self->ctx.joined){
         
             if((port > 0U) && (port <= 223U)){    
                 
-                if(self->band[LORA_BAND_GLOBAL] == 0UL){
+                if(self->band[LDL_BAND_GLOBAL] == 0UL){
                 
                     if(selectChannel(self, self->ctx.rate, self->tx.chIndex, 0UL, &self->tx.chIndex, &self->tx.freq)){
                      
@@ -1437,49 +1437,49 @@ static bool externalDataCommand(struct lora_mac *self, bool confirmed, uint8_t p
                         }
                         else{
                             
-                            self->errno = LORA_ERRNO_SIZE;
+                            self->errno = LDL_ERRNO_SIZE;
                         }                                        
                     }
                     else{
                         
-                        self->errno = LORA_ERRNO_NOCHANNEL;
+                        self->errno = LDL_ERRNO_NOCHANNEL;
                     }                
                 }
                 else{
                     
-                    self->errno = LORA_ERRNO_NOCHANNEL;
+                    self->errno = LDL_ERRNO_NOCHANNEL;
                 }
             }
             else{
                 
-                self->errno = LORA_ERRNO_PORT;
+                self->errno = LDL_ERRNO_PORT;
             }
         }
         else{
             
-            self->errno = LORA_ERRNO_NOTJOINED;
+            self->errno = LDL_ERRNO_NOTJOINED;
         }
     }
     else{
         
-        self->errno = LORA_ERRNO_BUSY;
+        self->errno = LDL_ERRNO_BUSY;
     }
             
     return retval;
 }
 
-static bool dataCommand(struct lora_mac *self, bool confirmed, uint8_t port, const void *data, uint8_t len)
+static bool dataCommand(struct ldl_mac *self, bool confirmed, uint8_t port, const void *data, uint8_t len)
 {
-    LORA_PEDANTIC(self != NULL)
-    LORA_PEDANTIC((len == 0) || (data != NULL))
+    LDL_PEDANTIC(self != NULL)
+    LDL_PEDANTIC((len == 0) || (data != NULL))
     
     bool retval = false;
-    struct lora_frame_data f;
-    struct lora_stream s;
+    struct ldl_frame_data f;
+    struct ldl_stream s;
     uint8_t maxPayload;
     uint8_t opts[15U];
-    enum lora_signal_bandwidth bw;
-    enum lora_spreading_factor sf;
+    enum ldl_signal_bandwidth bw;
+    enum ldl_spreading_factor sf;
     
     self->trials = 0U;
     
@@ -1487,11 +1487,11 @@ static bool dataCommand(struct lora_mac *self, bool confirmed, uint8_t port, con
     self->tx.power = self->ctx.power;
     
     /* pending MAC commands take priority over user payload */
-    (void)LDL_Stream_init(&s, opts, sizeof(opts));
+    LDL_Stream_init(&s, opts, sizeof(opts));
     
     if(self->dlChannelAns_pending){
     
-        struct lora_dl_channel_ans ans;        
+        struct ldl_dl_channel_ans ans;        
         (void)memset(&ans, 0, sizeof(ans));
         LDL_MAC_putDLChannelAns(&s, &ans);                                    
     }
@@ -1503,7 +1503,7 @@ static bool dataCommand(struct lora_mac *self, bool confirmed, uint8_t port, con
     
     if(self->rxParamSetupAns_pending){
         
-        struct lora_rx_param_setup_ans ans;
+        struct ldl_rx_param_setup_ans ans;
         (void)memset(&ans, 0, sizeof(ans));
         LDL_MAC_putRXParamSetupAns(&s, &ans);                                    
     }
@@ -1511,11 +1511,16 @@ static bool dataCommand(struct lora_mac *self, bool confirmed, uint8_t port, con
     if(self->opts.check){
 
         LDL_MAC_putLinkCheckReq(&s);
-    }                                
+    }                   
+    
+    if(self->opts.getTime){
+        
+        LDL_MAC_putDeviceTimeReq(&s);
+    }             
     
     LDL_Region_convertRate(self->region, self->tx.rate, &sf, &bw, &maxPayload);
     
-    LORA_PEDANTIC(maxPayload >= LDL_Frame_dataOverhead())
+    LDL_PEDANTIC(maxPayload >= LDL_Frame_dataOverhead())
     
     (void)memset(&f, 0, sizeof(f));
     
@@ -1528,7 +1533,7 @@ static bool dataCommand(struct lora_mac *self, bool confirmed, uint8_t port, con
     f.optsLen = LDL_Stream_tell(&s);
     f.port = port;
     
-    self->state = LORA_STATE_WAIT_TX;    
+    self->state = LDL_STATE_WAIT_TX;    
     
     /* it's possible the user data doesn't fit after mac command priority */
     if((LDL_Stream_tell(&s) + LDL_Frame_dataOverhead() + len) <= maxPayload){
@@ -1538,7 +1543,7 @@ static bool dataCommand(struct lora_mac *self, bool confirmed, uint8_t port, con
         
         self->bufferLen = LDL_OPS_prepareData(self, &f, self->buffer, sizeof(self->buffer));
         
-        self->op = confirmed ? LORA_OP_DATA_CONFIRMED : LORA_OP_DATA_UNCONFIRMED;
+        self->op = confirmed ? LDL_OP_DATA_CONFIRMED : LDL_OP_DATA_UNCONFIRMED;
                 
         retval = true;
     }
@@ -1554,14 +1559,14 @@ static bool dataCommand(struct lora_mac *self, bool confirmed, uint8_t port, con
         
         self->bufferLen = LDL_OPS_prepareData(self, &f, self->buffer, sizeof(self->buffer));
         
-        self->op = LORA_OP_DATA_UNCONFIRMED;
-        self->errno = LORA_ERRNO_SIZE;          //fixme: special error code to say goalpost moved?                
+        self->op = LDL_OP_DATA_UNCONFIRMED;
+        self->errno = LDL_ERRNO_SIZE;          //fixme: special error code to say goalpost moved?                
     }
     
     self->ctx.up++;
     
     /* putData must have failed for some reason */
-    LORA_PEDANTIC(self->bufferLen > 0U)
+    LDL_PEDANTIC(self->bufferLen > 0U)
     
     uint32_t send_delay = 0U;
     
@@ -1572,12 +1577,12 @@ static bool dataCommand(struct lora_mac *self, bool confirmed, uint8_t port, con
     
     self->service_start_time = timeNow(self) + (send_delay / LDL_System_tps());            
                 
-    LDL_MAC_timerSet(self, LORA_TIMER_WAITA, send_delay);
+    LDL_MAC_timerSet(self, LDL_TIMER_WAITA, send_delay);
     
     return retval;
 }
 
-static void adaptRate(struct lora_mac *self)
+static void adaptRate(struct ldl_mac *self)
 {
     self->adrAckReq = false;
     
@@ -1585,26 +1590,26 @@ static void adaptRate(struct lora_mac *self)
                 
         if(self->adrAckCounter < UINT8_MAX){
             
-            if(self->adrAckCounter >= ADRAckLimit){
+            if(self->adrAckCounter >= self->ctx.adr_ack_limit){
                 
                 self->adrAckReq = true;
             
-                LORA_DEBUG(self->app, "adr: adrAckCounter=%u (past ADRAckLimit)", self->adrAckCounter)
+                LDL_DEBUG(self->app, "adr: adrAckCounter=%u (past ADRAckLimit)", self->adrAckCounter)
             
-                if(self->adrAckCounter >= (ADRAckLimit + ADRAckDelay)){
+                if(self->adrAckCounter >= (self->ctx.adr_ack_limit + self->ctx.adr_ack_delay)){
                 
-                    if(((self->adrAckCounter - (ADRAckLimit + ADRAckDelay)) % ADRAckDelay) == 0U){
+                    if(((self->adrAckCounter - (self->ctx.adr_ack_limit + self->ctx.adr_ack_delay)) % self->ctx.adr_ack_delay) == 0U){
                 
                         if(self->ctx.power == 0U){
                 
-                            if(self->ctx.rate > LORA_DEFAULT_RATE){
+                            if(self->ctx.rate > LDL_DEFAULT_RATE){
                                                             
                                 self->ctx.rate--;
-                                LORA_DEBUG(self->app, "adr: rate reduced to %u", self->ctx.rate)
+                                LDL_DEBUG(self->app, "adr: rate reduced to %u", self->ctx.rate)
                             }
                             else{
                                 
-                                LORA_DEBUG(self->app, "adr: all channels unmasked")
+                                LDL_DEBUG(self->app, "adr: all channels unmasked")
                                 
                                 unmaskAllChannels(self->ctx.chMask, self->region);
                                 
@@ -1613,7 +1618,7 @@ static void adaptRate(struct lora_mac *self)
                         }
                         else{
                             
-                            LORA_DEBUG(self->app, "adr: full power enabled")
+                            LDL_DEBUG(self->app, "adr: full power enabled")
                             self->ctx.power = 0U;
                         }
                     }
@@ -1625,7 +1630,7 @@ static void adaptRate(struct lora_mac *self)
     }
 }
 
-static uint32_t transmitTime(enum lora_signal_bandwidth bw, enum lora_spreading_factor sf, uint8_t size, bool crc)
+static uint32_t transmitTime(enum ldl_signal_bandwidth bw, enum ldl_spreading_factor sf, uint8_t size, bool crc)
 {
     /* from 4.1.1.7 of sx1272 datasheet
      *
@@ -1663,7 +1668,7 @@ static uint32_t transmitTime(enum lora_signal_bandwidth bw, enum lora_spreading_
     Tpacket = 0UL;
     
     /* optimise this mode according to the datasheet */
-    lowDataRateOptimize = ((bw == BW_125) && ((sf == SF_11) || (sf == SF_12))) ? true : false;    
+    lowDataRateOptimize = ((bw == LDL_BW_125) && ((sf == LDL_SF_11) || (sf == LDL_SF_12))) ? true : false;    
     
     /* lorawan always uses a header */
     header = true; 
@@ -1683,7 +1688,7 @@ static uint32_t transmitTime(enum lora_signal_bandwidth bw, enum lora_spreading_
     return Tpacket;
 }
 
-static uint32_t symbolPeriod(enum lora_spreading_factor sf, enum lora_signal_bandwidth bw)
+static uint32_t symbolPeriod(enum ldl_spreading_factor sf, enum ldl_signal_bandwidth bw)
 {
     return ((((uint32_t)1U) << sf) * LDL_System_tps()) / LDL_MAC_bwToNumber(bw);
 }
@@ -1693,18 +1698,18 @@ static uint8_t extraSymbols(uint32_t xtal_error, uint32_t symbol_period)
     return (xtal_error / symbol_period) + (((xtal_error % symbol_period) > 0U) ? 1U : 0U);        
 }
 
-static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t len, bool inFopts, uint8_t *out, uint8_t max)
+static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t len, bool inFopts, uint8_t *out, uint8_t max)
 {
     uint8_t pos = 0U;
     
-    struct lora_stream s_in;
-    struct lora_stream s_out;
+    struct ldl_stream s_in;
+    struct ldl_stream s_out;
     
-    struct lora_downstream_cmd cmd;
-    struct lora_mac_session shadow;
-    union lora_mac_response_arg arg;
-    struct lora_link_adr_ans adr_ans;
-    enum lora_mac_cmd_type next_cmd;
+    struct ldl_downstream_cmd cmd;
+    struct ldl_mac_session shadow;
+    union ldl_mac_response_arg arg;
+    struct ldl_link_adr_ans adr_ans;
+    enum ldl_mac_cmd_type next_cmd;
     
     enum {
         
@@ -1717,8 +1722,8 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
     (void)memset(&adr_ans, 0, sizeof(adr_ans));
     (void)memcpy(&shadow, &self->ctx, sizeof(shadow));
 
-    (void)LDL_Stream_initReadOnly(&s_in, in, len);
-    (void)LDL_Stream_init(&s_out, out, max);
+    LDL_Stream_initReadOnly(&s_in, in, len);
+    LDL_Stream_init(&s_out, out, max);
     
     adr_ans.channelMaskOK = true;
     
@@ -1731,30 +1736,30 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
         switch(cmd.type){
         default:
             break;     
-#ifndef LORA_DISABLE_CHECK                                   
-        case LINK_CHECK:    
+#ifndef LDL_DISABLE_CHECK                                   
+        case LDL_CMD_LINK_CHECK:    
         {                
-            const struct lora_link_check_ans *ans = &cmd.fields.linkCheckAns;
+            const struct ldl_link_check_ans *ans = &cmd.fields.linkCheck;
             
             arg.link_status.inFOpt = inFopts;
             arg.link_status.margin = ans->margin;
             arg.link_status.gwCount = ans->gwCount;            
             
-            LORA_DEBUG(self->app, "link_check_ans: margin=%u gwCount=%u", 
+            LDL_DEBUG(self->app, "link_check_ans: margin=%u gwCount=%u", 
                 ans->margin,
                 ans->gwCount             
             )
             
-            self->handler(self->app, LORA_MAC_LINK_STATUS, &arg);                                                             
+            self->handler(self->app, LDL_MAC_LINK_STATUS, &arg);                                                             
         }
             break;
 #endif                            
 
-        case LINK_ADR:              
+        case LDL_CMD_LINK_ADR:              
         {
-            const struct lora_link_adr_req *req = &cmd.fields.linkADRReq;
+            const struct ldl_link_adr_req *req = &cmd.fields.linkADR;
             
-            LORA_DEBUG(self->app, "link_adr_req: dataRate=%u txPower=%u chMask=%04x chMaskCntl=%u nbTrans=%u",
+            LDL_DEBUG(self->app, "link_adr_req: dataRate=%u txPower=%u chMask=%04x chMaskCntl=%u nbTrans=%u",
                 req->dataRate, req->txPower, req->channelMask, req->channelMaskControl, req->nbTrans)
             
             uint8_t i;
@@ -1827,7 +1832,7 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
                 }            
             }
             
-            if(!LDL_MAC_peekNextCommand(&s_in, &next_cmd) || (next_cmd != LINK_ADR)){
+            if(!LDL_MAC_peekNextCommand(&s_in, &next_cmd) || (next_cmd != LDL_CMD_LINK_ADR)){
              
                 adr_ans.dataRateOK = true;
                 adr_ans.powerOK = true;
@@ -1837,9 +1842,9 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
                 
                     shadow.nbTrans = req->nbTrans & 0xfU;
                     
-                    if(shadow.nbTrans > LORA_REDUNDANCY_MAX){
+                    if(shadow.nbTrans > LDL_REDUNDANCY_MAX){
                         
-                        shadow.nbTrans = LORA_REDUNDANCY_MAX;
+                        shadow.nbTrans = LDL_REDUNDANCY_MAX;
                     }
                 }
                 
@@ -1880,7 +1885,7 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
                 }
                
              
-                LORA_DEBUG(self->app, "link_adr_ans: powerOK=%s dataRateOK=%s channelMaskOK=%s",
+                LDL_DEBUG(self->app, "link_adr_ans: powerOK=%s dataRateOK=%s channelMaskOK=%s",
                     adr_ans.dataRateOK ? "true" : "false", 
                     adr_ans.powerOK ? "true" : "false", 
                     adr_ans.channelMaskOK ? "true" : "false"
@@ -1892,23 +1897,23 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
         }
             break;
         
-        case DUTY_CYCLE:
+        case LDL_CMD_DUTY_CYCLE:
         {    
-            const struct lora_duty_cycle_req *req = &cmd.fields.dutyCycleReq;
+            const struct ldl_duty_cycle_req *req = &cmd.fields.dutyCycle;
             
-            LORA_DEBUG(self->app, "duty_cycle_req: %u", req->maxDutyCycle)
+            LDL_DEBUG(self->app, "duty_cycle_req: %u", req->maxDutyCycle)
             
             shadow.maxDutyCycle = req->maxDutyCycle;                        
             LDL_MAC_putDutyCycleAns(&s_out);
         }
             break;
         
-        case RX_PARAM_SETUP:     
+        case LDL_CMD_RX_PARAM_SETUP:     
         {
-            const struct lora_rx_param_setup_req *req = &cmd.fields.rxParamSetupReq;
-            struct lora_rx_param_setup_ans ans;
+            const struct ldl_rx_param_setup_req *req = &cmd.fields.rxParamSetup;
+            struct ldl_rx_param_setup_ans ans;
          
-            LORA_DEBUG(self->app, "rx_param_setup: rx1DROffset=%u rx2DataRate=%u freq=%"PRIu32,
+            LDL_DEBUG(self->app, "rx_param_setup: rx1DROffset=%u rx2DataRate=%u freq=%"PRIu32,
                 req->rx1DROffset,
                 req->rx2DataRate,
                 req->freq
@@ -1928,10 +1933,10 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
         }
             break;
         
-        case DEV_STATUS:
+        case LDL_CMD_DEV_STATUS:
         {
-            LORA_DEBUG(self->app, "dev_status_req")
-            struct lora_dev_status_ans ans;        
+            LDL_DEBUG(self->app, "dev_status_req")
+            struct ldl_dev_status_ans ans;        
             
             ans.battery = LDL_System_getBatteryLevel(self->app);
             ans.margin = (int8_t)self->margin;
@@ -1940,55 +1945,93 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
         }
             break;
             
-        case NEW_CHANNEL:    
+        case LDL_CMD_NEW_CHANNEL:    
         
-            LORA_DEBUG(self->app, "new_channel_req:")
+            LDL_DEBUG(self->app, "new_channel_req:")
             
             if(LDL_Region_isDynamic(self->region)){
             
-                struct lora_new_channel_ans ans;
+                struct ldl_new_channel_ans ans;
             
-                ans.dataRateRangeOK = LDL_Region_validateRate(self->region, cmd.fields.newChannelReq.chIndex, cmd.fields.newChannelReq.minDR, cmd.fields.newChannelReq.maxDR);        
-                ans.channelFrequencyOK = LDL_Region_validateFreq(self->region, cmd.fields.newChannelReq.chIndex, cmd.fields.newChannelReq.freq);
+                ans.dataRateRangeOK = LDL_Region_validateRate(self->region, cmd.fields.newChannel.chIndex, cmd.fields.newChannel.minDR, cmd.fields.newChannel.maxDR);        
+                ans.channelFrequencyOK = LDL_Region_validateFreq(self->region, cmd.fields.newChannel.chIndex, cmd.fields.newChannel.freq);
                 
                 if(ans.dataRateRangeOK && ans.channelFrequencyOK){
                     
-                    (void)setChannel(shadow.chConfig, self->region, cmd.fields.newChannelReq.chIndex, cmd.fields.newChannelReq.freq, cmd.fields.newChannelReq.minDR, cmd.fields.newChannelReq.maxDR);                        
+                    (void)setChannel(shadow.chConfig, self->region, cmd.fields.newChannel.chIndex, cmd.fields.newChannel.freq, cmd.fields.newChannel.minDR, cmd.fields.newChannel.maxDR);                        
                 }            
                 
                 LDL_MAC_putNewChannelAns(&s_out, &ans);
             }
             break; 
                    
-        case DL_CHANNEL:            
+        case LDL_CMD_DL_CHANNEL:            
             
-            LORA_DEBUG(self->app, "dl_channel:")
+            LDL_DEBUG(self->app, "dl_channel:")
             
             if(LDL_Region_isDynamic(self->region)){
                 
-                struct lora_dl_channel_ans ans;
+                struct ldl_dl_channel_ans ans;
                 
                 ans.uplinkFreqOK = true;
-                ans.channelFrequencyOK = LDL_Region_validateFreq(self->region, cmd.fields.dlChannelReq.chIndex, cmd.fields.dlChannelReq.freq);
+                ans.channelFrequencyOK = LDL_Region_validateFreq(self->region, cmd.fields.dlChannel.chIndex, cmd.fields.dlChannel.freq);
                 
                 LDL_MAC_putDLChannelAns(&s_out, &ans);            
             }        
             break;
         
-        case RX_TIMING_SETUP:
+        case LDL_CMD_RX_TIMING_SETUP:
         {        
-            LORA_DEBUG(self->app, "handing rx_timing_setup")
+            LDL_DEBUG(self->app, "handing rx_timing_setup")
             
-            shadow.rx1Delay = cmd.fields.rxTimingSetupReq.delay;
+            shadow.rx1Delay = cmd.fields.rxTimingSetup.delay;
             
             LDL_MAC_putRXTimingSetupAns(&s_out);
         }
             break;
         
-        case TX_PARAM_SETUP:        
+        case LDL_CMD_TX_PARAM_SETUP:        
             
-            LORA_DEBUG(self->app, "handing tx_param_setup")    
+            LDL_DEBUG(self->app, "handing tx_param_setup")    
             break;
+            
+        case LDL_CMD_DEVICE_TIME:
+        
+            arg.device_time.seconds = cmd.fields.deviceTime.seconds;
+            arg.device_time.fractions = cmd.fields.deviceTime.fractions;
+            
+            LDL_DEBUG(self->app, "device_time_ans: seconds=%"PRIu32" fractions=%u", 
+                arg.device_time.seconds,
+                arg.device_time.fractions             
+            )
+            
+            self->handler(self->app, LDL_MAC_DEVICE_TIME, &arg);                                                                                     
+            break;
+            
+        case LDL_CMD_ADR_PARAM_SETUP:
+        
+            LDL_DEBUG(self->app, "adr_param_setup: limit_exp=%u delay_exp=%u", 
+                cmd.fields.adrParamSetup.limit_exp,
+                cmd.fields.adrParamSetup.delay_exp        
+            )
+            
+            shadow.adr_ack_limit = (1U << cmd.fields.adrParamSetup.limit_exp);
+            shadow.adr_ack_delay = (1U << cmd.fields.adrParamSetup.delay_exp);
+            
+            LDL_MAC_putADRParamSetupAns(&s_out);
+            break;
+            
+        case LDL_CMD_REKEY:
+        
+            break;
+            
+        case LDL_CMD_FORCE_REJOIN:
+                
+            break;
+            
+        case LDL_CMD_REJOIN_PARAM_SETUP:
+        
+            break;        
         }
         
         /* this ensures the output stream doesn't contain part of a MAC command */
@@ -2001,7 +2044,7 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
     /* roll back ADR request if not successful */
     if(adr_state == _ADR_BAD){
         
-        LORA_DEBUG(self->app, "bad ADR setting; rollback")
+        LDL_DEBUG(self->app, "bad ADR setting; rollback")
         
         (void)memcpy(shadow.chMask, self->ctx.chMask, sizeof(shadow.chMask));
         
@@ -2017,7 +2060,7 @@ static uint8_t processCommands(struct lora_mac *self, const uint8_t *in, uint8_t
     return LDL_Stream_tell(&s_out);  
 }
 
-static void registerTime(struct lora_mac *self, uint32_t freq, uint32_t airTime)
+static void registerTime(struct ldl_mac *self, uint32_t freq, uint32_t airTime)
 {
     uint8_t band;
     uint32_t offtime;
@@ -2028,7 +2071,7 @@ static void registerTime(struct lora_mac *self, uint32_t freq, uint32_t airTime)
     
         if(offtime > 0U){
         
-            LORA_PEDANTIC( band < LORA_BAND_MAX )
+            LDL_PEDANTIC( band < LDL_BAND_MAX )
             
             offtime = ticksToMS(airTime) * offtime;
             
@@ -2043,24 +2086,24 @@ static void registerTime(struct lora_mac *self, uint32_t freq, uint32_t airTime)
         }
     }
     
-    if((self->op != LORA_OP_JOINING) && (self->ctx.maxDutyCycle > 0U)){
+    if((self->op != LDL_OP_JOINING) && (self->ctx.maxDutyCycle > 0U)){
         
         offtime = ticksToMS(airTime) * ( 1UL << (self->ctx.maxDutyCycle & 0xfU));
         
-        if((self->band[LORA_BAND_GLOBAL] + offtime) < self->band[LORA_BAND_GLOBAL]){
+        if((self->band[LDL_BAND_GLOBAL] + offtime) < self->band[LDL_BAND_GLOBAL]){
             
-            self->band[LORA_BAND_GLOBAL] = UINT32_MAX;
+            self->band[LDL_BAND_GLOBAL] = UINT32_MAX;
         }
         else{
             
-            self->band[LORA_BAND_GLOBAL] += offtime; 
+            self->band[LDL_BAND_GLOBAL] += offtime; 
         }
     }
 }    
 
 
 
-static bool selectChannel(const struct lora_mac *self, uint8_t rate, uint8_t prevChIndex, uint32_t limit, uint8_t *chIndex, uint32_t *freq)
+static bool selectChannel(const struct ldl_mac *self, uint8_t rate, uint8_t prevChIndex, uint32_t limit, uint8_t *chIndex, uint32_t *freq)
 {
     bool retval = false;
     uint8_t i;    
@@ -2131,7 +2174,7 @@ static bool selectChannel(const struct lora_mac *self, uint8_t rate, uint8_t pre
     return retval;
 }
 
-static bool isAvailable(const struct lora_mac *self, uint8_t chIndex, uint8_t rate, uint32_t limit)
+static bool isAvailable(const struct ldl_mac *self, uint8_t chIndex, uint8_t rate, uint32_t limit)
 {
     bool retval = false;
     uint32_t freq;
@@ -2147,7 +2190,7 @@ static bool isAvailable(const struct lora_mac *self, uint8_t chIndex, uint8_t ra
             
                 if(LDL_Region_getBand(self->region, freq, &band)){
                 
-                    LORA_PEDANTIC( band < LORA_BAND_MAX )
+                    LDL_PEDANTIC( band < LDL_BAND_MAX )
                 
                     if(self->band[band] <= limit){
                 
@@ -2161,7 +2204,7 @@ static bool isAvailable(const struct lora_mac *self, uint8_t chIndex, uint8_t ra
     return retval;
 }
 
-static bool msUntilAvailable(const struct lora_mac *self, uint8_t chIndex, uint8_t rate, uint32_t *ms)
+static bool msUntilAvailable(const struct ldl_mac *self, uint8_t chIndex, uint8_t rate, uint32_t *ms)
 {
     bool retval = false;
     uint32_t freq;
@@ -2177,9 +2220,9 @@ static bool msUntilAvailable(const struct lora_mac *self, uint8_t chIndex, uint8
             
                 if(LDL_Region_getBand(self->region, freq, &band)){
                 
-                    LORA_PEDANTIC( band < LORA_BAND_MAX )
+                    LDL_PEDANTIC( band < LDL_BAND_MAX )
                 
-                    *ms = (self->band[band] > self->band[LORA_BAND_GLOBAL]) ? self->band[band] : self->band[LORA_BAND_GLOBAL];
+                    *ms = (self->band[band] > self->band[LDL_BAND_GLOBAL]) ? self->band[band] : self->band[LDL_BAND_GLOBAL];
                     
                     retval = true;                
                 }
@@ -2190,12 +2233,12 @@ static bool msUntilAvailable(const struct lora_mac *self, uint8_t chIndex, uint8
     return retval;
 }
 
-static void restoreDefaults(struct lora_mac *self, bool keep)
+static void restoreDefaults(struct ldl_mac *self, bool keep)
 {
     if(!keep){
         
         (void)memset(&self->ctx, 0, sizeof(self->ctx));
-        self->ctx.rate = LORA_DEFAULT_RATE;    
+        self->ctx.rate = LDL_DEFAULT_RATE;    
         self->ctx.adr = true;        
     }
     else{
@@ -2216,9 +2259,12 @@ static void restoreDefaults(struct lora_mac *self, bool keep)
     self->ctx.rx2DataRate = LDL_Region_getRX2Rate(self->region);
     self->ctx.rx2Freq = LDL_Region_getRX2Freq(self->region);    
     self->ctx.version = 0U;
+
+    self->ctx.adr_ack_limit = ADRAckLimit;
+    self->ctx.adr_ack_delay = ADRAckDelay;
 }
 
-static bool getChannel(const struct lora_mac_channel *self, enum lora_region region, uint8_t chIndex, uint32_t *freq, uint8_t *minRate, uint8_t *maxRate)
+static bool getChannel(const struct ldl_mac_channel *self, enum ldl_region region, uint8_t chIndex, uint32_t *freq, uint8_t *minRate, uint8_t *maxRate)
 {
     bool retval = false;
     
@@ -2241,7 +2287,7 @@ static bool getChannel(const struct lora_mac_channel *self, enum lora_region reg
     return retval;
 }
 
-static bool setChannel(struct lora_mac_channel *self, enum lora_region region, uint8_t chIndex, uint32_t freq, uint8_t minRate, uint8_t maxRate)
+static bool setChannel(struct ldl_mac_channel *self, enum ldl_region region, uint8_t chIndex, uint32_t freq, uint8_t minRate, uint8_t maxRate)
 {
     bool retval = false;
     
@@ -2255,7 +2301,7 @@ static bool setChannel(struct lora_mac_channel *self, enum lora_region region, u
     return retval;
 }
 
-static bool maskChannel(uint8_t *self, enum lora_region region, uint8_t chIndex)
+static bool maskChannel(uint8_t *self, enum ldl_region region, uint8_t chIndex)
 {
     bool retval = false;
     
@@ -2268,7 +2314,7 @@ static bool maskChannel(uint8_t *self, enum lora_region region, uint8_t chIndex)
     return retval;
 }
 
-static bool unmaskChannel(uint8_t *self, enum lora_region region, uint8_t chIndex)
+static bool unmaskChannel(uint8_t *self, enum ldl_region region, uint8_t chIndex)
 {
     bool retval = false;
     
@@ -2281,7 +2327,7 @@ static bool unmaskChannel(uint8_t *self, enum lora_region region, uint8_t chInde
     return retval;
 }
 
-static void unmaskAllChannels(uint8_t *self, enum lora_region region)
+static void unmaskAllChannels(uint8_t *self, enum ldl_region region)
 {
     uint8_t i;
     
@@ -2291,7 +2337,7 @@ static void unmaskAllChannels(uint8_t *self, enum lora_region region)
     }    
 }
 
-static bool channelIsMasked(const uint8_t *self, enum lora_region region, uint8_t chIndex)
+static bool channelIsMasked(const uint8_t *self, enum ldl_region region, uint8_t chIndex)
 {
     bool retval = false;
     
@@ -2303,7 +2349,7 @@ static bool channelIsMasked(const uint8_t *self, enum lora_region region, uint8_
     return retval;    
 }
 
-static bool rateSettingIsValid(enum lora_region region, uint8_t rate)
+static bool rateSettingIsValid(enum ldl_region region, uint8_t rate)
 {
     bool retval = false;
     uint8_t i;
@@ -2320,7 +2366,7 @@ static bool rateSettingIsValid(enum lora_region region, uint8_t rate)
     return retval;
 }
 
-static uint32_t timeNow(struct lora_mac *self)
+static uint32_t timeNow(struct ldl_mac *self)
 {
     uint32_t seconds;
     uint32_t ticks;
@@ -2369,7 +2415,7 @@ static uint32_t timerDelta(uint32_t timeout, uint32_t time)
     return (timeout <= time) ? (time - timeout) : (UINT32_MAX - timeout + time);
 }
 
-static void processBands(struct lora_mac *self)
+static void processBands(struct ldl_mac *self)
 {
     uint32_t since;
     uint32_t ticks;
@@ -2401,7 +2447,7 @@ static void processBands(struct lora_mac *self)
     }
 }
 
-static uint32_t nextBandEvent(const struct lora_mac *self)
+static uint32_t nextBandEvent(const struct ldl_mac *self)
 {
     uint32_t retval = UINT32_MAX;
     size_t i;
@@ -2420,12 +2466,12 @@ static uint32_t nextBandEvent(const struct lora_mac *self)
     return retval;
 }
 
-static void downlinkMissingHandler(struct lora_mac *self)
+static void downlinkMissingHandler(struct ldl_mac *self)
 {
-    union lora_mac_response_arg arg;
+    union ldl_mac_response_arg arg;
     uint8_t nbTrans;
-    enum lora_spreading_factor sf;
-    enum lora_signal_bandwidth bw;
+    enum ldl_spreading_factor sf;
+    enum ldl_signal_bandwidth bw;
     uint32_t delta;
     uint32_t tx_time;
     uint8_t mtu;
@@ -2449,14 +2495,14 @@ static void downlinkMissingHandler(struct lora_mac *self)
         
     switch(self->op){
     default:
-    case LORA_OP_NONE:
+    case LDL_OP_NONE:
         break;
-    case LORA_OP_DATA_CONFIRMED:
+    case LDL_OP_DATA_CONFIRMED:
 
         if(self->trials < nbTrans){
 
-            self->band[LORA_BAND_RETRY] = tx_time * getRetryDuty(delta);
-            self->state = LORA_STATE_WAIT_RETRY;            
+            self->band[LDL_BAND_RETRY] = tx_time * getRetryDuty(delta);
+            self->state = LDL_STATE_WAIT_RETRY;            
         }
         else{
             
@@ -2465,32 +2511,32 @@ static void downlinkMissingHandler(struct lora_mac *self)
             self->tx.rate = self->ctx.rate;
             self->tx.power = self->ctx.power;
                 
-#ifndef LORA_DISABLE_DATA_CONFIRMED_EVENT                
-            self->handler(self->app, LORA_MAC_DATA_TIMEOUT, NULL);
+#ifndef LDL_DISABLE_DATA_CONFIRMED_EVENT                
+            self->handler(self->app, LDL_MAC_DATA_TIMEOUT, NULL);
 #endif                  
-            self->state = LORA_STATE_IDLE;
-            self->op = LORA_OP_NONE;
+            self->state = LDL_STATE_IDLE;
+            self->op = LDL_OP_NONE;
         }
         break;
         
-    case LORA_OP_DATA_UNCONFIRMED:
+    case LDL_OP_DATA_UNCONFIRMED:
     
         if(self->trials < nbTrans){
             
-            if((self->band[LORA_BAND_GLOBAL] < LDL_Region_getMaxDCycleOffLimit(self->region)) && selectChannel(self, self->tx.rate, self->tx.chIndex, LDL_Region_getMaxDCycleOffLimit(self->region), &self->tx.chIndex, &self->tx.freq)){
+            if((self->band[LDL_BAND_GLOBAL] < LDL_Region_getMaxDCycleOffLimit(self->region)) && selectChannel(self, self->tx.rate, self->tx.chIndex, LDL_Region_getMaxDCycleOffLimit(self->region), &self->tx.chIndex, &self->tx.freq)){
             
-                LDL_MAC_timerSet(self, LORA_TIMER_WAITA, 0U);
-                self->state = LORA_STATE_WAIT_TX;
+                LDL_MAC_timerSet(self, LDL_TIMER_WAITA, 0U);
+                self->state = LDL_STATE_WAIT_TX;
             }
             else{
                 
-                LORA_DEBUG(self->app, "no channel available for retry")
+                LDL_DEBUG(self->app, "no channel available for retry")
                 
-#ifndef LORA_DISABLE_DATA_COMPLETE_EVENT                    
-                self->handler(self->app, LORA_MAC_DATA_COMPLETE, NULL);
+#ifndef LDL_DISABLE_DATA_COMPLETE_EVENT                    
+                self->handler(self->app, LDL_MAC_DATA_COMPLETE, NULL);
 #endif                    
-                self->state = LORA_STATE_IDLE;
-                self->op = LORA_OP_NONE;                      
+                self->state = LDL_STATE_IDLE;
+                self->op = LDL_OP_NONE;                      
             }            
         }
         else{
@@ -2500,24 +2546,24 @@ static void downlinkMissingHandler(struct lora_mac *self)
             self->tx.rate = self->ctx.rate;
             self->tx.power = self->ctx.power;
                                 
-#ifndef LORA_DISABLE_DATA_COMPLETE_EVENT                    
-            self->handler(self->app, LORA_MAC_DATA_COMPLETE, NULL);
+#ifndef LDL_DISABLE_DATA_COMPLETE_EVENT                    
+            self->handler(self->app, LDL_MAC_DATA_COMPLETE, NULL);
 #endif  
-            self->state = LORA_STATE_IDLE;
-            self->op = LORA_OP_NONE;                      
+            self->state = LDL_STATE_IDLE;
+            self->op = LDL_OP_NONE;                      
         }
         break;
 
-    case LORA_OP_JOINING:
+    case LDL_OP_JOINING:
         
-        self->band[LORA_BAND_RETRY] = tx_time * getRetryDuty(delta);
+        self->band[LDL_BAND_RETRY] = tx_time * getRetryDuty(delta);
         
         self->tx.rate = LDL_Region_getJoinRate(self->region, self->trials);
         
-#ifndef LORA_DISABLE_JOIN_TIMEOUT_EVENT                               
-        self->handler(self->app, LORA_MAC_JOIN_TIMEOUT, &arg);                    
+#ifndef LDL_DISABLE_JOIN_TIMEOUT_EVENT                               
+        self->handler(self->app, LDL_MAC_JOIN_TIMEOUT, &arg);                    
 #endif                            
-        self->state = LORA_STATE_WAIT_RETRY;        
+        self->state = LDL_STATE_WAIT_RETRY;        
         break;                    
     }        
 }
@@ -2532,7 +2578,7 @@ static uint32_t ticksToMSCoarse(uint32_t ticks)
     return ticks / LDL_System_tps() * 1000UL;
 }
 
-static uint32_t msUntilNextChannel(const struct lora_mac *self, uint8_t rate)
+static uint32_t msUntilNextChannel(const struct ldl_mac *self, uint8_t rate)
 {
     uint8_t i;
     uint32_t min = UINT32_MAX;
@@ -2567,15 +2613,15 @@ static uint32_t rand32(void *app)
     return retval;
 }
 
-#ifndef LORA_DISABLE_SESSION_UPDATE
-static void pushSessionUpdate(struct lora_mac *self)
+#ifndef LDL_DISABLE_SESSION_UPDATE
+static void pushSessionUpdate(struct ldl_mac *self)
 {
-    union lora_mac_response_arg arg;     
+    union ldl_mac_response_arg arg;     
     arg.session_updated.session = &self->ctx;
-    self->handler(self->app, LORA_MAC_SESSION_UPDATED, &arg);        
+    self->handler(self->app, LDL_MAC_SESSION_UPDATED, &arg);        
 }
 #endif
 
-static void dummyResponseHandler(void *app, enum lora_mac_response_type type, const union lora_mac_response_arg *arg)
+static void dummyResponseHandler(void *app, enum ldl_mac_response_type type, const union ldl_mac_response_arg *arg)
 {
 }

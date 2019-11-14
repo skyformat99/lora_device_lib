@@ -19,8 +19,8 @@
  *
  * */
  
-#ifndef __LORA_CMAC_H
-#define __LORA_CMAC_H
+#ifndef LDL_CMAC_H
+#define LDL_CMAC_H
 
 /** @file */
 
@@ -37,12 +37,12 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 
-struct lora_aes_ctx;
+struct ldl_aes_ctx;
 
 /** CMAC state */
-struct lora_cmac_ctx {
+struct ldl_cmac_ctx {
 
-    const struct lora_aes_ctx *aes_ctx;
+    const struct ldl_aes_ctx *aes_ctx;
     uint8_t m[16U];
     uint8_t x[16U];
     uint32_t size;
@@ -54,7 +54,7 @@ struct lora_cmac_ctx {
  * @param[in] aes_ctx block cipher state
  * 
  * */
-void LDL_CMAC_init(struct lora_cmac_ctx *ctx, const struct lora_aes_ctx *aes_ctx);
+void LDL_CMAC_init(struct ldl_cmac_ctx *ctx, const struct ldl_aes_ctx *aes_ctx);
 
 /** Update CMAC state
  * 
@@ -63,7 +63,7 @@ void LDL_CMAC_init(struct lora_cmac_ctx *ctx, const struct lora_aes_ctx *aes_ctx
  * @param[in] len
  * 
  * */
-void LDL_CMAC_update(struct lora_cmac_ctx *ctx, const void *data, uint8_t len);
+void LDL_CMAC_update(struct ldl_cmac_ctx *ctx, const void *data, uint8_t len);
 
 /** Produce CMAC output from current state
  * 
@@ -72,7 +72,7 @@ void LDL_CMAC_update(struct lora_cmac_ctx *ctx, const void *data, uint8_t len);
  * @param[in]   outMax 
  * 
  * */
-void LDL_CMAC_finish(const struct lora_cmac_ctx *ctx, void *out, uint8_t outMax);
+void LDL_CMAC_finish(const struct ldl_cmac_ctx *ctx, void *out, uint8_t outMax);
 
 #ifdef __cplusplus
 }

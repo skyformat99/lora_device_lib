@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef __LORA_CHIP_H
-#define __LORA_CHIP_H
+#ifndef LDL_CHIP_H
+#define LDL_CHIP_H
 
 /** @file */
 
@@ -86,7 +86,7 @@
  * - DIOx become active to indicate events and stay active until they are cleared by LDL
  *  - The radio connector needs to detect the rising edge and call LDL_MAC_interrupt() with the line number as argument
  *  - Edge detection can be by interrupt or polling
- *  - If interrupt is used, LORA_SYSTEM_ENTER_CRITICAL() and LORA_SYSTEM_LEAVE_CRITICAL() must be defined
+ *  - If interrupt is used, LDL_SYSTEM_ENTER_CRITICAL() and LDL_SYSTEM_LEAVE_CRITICAL() must be defined
  * - DIOx interrupt example:
  * 
  * @code{.c}

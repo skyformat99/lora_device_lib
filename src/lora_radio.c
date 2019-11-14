@@ -26,9 +26,9 @@
 #include "lora_chip.h"
 #include "lora_platform.h"
 
-#if defined(LORA_ENABLE_SX1272) || defined(LORA_ENABLE_SX1276)
+#if defined(LDL_ENABLE_SX1272) || defined(LDL_ENABLE_SX1276)
 
-enum lora_radio_sx1272_register {
+enum ldl_radio_sx1272_register {
     RegFifo=0x00,
     RegOpMode=0x01,
     RegBitrateMsb=0x02,
@@ -142,31 +142,31 @@ enum lora_radio_sx1272_register {
 
 /* static function prototypes *****************************************/
 
-static uint8_t readFIFO(struct lora_radio *self, uint8_t *data, uint8_t max);
-static void writeFIFO(struct lora_radio *self, const uint8_t *data, uint8_t len);
-static void setFreq(struct lora_radio *self, uint32_t freq);
-static void setModemConfig(struct lora_radio *self, enum lora_signal_bandwidth bw, enum lora_spreading_factor sf);
-static void setPower(struct lora_radio *self, int16_t dbm);
-static uint8_t readReg(struct lora_radio *self, uint8_t reg);
-static void writeReg(struct lora_radio *self, uint8_t reg, uint8_t data);
-static void burstRead(struct lora_radio *self, uint8_t reg, uint8_t *data, uint8_t len);
-static void burstWrite(struct lora_radio *self, uint8_t reg, const uint8_t *data, uint8_t len);
-static void setOpRX(struct lora_radio *self);
-static void setOpTX(struct lora_radio *self);
-static void setOpRXContinuous(struct lora_radio *self);
-static void setOpStandby(struct lora_radio *self);
-static void setOpSleep(struct lora_radio *self);
-static void setOp(struct lora_radio *self, uint8_t op);
-static void enableLora(struct lora_radio *self);
-static uint8_t crSetting(const struct lora_radio *self, enum lora_coding_rate cr);
-static uint8_t bwSetting(const struct lora_radio *self, enum lora_signal_bandwidth bw);
-static uint8_t sfSetting(const struct lora_radio *self, enum lora_spreading_factor sf);
+static uint8_t readFIFO(struct ldl_radio *self, uint8_t *data, uint8_t max);
+static void writeFIFO(struct ldl_radio *self, const uint8_t *data, uint8_t len);
+static void setFreq(struct ldl_radio *self, uint32_t freq);
+static void setModemConfig(struct ldl_radio *self, enum ldl_signal_bandwidth bw, enum ldl_spreading_factor sf);
+static void setPower(struct ldl_radio *self, int16_t dbm);
+static uint8_t readReg(struct ldl_radio *self, uint8_t reg);
+static void writeReg(struct ldl_radio *self, uint8_t reg, uint8_t data);
+static void burstRead(struct ldl_radio *self, uint8_t reg, uint8_t *data, uint8_t len);
+static void burstWrite(struct ldl_radio *self, uint8_t reg, const uint8_t *data, uint8_t len);
+static void setOpRX(struct ldl_radio *self);
+static void setOpTX(struct ldl_radio *self);
+static void setOpRXContinuous(struct ldl_radio *self);
+static void setOpStandby(struct ldl_radio *self);
+static void setOpSleep(struct ldl_radio *self);
+static void setOp(struct ldl_radio *self, uint8_t op);
+static void enableLora(struct ldl_radio *self);
+static uint8_t crSetting(const struct ldl_radio *self, enum ldl_coding_rate cr);
+static uint8_t bwSetting(const struct ldl_radio *self, enum ldl_signal_bandwidth bw);
+static uint8_t sfSetting(const struct ldl_radio *self, enum ldl_spreading_factor sf);
 
 /* functions **********************************************************/
 
-void LDL_Radio_init(struct lora_radio *self, enum lora_radio_type type, void *board)
+void LDL_Radio_init(struct ldl_radio *self, enum ldl_radio_type type, void *board)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     (void)memset(self, 0, sizeof(*self));
     self->board = board;
@@ -174,24 +174,24 @@ void LDL_Radio_init(struct lora_radio *self, enum lora_radio_type type, void *bo
     self->type = type;
 }
 
-void LDL_Radio_setPA(struct lora_radio *self, enum lora_radio_pa pa)
+void LDL_Radio_setPA(struct ldl_radio *self, enum ldl_radio_pa pa)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     self->pa = pa;    
 }
 
-void LDL_Radio_setHandler(struct lora_radio *self, struct lora_mac *mac, lora_radio_event_fn handler)
+void LDL_Radio_setHandler(struct ldl_radio *self, struct ldl_mac *mac, ldl_radio_event_fn handler)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     self->handler = handler;
     self->mac = mac;
 }
 
-void LDL_Radio_interrupt(struct lora_radio *self, uint8_t n)
+void LDL_Radio_interrupt(struct ldl_radio *self, uint8_t n)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     if(self->handler != NULL){
         
@@ -199,19 +199,19 @@ void LDL_Radio_interrupt(struct lora_radio *self, uint8_t n)
     }
 }
 
-void LDL_Radio_reset(struct lora_radio *self, bool state)
+void LDL_Radio_reset(struct ldl_radio *self, bool state)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     LDL_Chip_reset(self->board, state);
 }
 
-void LDL_Radio_transmit(struct lora_radio *self, const struct lora_radio_tx_setting *settings, const void *data, uint8_t len)
+void LDL_Radio_transmit(struct ldl_radio *self, const struct ldl_radio_tx_setting *settings, const void *data, uint8_t len)
 {
-    LORA_PEDANTIC(self != NULL)
-    LORA_PEDANTIC(settings != NULL)
-    LORA_PEDANTIC((data != NULL) || (len == 0U))
-    LORA_PEDANTIC(settings->freq != 0U)
+    LDL_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(settings != NULL)
+    LDL_PEDANTIC((data != NULL) || (len == 0U))
+    LDL_PEDANTIC(settings->freq != 0U)
     
     self->dio_mapping1 = 0x40U;
     
@@ -234,11 +234,11 @@ void LDL_Radio_transmit(struct lora_radio *self, const struct lora_radio_tx_sett
     setOpTX(self);    
 }
 
-void LDL_Radio_receive(struct lora_radio *self, const struct lora_radio_rx_setting *settings)
+void LDL_Radio_receive(struct ldl_radio *self, const struct ldl_radio_rx_setting *settings)
 {
-    LORA_PEDANTIC(self != NULL)
-    LORA_PEDANTIC(settings != NULL)
-    LORA_PEDANTIC(settings->freq != 0U)
+    LDL_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(settings != NULL)
+    LDL_PEDANTIC(settings->freq != 0U)
     
     self->dio_mapping1 = 0U;
     
@@ -260,10 +260,10 @@ void LDL_Radio_receive(struct lora_radio *self, const struct lora_radio_rx_setti
     setOpRX(self);
 }
 
-uint8_t LDL_Radio_collect(struct lora_radio *self, struct lora_radio_packet_metadata *meta, void *data, uint8_t max)
+uint8_t LDL_Radio_collect(struct ldl_radio *self, struct ldl_radio_packet_metadata *meta, void *data, uint8_t max)
 {   
-    LORA_PEDANTIC(self != NULL)
-    LORA_PEDANTIC((data != NULL) || (max == 0U))
+    LDL_PEDANTIC(self != NULL)
+    LDL_PEDANTIC((data != NULL) || (max == 0U))
     
     uint8_t retval;
     
@@ -277,21 +277,21 @@ uint8_t LDL_Radio_collect(struct lora_radio *self, struct lora_radio_packet_meta
     return retval;
 }
 
-enum lora_radio_event LDL_Radio_signal(struct lora_radio *self, uint8_t n)
+enum ldl_radio_event LDL_Radio_signal(struct ldl_radio *self, uint8_t n)
 {    
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
-    enum lora_radio_event retval = LORA_RADIO_EVENT_NONE;
+    enum ldl_radio_event retval = LDL_RADIO_EVENT_NONE;
     
     switch(n){
     case 0U:  
     
         switch(self->dio_mapping1){
         case 0U:
-            retval = LORA_RADIO_EVENT_RX_READY;
+            retval = LDL_RADIO_EVENT_RX_READY;
             break;
         case 0x40U:
-            retval = LORA_RADIO_EVENT_TX_COMPLETE;
+            retval = LDL_RADIO_EVENT_TX_COMPLETE;
             break;
         default:
             /* do nothing */
@@ -303,7 +303,7 @@ enum lora_radio_event LDL_Radio_signal(struct lora_radio *self, uint8_t n)
     
         switch(self->dio_mapping1){
         case 0U:
-            retval = LORA_RADIO_EVENT_RX_TIMEOUT;
+            retval = LDL_RADIO_EVENT_RX_TIMEOUT;
             break;
         default:
             /* do nothing */
@@ -319,7 +319,7 @@ enum lora_radio_event LDL_Radio_signal(struct lora_radio *self, uint8_t n)
     return retval;
 }
 
-void LDL_Radio_entropyBegin(struct lora_radio *self)
+void LDL_Radio_entropyBegin(struct ldl_radio *self)
 {
     enableLora(self);
     setOpStandby(self);
@@ -331,14 +331,14 @@ void LDL_Radio_entropyBegin(struct lora_radio *self)
     switch(self->type){
     default:
         break;
-#ifdef LORA_ENABLE_SX1272        
-    case LORA_RADIO_SX1272:
+#ifdef LDL_ENABLE_SX1272        
+    case LDL_RADIO_SX1272:
         writeReg(self, RegModemConfig1, 0x0aU);
         writeReg(self, RegModemConfig2, 0x74U);    
         break;
 #endif    
-#ifdef LORA_ENABLE_SX1276
-    case LORA_RADIO_SX1276:
+#ifdef LDL_ENABLE_SX1276
+    case LDL_RADIO_SX1276:
         writeReg(self, RegModemConfig1, 0x72U);
         writeReg(self, RegModemConfig2, 0x70U);
         break;
@@ -348,7 +348,7 @@ void LDL_Radio_entropyBegin(struct lora_radio *self)
     setOpRXContinuous(self);
 }
 
-unsigned int LDL_Radio_entropyEnd(struct lora_radio *self)
+unsigned int LDL_Radio_entropyEnd(struct ldl_radio *self)
 {
     unsigned int retval = 0U;
     size_t i;
@@ -364,16 +364,16 @@ unsigned int LDL_Radio_entropyEnd(struct lora_radio *self)
     return retval;
 }
 
-void LDL_Radio_sleep(struct lora_radio *self)
+void LDL_Radio_sleep(struct ldl_radio *self)
 {
-    LORA_PEDANTIC(self != NULL)    
+    LDL_PEDANTIC(self != NULL)    
     
     enableLora(self);
 }
 
-void LDL_Radio_clearInterrupt(struct lora_radio *self)
+void LDL_Radio_clearInterrupt(struct ldl_radio *self)
 {
-    LORA_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(self != NULL)
     
     writeReg(self, RegIrqFlags, 0xff);         // clear all interrupts
     writeReg(self, RegIrqFlagsMask, 0xffU);    // mask all interrupts
@@ -381,23 +381,23 @@ void LDL_Radio_clearInterrupt(struct lora_radio *self)
     setOpSleep(self);
 }
 
-#ifdef LORA_ENABLE_RADIO_TEST
-void LDL_Radio_setFreq(struct lora_radio *self, uint32_t freq)
+#ifdef LDL_ENABLE_RADIO_TEST
+void LDL_Radio_setFreq(struct ldl_radio *self, uint32_t freq)
 {
     setFreq(self, freq);
 }
 
-void LDL_Radio_setModemConfig(struct lora_radio *self, enum lora_signal_bandwidth bw, enum lora_spreading_factor sf)
+void LDL_Radio_setModemConfig(struct ldl_radio *self, enum ldl_signal_bandwidth bw, enum ldl_spreading_factor sf)
 {
     setModemConfig(self, bw, sf);
 }
 
-void LDL_Radio_setPower(struct lora_radio *self, int16_t dbm)
+void LDL_Radio_setPower(struct ldl_radio *self, int16_t dbm)
 {
     setPower(self, dbm);
 }
 
-void LDL_Radio_enableLora(struct lora_radio *self)
+void LDL_Radio_enableLora(struct ldl_radio *self)
 {   
     enableLora(self);
 }
@@ -405,51 +405,51 @@ void LDL_Radio_enableLora(struct lora_radio *self)
 
 /* static functions ***************************************************/
 
-static void enableLora(struct lora_radio *self)
+static void enableLora(struct ldl_radio *self)
 {
     setOpSleep(self);    
     writeReg(self, RegOpMode, readReg(self, RegOpMode) | 0x80U);      
 }
 
-static void setOp(struct lora_radio *self, uint8_t op)
+static void setOp(struct ldl_radio *self, uint8_t op)
 {
     writeReg(self, RegOpMode, (readReg(self, RegOpMode) & ~(0x7U)) | (op & 0x7U));    
 }
 
-static void setOpSleep(struct lora_radio *self)
+static void setOpSleep(struct ldl_radio *self)
 {
     setOp(self, 0U);
 }
 
-static void setOpStandby(struct lora_radio *self)
+static void setOpStandby(struct ldl_radio *self)
 {   
     setOp(self, 1U);    
 }
 
-static void setOpRX(struct lora_radio *self)
+static void setOpRX(struct ldl_radio *self)
 {   
     setOp(self, 6U);
 }
 
-static void setOpRXContinuous(struct lora_radio *self)
+static void setOpRXContinuous(struct ldl_radio *self)
 {   
     setOp(self, 5U);    
 }
 
-static void setOpTX(struct lora_radio *self)
+static void setOpTX(struct ldl_radio *self)
 {   
     setOp(self, 3U);    
 }
 
-static void setModemConfig(struct lora_radio *self, enum lora_signal_bandwidth bw, enum lora_spreading_factor sf)
+static void setModemConfig(struct ldl_radio *self, enum ldl_signal_bandwidth bw, enum ldl_spreading_factor sf)
 {
-    bool low_rate = ((bw == BW_125) && ((sf == SF_11) || (sf == SF_12))) ? true : false;
+    bool low_rate = ((bw == LDL_BW_125) && ((sf == LDL_SF_11) || (sf == LDL_SF_12))) ? true : false;
     
     switch(self->type){
     default:
         break;
-#ifdef LORA_ENABLE_SX1272          
-    case LORA_RADIO_SX1272:
+#ifdef LDL_ENABLE_SX1272          
+    case LDL_RADIO_SX1272:
         /* bandwidth            (2bit)
          * codingRate           (3bit)
          * implicitHeaderModeOn (1bit) (0)
@@ -464,8 +464,8 @@ static void setModemConfig(struct lora_radio *self, enum lora_signal_bandwidth b
         writeReg(self, RegModemConfig2, sfSetting(self, sf) | 0U | 4U | 0U);    
         break;
 #endif
-#ifdef LORA_ENABLE_SX1276
-    case LORA_RADIO_SX1276:
+#ifdef LDL_ENABLE_SX1276
+    case LDL_RADIO_SX1276:
         /* bandwidth            (4bit)
          * codingRate           (3bit)
          * implicitHeaderModeOn (1bit) (0)  */
@@ -487,7 +487,7 @@ static void setModemConfig(struct lora_radio *self, enum lora_signal_bandwidth b
     }
 }
 
-static void setPower(struct lora_radio *self, int16_t dbm)
+static void setPower(struct ldl_radio *self, int16_t dbm)
 {
     /* Todo: 
      * 
@@ -499,8 +499,8 @@ static void setPower(struct lora_radio *self, int16_t dbm)
      dbm /= 100L;
 
     switch(self->type){
-#ifdef LORA_ENABLE_SX1272        
-    case LORA_RADIO_SX1272:
+#ifdef LDL_ENABLE_SX1272        
+    case LDL_RADIO_SX1272:
     {
         uint8_t paConfig;
         uint8_t paDac;    
@@ -509,7 +509,7 @@ static void setPower(struct lora_radio *self, int16_t dbm)
         paConfig &= ~(0xfU);
 
         switch(self->pa){
-        case LORA_RADIO_PA_RFO:
+        case LDL_RADIO_PA_RFO:
         
             /* -1 to 14dbm */
             paConfig &= ~(0x80U);
@@ -518,7 +518,7 @@ static void setPower(struct lora_radio *self, int16_t dbm)
             writeReg(self, RegPaConfig, paConfig);            
             break;
         
-        case LORA_RADIO_PA_BOOST:
+        case LDL_RADIO_PA_BOOST:
         
             paDac = readReg(self, RegPaDac); 
                 
@@ -547,8 +547,8 @@ static void setPower(struct lora_radio *self, int16_t dbm)
     }
         break;
 #endif              
-#ifdef LORA_ENABLE_SX1276
-    case LORA_RADIO_SX1276:
+#ifdef LDL_ENABLE_SX1276
+    case LDL_RADIO_SX1276:
     {
         uint8_t paConfig;
         uint8_t paDac;    
@@ -557,14 +557,14 @@ static void setPower(struct lora_radio *self, int16_t dbm)
         paConfig &= ~(0xfU);
     
         switch(self->pa){
-        case LORA_RADIO_PA_RFO:
+        case LDL_RADIO_PA_RFO:
         
             /* todo */
             paConfig |= 0x7eU;
             writeReg(self, RegPaConfig, paConfig);            
             break;
         
-        case LORA_RADIO_PA_BOOST:
+        case LDL_RADIO_PA_BOOST:
         
             /* regpadac address == 0x4d */
             paDac = readReg(self, 0x4d); 
@@ -601,40 +601,40 @@ static void setPower(struct lora_radio *self, int16_t dbm)
     }
 }
 
-static uint8_t bwSetting(const struct lora_radio *self, enum lora_signal_bandwidth bw)
+static uint8_t bwSetting(const struct ldl_radio *self, enum ldl_signal_bandwidth bw)
 {
     uint8_t retval = 0U;
     
     switch(self->type){
     default:
         break;
-#ifdef LORA_ENABLE_SX1272          
-    case LORA_RADIO_SX1272:    
+#ifdef LDL_ENABLE_SX1272          
+    case LDL_RADIO_SX1272:    
         switch(bw){
         default:
-        case BW_125:
+        case LDL_BW_125:
             retval = 0x00U;
             break;
-        case BW_250:
+        case LDL_BW_250:
             retval = 0x40U;
             break;
-        case BW_500:
+        case LDL_BW_500:
             retval = 0x80U;
             break;
         }
         break;
 #endif
-#ifdef LORA_ENABLE_SX1276          
-    case LORA_RADIO_SX1276:    
+#ifdef LDL_ENABLE_SX1276          
+    case LDL_RADIO_SX1276:    
         switch(bw){
         default:
-        case BW_125:
+        case LDL_BW_125:
             retval = 0x70U;
             break;
-        case BW_250:
+        case LDL_BW_250:
             retval = 0x80U;
             break;
-        case BW_500:
+        case LDL_BW_500:
             retval = 0x90U;
             break;
         }
@@ -645,47 +645,47 @@ static uint8_t bwSetting(const struct lora_radio *self, enum lora_signal_bandwid
     return retval;    
 }
 
-static uint8_t sfSetting(const struct lora_radio *self, enum lora_spreading_factor sf)
+static uint8_t sfSetting(const struct ldl_radio *self, enum ldl_spreading_factor sf)
 {
     uint8_t retval = 0U;
     switch(sf){
     default:
-    case SF_7:
+    case LDL_SF_7:
         retval = 0x70U;
         break;
-    case SF_8:
+    case LDL_SF_8:
         retval = 0x80U;
         break;
-    case SF_9:
+    case LDL_SF_9:
         retval = 0x90U;
         break;
-    case SF_10:
+    case LDL_SF_10:
         retval = 0xa0U;
         break;
-    case SF_11:
+    case LDL_SF_11:
         retval = 0xb0U;
         break;
-    case SF_12:
+    case LDL_SF_12:
         retval = 0xc0U;
         break;
     }
     return retval;
 }
 
-static uint8_t crSetting(const struct lora_radio *self, enum lora_coding_rate cr)
+static uint8_t crSetting(const struct ldl_radio *self, enum ldl_coding_rate cr)
 {
     uint8_t retval = 0U;
     
     switch(self->type){
     default:
         break;
-#ifdef LORA_ENABLE_SX1272
-    case LORA_RADIO_SX1272:
+#ifdef LDL_ENABLE_SX1272
+    case LDL_RADIO_SX1272:
         retval = 8U;    // CR_5
         break;
 #endif
-#ifdef LORA_ENABLE_SX1276
-    case LORA_RADIO_SX1276:
+#ifdef LDL_ENABLE_SX1276
+    case LDL_RADIO_SX1276:
         retval = 2U;    // CR_5
         break;
 #endif
@@ -694,7 +694,7 @@ static uint8_t crSetting(const struct lora_radio *self, enum lora_coding_rate cr
     return retval;
 }
 
-static void setFreq(struct lora_radio *self, uint32_t freq)
+static void setFreq(struct ldl_radio *self, uint32_t freq)
 {
     uint32_t f = (uint32_t)(((uint64_t)freq << 19U) / 32000000U);
         
@@ -703,7 +703,7 @@ static void setFreq(struct lora_radio *self, uint32_t freq)
     writeReg(self, RegFrfLsb, f);    
 }
 
-static uint8_t readFIFO(struct lora_radio *self, uint8_t *data, uint8_t max)
+static uint8_t readFIFO(struct ldl_radio *self, uint8_t *data, uint8_t max)
 {
     uint8_t size = readReg(self, RegRxNbBytes);
     
@@ -719,7 +719,7 @@ static uint8_t readFIFO(struct lora_radio *self, uint8_t *data, uint8_t max)
     return size;
 }
 
-static void writeFIFO(struct lora_radio *self, const uint8_t *data, uint8_t len)
+static void writeFIFO(struct ldl_radio *self, const uint8_t *data, uint8_t len)
 {
     writeReg(self, RegFifoTxBaseAddr, 0x00U);    // set tx base
     writeReg(self, RegFifoAddrPtr, 0x00U);       // set address pointer
@@ -727,19 +727,19 @@ static void writeFIFO(struct lora_radio *self, const uint8_t *data, uint8_t len)
     burstWrite(self, RegFifo, data, len);        // write into fifo
 }
 
-static uint8_t readReg(struct lora_radio *self, uint8_t reg)
+static uint8_t readReg(struct ldl_radio *self, uint8_t reg)
 {
     uint8_t data;
     burstRead(self, reg, &data, sizeof(data));
     return data;
 }
 
-static void writeReg(struct lora_radio *self, uint8_t reg, uint8_t data)
+static void writeReg(struct ldl_radio *self, uint8_t reg, uint8_t data)
 {
     burstWrite(self, reg, &data, sizeof(data));
 }
 
-static void burstWrite(struct lora_radio *self, uint8_t reg, const uint8_t *data, uint8_t len)
+static void burstWrite(struct ldl_radio *self, uint8_t reg, const uint8_t *data, uint8_t len)
 {
     uint8_t i;
 
@@ -758,7 +758,7 @@ static void burstWrite(struct lora_radio *self, uint8_t reg, const uint8_t *data
     }
 }
 
-static void burstRead(struct lora_radio *self, uint8_t reg, uint8_t *data, uint8_t len)
+static void burstRead(struct ldl_radio *self, uint8_t reg, uint8_t *data, uint8_t len)
 {
     uint8_t i;
 

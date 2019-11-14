@@ -61,7 +61,7 @@ output/arduino_ldl:
 	cp $(DIR_ROOT)/include/* $@
 	cp $(DIR_ROOT)/LICENSE $@
 	echo $(VERSION) > $@/version
-	sed -i '/#define LORA_PLATFORM_H/a #define LORA_TARGET_INCLUDE "platform.h"' $@/lora_platform.h
+	sed -i '/#define LDL_PLATFORM_H/a #define LDL_TARGET_INCLUDE "platform.h"' $@/lora_platform.h
 	sed -i '/version=/s/.*/version=$(VERSION)/' $@/library.properties
 	@ echo
 

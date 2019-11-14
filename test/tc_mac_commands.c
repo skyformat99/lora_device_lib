@@ -9,7 +9,7 @@
 static void test_putLinkCheckReq(void **user)
 {
     uint8_t buffer[50U];
-    struct lora_stream s;
+    struct ldl_stream s;
     LDL_Stream_init(&s, buffer, sizeof(buffer));    
     
     uint8_t expected[] = "\x02";

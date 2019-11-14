@@ -16,7 +16,7 @@ extern uint32_t system_time;
 
 static int setup(void **user)
 {
-    static struct lora_mac state;
+    static struct ldl_mac state;
     (void)memset(&state, 0, sizeof(state));
     *user = (void *)&state;                
     
@@ -29,47 +29,47 @@ static int setup(void **user)
 
 static void inputCheck_shall_return_false_for_no_signal(void **user)
 {
-    struct lora_mac *self = (struct lora_mac *)(*user);    
+    struct ldl_mac *self = (struct ldl_mac *)(*user);    
     uint32_t error;
     
-    assert_false( LDL_MAC_inputCheck(self, LORA_INPUT_TX_COMPLETE, &error) );
-    assert_false( LDL_MAC_inputCheck(self, LORA_INPUT_RX_READY, &error) );
-    assert_false( LDL_MAC_inputCheck(self, LORA_INPUT_RX_TIMEOUT, &error) );    
+    assert_false( LDL_MAC_inputCheck(self, LDL_INPUT_TX_COMPLETE, &error) );
+    assert_false( LDL_MAC_inputCheck(self, LDL_INPUT_RX_READY, &error) );
+    assert_false( LDL_MAC_inputCheck(self, LDL_INPUT_RX_TIMEOUT, &error) );    
 }
 
 static void inputCheck_shall_return_false_for_unarmed_signal(void **user)
 {
-    struct lora_mac *self = (struct lora_mac *)(*user);    
+    struct ldl_mac *self = (struct ldl_mac *)(*user);    
     uint32_t error;
     
-    LDL_MAC_inputSignal(self, LORA_INPUT_RX_READY);
+    LDL_MAC_inputSignal(self, LDL_INPUT_RX_READY);
     
-    assert_false( LDL_MAC_inputCheck(self, LORA_INPUT_RX_READY, &error) );    
+    assert_false( LDL_MAC_inputCheck(self, LDL_INPUT_RX_READY, &error) );    
 }
 
 static void inputCheck_shall_return_true_for_latched_signal_and_false_for_others(void **user)
 {
-    struct lora_mac *self = (struct lora_mac *)(*user);    
+    struct ldl_mac *self = (struct ldl_mac *)(*user);    
     uint32_t error;
     
-    LDL_MAC_inputArm(self, LORA_INPUT_RX_READY);
+    LDL_MAC_inputArm(self, LDL_INPUT_RX_READY);
     
-    LDL_MAC_inputSignal(self, LORA_INPUT_RX_READY);
+    LDL_MAC_inputSignal(self, LDL_INPUT_RX_READY);
     
-    assert_false( LDL_MAC_inputCheck(self, LORA_INPUT_TX_COMPLETE, &error) );
-    assert_true( LDL_MAC_inputCheck(self, LORA_INPUT_RX_READY, &error) );
+    assert_false( LDL_MAC_inputCheck(self, LDL_INPUT_TX_COMPLETE, &error) );
+    assert_true( LDL_MAC_inputCheck(self, LDL_INPUT_RX_READY, &error) );
     assert_int_equal(0, error);        
-    assert_false( LDL_MAC_inputCheck(self, LORA_INPUT_RX_TIMEOUT, &error) );    
+    assert_false( LDL_MAC_inputCheck(self, LDL_INPUT_RX_TIMEOUT, &error) );    
 }
 
 static void inputCheck_shall_return_time_error(void **user)
 {
-    struct lora_mac *self = (struct lora_mac *)(*user);    
+    struct ldl_mac *self = (struct ldl_mac *)(*user);    
     uint32_t error;
     
-    LDL_MAC_inputArm(self, LORA_INPUT_TX_COMPLETE);
+    LDL_MAC_inputArm(self, LDL_INPUT_TX_COMPLETE);
     
-    LDL_MAC_inputSignal(self, LORA_INPUT_TX_COMPLETE);
+    LDL_MAC_inputSignal(self, LDL_INPUT_TX_COMPLETE);
     
     system_time++;
     system_time++;
@@ -77,7 +77,7 @@ static void inputCheck_shall_return_time_error(void **user)
     system_time++;
     system_time++;
     
-    assert_true( LDL_MAC_inputCheck(self, LORA_INPUT_TX_COMPLETE, &error) );
+    assert_true( LDL_MAC_inputCheck(self, LDL_INPUT_TX_COMPLETE, &error) );
     assert_int_equal(5, error);        
 }
 
@@ -86,28 +86,28 @@ static void inputCheck_shall_return_time_error(void **user)
 
 static void inputClear_shall_reset_inputs(void **user)
 {
-    struct lora_mac *self = (struct lora_mac *)(*user);    
+    struct ldl_mac *self = (struct ldl_mac *)(*user);    
     uint32_t error;
     
-    assert_false( LDL_MAC_inputCheck(self, LORA_INPUT_RX_READY, &error) );
-    assert_false( LDL_MAC_inputCheck(self, LORA_INPUT_TX_COMPLETE, &error) );
+    assert_false( LDL_MAC_inputCheck(self, LDL_INPUT_RX_READY, &error) );
+    assert_false( LDL_MAC_inputCheck(self, LDL_INPUT_TX_COMPLETE, &error) );
     
-    LDL_MAC_inputArm(self, LORA_INPUT_TX_COMPLETE);
-    LDL_MAC_inputSignal(self, LORA_INPUT_TX_COMPLETE);
+    LDL_MAC_inputArm(self, LDL_INPUT_TX_COMPLETE);
+    LDL_MAC_inputSignal(self, LDL_INPUT_TX_COMPLETE);
     
-    assert_false( LDL_MAC_inputCheck(self, LORA_INPUT_RX_READY, &error) );
-    assert_true( LDL_MAC_inputCheck(self, LORA_INPUT_TX_COMPLETE, &error) );
+    assert_false( LDL_MAC_inputCheck(self, LDL_INPUT_RX_READY, &error) );
+    assert_true( LDL_MAC_inputCheck(self, LDL_INPUT_TX_COMPLETE, &error) );
     
     LDL_MAC_inputClear(self);
     
-    assert_false( LDL_MAC_inputCheck(self, LORA_INPUT_RX_READY, &error) );
-    assert_false( LDL_MAC_inputCheck(self, LORA_INPUT_TX_COMPLETE, &error) );
+    assert_false( LDL_MAC_inputCheck(self, LDL_INPUT_RX_READY, &error) );
+    assert_false( LDL_MAC_inputCheck(self, LDL_INPUT_TX_COMPLETE, &error) );
     
-    LDL_MAC_inputArm(self, LORA_INPUT_RX_READY);
-    LDL_MAC_inputSignal(self, LORA_INPUT_RX_READY);
+    LDL_MAC_inputArm(self, LDL_INPUT_RX_READY);
+    LDL_MAC_inputSignal(self, LDL_INPUT_RX_READY);
     
-    assert_true( LDL_MAC_inputCheck(self, LORA_INPUT_RX_READY, &error) );
-    assert_false( LDL_MAC_inputCheck(self, LORA_INPUT_TX_COMPLETE, &error) );
+    assert_true( LDL_MAC_inputCheck(self, LDL_INPUT_RX_READY, &error) );
+    assert_false( LDL_MAC_inputCheck(self, LDL_INPUT_TX_COMPLETE, &error) );
 }
 
 /* runner */

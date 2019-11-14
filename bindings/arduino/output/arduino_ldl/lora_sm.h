@@ -1,5 +1,26 @@
-#ifndef __LORA_SM_H
-#define __LORA_SM_H
+/* Copyright (c) 2019 Cameron Harper
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ * */
+
+#ifndef LDL_SM_H
+#define LDL_SM_H
 
 /** @file */
 
@@ -11,25 +32,18 @@ extern "C" {
 
 #include <stdint.h>
 
-struct lora_key {
+struct ldl_key {
     
     uint8_t value[16U];
 };
 
-struct lora_eui {
-    
-    uint8_t value[8U];
-};
-
 /** default in-memory security module state */
-struct lora_sm {
+struct ldl_sm {
     
-    struct lora_key keys[8U];    
+    struct ldl_key keys[8U];    
 };
 
-void LDL_SM_init(struct lora_sm *self, const void *appKey, const void *nwkKey);
-
-void *LDL_SM_getKey(struct lora_sm *self, enum lora_sm_key key);
+void LDL_SM_init(struct ldl_sm *self, const void *appKey, const void *nwkKey);
 
 #ifdef __cplusplus
 }

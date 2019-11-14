@@ -27,82 +27,82 @@
 
 /* static function prototypes *****************************************/
 
-static bool getFrameType(uint8_t tag, enum lora_frame_type *type);
+static bool getFrameType(uint8_t tag, enum ldl_frame_type *type);
 
 /* functions **********************************************************/
 
 void LDL_Frame_updateMIC(void *msg, uint8_t len, uint32_t mic)
 {
-    struct lora_stream s;    
+    struct ldl_stream s;    
     
     if(len > sizeof(mic)){
     
         LDL_Stream_init(&s, msg, len);
         
-        LDL_Stream_seekSet(&s, len - sizeof(mic));
+        (void)LDL_Stream_seekSet(&s, len - sizeof(mic));
         
-        LDL_Stream_putU32(&s, mic);    
+        (void)LDL_Stream_putU32(&s, mic);    
     }
 }
 
-uint8_t LDL_Frame_putData(const struct lora_frame_data *f, void *out, uint8_t max, struct lora_frame_data_offset *off)
+uint8_t LDL_Frame_putData(const struct ldl_frame_data *f, void *out, uint8_t max, struct ldl_frame_data_offset *off)
 {
-    struct lora_stream s;    
+    struct ldl_stream s;    
     
     LDL_Stream_init(&s, out, max);
     
-    LDL_Stream_putU8(&s, ((uint8_t)f->type) << 5);
-    LDL_Stream_putU32(&s, f->devAddr);
-    LDL_Stream_putU8(&s, (f->adr ? 0x80U : 0U) | (f->adrAckReq ? 0x40U : 0U) | (f->ack ? 0x20U : 0U) | (f->pending ? 0x10U : 0U) | (f->optsLen & 0xfU));
-    LDL_Stream_putU16(&s, f->counter);
+    (void)LDL_Stream_putU8(&s, ((uint8_t)f->type) << 5);
+    (void)LDL_Stream_putU32(&s, f->devAddr);
+    (void)LDL_Stream_putU8(&s, (f->adr ? 0x80U : 0U) | (f->adrAckReq ? 0x40U : 0U) | (f->ack ? 0x20U : 0U) | (f->pending ? 0x10U : 0U) | (f->optsLen & 0xfU));
+    (void)LDL_Stream_putU16(&s, f->counter);
     
     off->opts = LDL_Stream_tell(&s);
-    LDL_Stream_write(&s, f->opts, f->optsLen & 0xfU);
+    (void)LDL_Stream_write(&s, f->opts, f->optsLen & 0xfU);
     
     if(f->data != NULL){
 
-        LDL_Stream_putU8(&s, f->port);            
+        (void)LDL_Stream_putU8(&s, f->port);            
         off->data = LDL_Stream_tell(&s);            
-        LDL_Stream_write(&s, f->data, f->dataLen);        
+        (void)LDL_Stream_write(&s, f->data, f->dataLen);        
     }
     
-    LDL_Stream_putU32(&s, f->mic);                
+    (void)LDL_Stream_putU32(&s, f->mic);                
     
-    return LDL_Stream_tell(&s);
+    return LDL_Stream_error(&s) ? 0U : LDL_Stream_tell(&s);
 }
 
-uint8_t LDL_Frame_putJoinRequest(const struct lora_frame_join_request *f, void *out, uint8_t max)
+uint8_t LDL_Frame_putJoinRequest(const struct ldl_frame_join_request *f, void *out, uint8_t max)
 {
-    struct lora_stream s;    
+    struct ldl_stream s;    
     
     LDL_Stream_init(&s, out, max);
     
-    LDL_Stream_putU8(&s, ((uint8_t)FRAME_TYPE_JOIN_REQ) << 5);
-    LDL_Stream_putEUI(&s, f->joinEUI);
-    LDL_Stream_putEUI(&s, f->devEUI);
-    LDL_Stream_putU16(&s, f->devNonce);
-    LDL_Stream_putU32(&s, f->mic);
+    (void)LDL_Stream_putU8(&s, ((uint8_t)FRAME_TYPE_JOIN_REQ) << 5);
+    (void)LDL_Stream_putEUI(&s, f->joinEUI);
+    (void)LDL_Stream_putEUI(&s, f->devEUI);
+    (void)LDL_Stream_putU16(&s, f->devNonce);
+    (void)LDL_Stream_putU32(&s, f->mic);
 
-    return LDL_Stream_tell(&s);
+    return LDL_Stream_error(&s) ? 0U : LDL_Stream_tell(&s);
 }
 
-uint8_t LDL_Frame_putRejoinRequest(const struct lora_frame_rejoin_request *f, void *out, uint8_t max)
+uint8_t LDL_Frame_putRejoinRequest(const struct ldl_frame_rejoin_request *f, void *out, uint8_t max)
 {
-    struct lora_stream s;    
+    struct ldl_stream s;    
     
     LDL_Stream_init(&s, out, max);
         
-    LDL_Stream_putU8(&s, ((uint8_t)FRAME_TYPE_REJOIN_REQ) << 5);
-    LDL_Stream_putU8(&s, f->type);
-    LDL_Stream_putU24(&s, f->netID);
-    LDL_Stream_putEUI(&s, f->devEUI);
-    LDL_Stream_putU16(&s, f->rjCount);
-    LDL_Stream_putU32(&s, f->mic);    
+    (void)LDL_Stream_putU8(&s, ((uint8_t)FRAME_TYPE_REJOIN_REQ) << 5);
+    (void)LDL_Stream_putU8(&s, f->type);
+    (void)LDL_Stream_putU24(&s, f->netID);
+    (void)LDL_Stream_putEUI(&s, f->devEUI);
+    (void)LDL_Stream_putU16(&s, f->rjCount);
+    (void)LDL_Stream_putU32(&s, f->mic);    
     
-    return LDL_Stream_tell(&s);
+    return LDL_Stream_error(&s) ? 0U : LDL_Stream_tell(&s);
 }
 
-bool LDL_Frame_peek(const void *in, uint8_t len, enum lora_frame_type *type)
+bool LDL_Frame_peek(const void *in, uint8_t len, enum ldl_frame_type *type)
 {
     bool retval = false;
     
@@ -119,14 +119,14 @@ uint8_t LDL_Frame_sizeofJoinAccept(bool withCFList)
     return 17U + (withCFList ? 16U : 0U);
 }
 
-bool LDL_Frame_decode(struct lora_frame_down *f, void *in, uint8_t len)
+bool LDL_Frame_decode(struct ldl_frame_down *f, void *in, uint8_t len)
 {
     uint8_t *ptr = (uint8_t *)in;
     bool retval = false;    
     uint8_t fhdr = 0U;
     uint8_t tag;
     uint8_t dlSettings = 0U;
-    struct lora_stream s;    
+    struct ldl_stream s;    
     
     (void)memset(f, 0, sizeof(*f));    
     
@@ -146,11 +146,11 @@ bool LDL_Frame_decode(struct lora_frame_down *f, void *in, uint8_t len)
                 
             case FRAME_TYPE_JOIN_ACCEPT:
             
-                LDL_Stream_getU24(&s, &f->joinNonce);
-                LDL_Stream_getU24(&s, &f->netID);
-                LDL_Stream_getU32(&s, &f->devAddr);
-                LDL_Stream_getU8(&s, &dlSettings);
-                LDL_Stream_getU8(&s, &f->rxDelay);
+                (void)LDL_Stream_getU24(&s, &f->joinNonce);
+                (void)LDL_Stream_getU24(&s, &f->netID);
+                (void)LDL_Stream_getU32(&s, &f->devAddr);
+                (void)LDL_Stream_getU8(&s, &dlSettings);
+                (void)LDL_Stream_getU8(&s, &f->rxDelay);
                 
                 f->optNeg =             ((dlSettings & 0x80U) != 0);
                 f->rx1DataRateOffset =  (dlSettings >> 4) & 0x7U;
@@ -163,10 +163,10 @@ bool LDL_Frame_decode(struct lora_frame_down *f, void *in, uint8_t len)
                 
                     f->cfList = &ptr[LDL_Stream_tell(&s)];
                     f->cfListLen = 16U;
-                    LDL_Stream_seekCur(&s, f->cfListLen);
+                    (void)LDL_Stream_seekCur(&s, f->cfListLen);
                 }
                 
-                LDL_Stream_getU32(&s, &f->mic);
+                (void)LDL_Stream_getU32(&s, &f->mic);
                     
                 if(!LDL_Stream_error(&s)){
                     
@@ -181,8 +181,8 @@ bool LDL_Frame_decode(struct lora_frame_down *f, void *in, uint8_t len)
             case FRAME_TYPE_DATA_UNCONFIRMED_DOWN:            
             case FRAME_TYPE_DATA_CONFIRMED_DOWN:
 
-                LDL_Stream_getU32(&s, &f->devAddr);
-                LDL_Stream_getU8(&s, &fhdr);
+                (void)LDL_Stream_getU32(&s, &f->devAddr);
+                (void)LDL_Stream_getU8(&s, &fhdr);
                 
                 f->adr =        ((fhdr & 0x80U) > 0U) ? true : false;
                 f->adrAckReq =  ((fhdr & 0x40U) > 0U) ? true : false;
@@ -193,19 +193,19 @@ bool LDL_Frame_decode(struct lora_frame_down *f, void *in, uint8_t len)
                 LDL_Stream_getU16(&s, &f->counter);
                 
                 f->opts = (f->optsLen > 0U) ? &ptr[LDL_Stream_tell(&s)] : NULL; 
-                LDL_Stream_seekCur(&s, f->optsLen);
+                (void)LDL_Stream_seekCur(&s, f->optsLen);
                 
                 if(LDL_Stream_remaining(&s) > sizeof(f->mic)){
                     
                     f->dataPresent = true;
                     
-                    LDL_Stream_getU8(&s, &f->port);
+                    (void)LDL_Stream_getU8(&s, &f->port);
                     f->dataLen = LDL_Stream_remaining(&s) - sizeof(f->mic);                                                
                     f->data = (f->dataLen == 0U) ? NULL : &ptr[LDL_Stream_tell(&s)];                    
-                    LDL_Stream_seekCur(&s, f->dataLen);
+                    (void)LDL_Stream_seekCur(&s, f->dataLen);
                 }
                 
-                LDL_Stream_getU32(&s, &f->mic);
+                (void)LDL_Stream_getU32(&s, &f->mic);
                 
                 if(!LDL_Stream_error(&s)){
                     
@@ -238,7 +238,7 @@ uint8_t LDL_Frame_phyOverhead(void)
 
 /* static functions ***************************************************/
 
-static bool getFrameType(uint8_t tag, enum lora_frame_type *type)
+static bool getFrameType(uint8_t tag, enum ldl_frame_type *type)
 {
     bool retval = false;
     

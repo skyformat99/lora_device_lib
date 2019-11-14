@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef __LORA_RADIO_DEFS_H
-#define __LORA_RADIO_DEFS_H
+#ifndef LDL_RADIO_DEFS_H
+#define LDL_RADIO_DEFS_H
 
 /** @file */
 
@@ -32,23 +32,23 @@
  * */
 
 /** Spreading Factor */
-enum lora_spreading_factor {
-    SF_7 = 7,   /**< 128 chips/symbol */
-    SF_8,       /**< 256 chips/symbol */
-    SF_9,       /**< 512 chips/symbol */
-    SF_10,      /**< 1024 chips/symbol */
-    SF_11,      /**< 2048 chips/symbol */
-    SF_12,      /**< 4096 chips/symbol */
+enum ldl_spreading_factor {
+    LDL_SF_7 = 7,   /**< 128 chips/symbol */
+    LDL_SF_8,       /**< 256 chips/symbol */
+    LDL_SF_9,       /**< 512 chips/symbol */
+    LDL_SF_10,      /**< 1024 chips/symbol */
+    LDL_SF_11,      /**< 2048 chips/symbol */
+    LDL_SF_12,      /**< 4096 chips/symbol */
 };
 
 /** signal bandwidth */
-enum lora_signal_bandwidth {
-    BW_125 = 0, /**< 125 KHz */
-    BW_250,     /**< 250 KHz */    
-    BW_500,     /**< 500 KHz */
+enum ldl_signal_bandwidth {
+    LDL_BW_125 = 0, /**< 125 KHz */
+    LDL_BW_250,     /**< 250 KHz */    
+    LDL_BW_500,     /**< 500 KHz */
 };
 
-enum lora_coding_rate {
+enum ldl_coding_rate {
     CR_5 = 1,
     CR_6,
     CR_7,

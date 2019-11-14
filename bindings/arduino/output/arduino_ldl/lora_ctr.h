@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef __LORA_CTR_H
-#define __LORA_CTR_H
+#ifndef LDL_CTR_H
+#define LDL_CTR_H
 
 /** @file */
 
@@ -37,18 +37,18 @@ extern "C" {
 #include "stdint.h"
 #include "lora_aes.h"
 
-struct lora_aes_ctx;
+struct ldl_aes_ctx;
 
 /** Counter mode encryption
  * 
- * @param[in] ctx   #lora_aes_ctx
+ * @param[in] ctx   #ldl_aes_ctx
  * @param[in] iv    16 byte initial value
  * @param[in] in    input buffer to encrypt
  * @param[out] out  output buffer (can be same as in)
  * @param[in] len   size of input
  * 
  * */
-void LDL_CTR_encrypt(struct lora_aes_ctx *ctx, const void *iv, const void *in, void *out, uint8_t len);
+void LDL_CTR_encrypt(struct ldl_aes_ctx *ctx, const void *iv, const void *in, void *out, uint8_t len);
 
 #ifdef __cplusplus
 }

@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef __LORA_REGION_H
-#define __LORA_REGION_H
+#ifndef LDL_REGION_H
+#define LDL_REGION_H
 
 /** @file */
 
@@ -42,50 +42,50 @@ extern "C" {
  * 
  * Regions are included in the build by defining:
  * 
- * - #LORA_ENABLE_EU_863_870
- * - #LORA_ENABLE_US_902_928
- * - #LORA_ENABLE_AU_915_928
- * - #LORA_ENABLE_EU_433
+ * - #LDL_ENABLE_EU_863_870
+ * - #LDL_ENABLE_US_902_928
+ * - #LDL_ENABLE_AU_915_928
+ * - #LDL_ENABLE_EU_433
  * 
  *  */
-enum lora_region {
-#ifdef LORA_ENABLE_EU_863_870
-    EU_863_870, /**< EU_863_870 */
+enum ldl_region {
+#ifdef LDL_ENABLE_EU_863_870
+    LDL_EU_863_870, /**< EU_863_870 */
 #endif
-#ifdef LORA_ENABLE_US_902_928
-    US_902_928, /**< US_902_928 */
+#ifdef LDL_ENABLE_US_902_928
+    LDL_US_902_928, /**< US_902_928 */
 #endif
-#ifdef LORA_ENABLE_AU_915_928
-    AU_915_928, /**< AU_915_928 */
+#ifdef LDL_ENABLE_AU_915_928
+    LDL_AU_915_928, /**< AU_915_928 */
 #endif
-#ifdef LORA_ENABLE_EU_433        
-    EU_433,     /**< EU_433 */
+#ifdef LDL_ENABLE_EU_433        
+    LDL_EU_433,     /**< EU_433 */
 #endif    
 };
 
-struct lora_mac;
+struct ldl_mac;
 
-void LDL_Region_convertRate(enum lora_region region, uint8_t rate, enum lora_spreading_factor *sf, enum lora_signal_bandwidth *bw, uint8_t *mtu);
-void LDL_Region_getRX1DataRate(enum lora_region region, uint8_t tx_rate, uint8_t rx1_offset, uint8_t *rx1_rate);
-void LDL_Region_getRX1Freq(enum lora_region region, uint32_t txFreq, uint8_t chIndex, uint32_t *freq);
-bool LDL_Region_validateFreq(enum lora_region region, uint8_t chIndex, uint32_t freq);
-bool LDL_Region_getBand(enum lora_region region, uint32_t freq, uint8_t *band);
-bool LDL_Region_getChannel(enum lora_region region, uint8_t chIndex, uint32_t *freq, uint8_t *minRate, uint8_t *maxRate);
-bool LDL_Region_validateRate(enum lora_region region, uint8_t chIndex, uint8_t minRate, uint8_t maxRate);
-bool LDL_Region_isDynamic(enum lora_region region);
-bool LDL_Region_validateTXPower(enum lora_region region, uint8_t power);
-int16_t LDL_Region_getTXPower(enum lora_region region, uint8_t power);
-uint8_t LDL_Region_numChannels(enum lora_region region);
-uint8_t LDL_Region_getJA1Delay(enum lora_region region);
-uint32_t LDL_Region_getOffTimeFactor(enum lora_region region, uint8_t band);
-uint8_t LDL_Region_getRX1Delay(enum lora_region region);
-uint8_t LDL_Region_getRX1Offset(enum lora_region region);
-uint32_t LDL_Region_getRX2Freq(enum lora_region region);
-uint8_t LDL_Region_getRX2Rate(enum lora_region region);
-uint8_t LDL_Region_getJoinRate(enum lora_region region, uint32_t trial);
-void LDL_Region_getDefaultChannels(enum lora_region region, struct lora_mac *mac);
-void LDL_Region_processCFList(enum lora_region region, struct lora_mac *mac, const uint8_t *cfList, uint8_t cfListLen);
-
+void LDL_Region_convertRate(enum ldl_region region, uint8_t rate, enum ldl_spreading_factor *sf, enum ldl_signal_bandwidth *bw, uint8_t *mtu);
+void LDL_Region_getRX1DataRate(enum ldl_region region, uint8_t tx_rate, uint8_t rx1_offset, uint8_t *rx1_rate);
+void LDL_Region_getRX1Freq(enum ldl_region region, uint32_t txFreq, uint8_t chIndex, uint32_t *freq);
+bool LDL_Region_validateFreq(enum ldl_region region, uint8_t chIndex, uint32_t freq);
+bool LDL_Region_getBand(enum ldl_region region, uint32_t freq, uint8_t *band);
+bool LDL_Region_getChannel(enum ldl_region region, uint8_t chIndex, uint32_t *freq, uint8_t *minRate, uint8_t *maxRate);
+bool LDL_Region_validateRate(enum ldl_region region, uint8_t chIndex, uint8_t minRate, uint8_t maxRate);
+bool LDL_Region_isDynamic(enum ldl_region region);
+bool LDL_Region_validateTXPower(enum ldl_region region, uint8_t power);
+int16_t LDL_Region_getTXPower(enum ldl_region region, uint8_t power);
+uint8_t LDL_Region_numChannels(enum ldl_region region);
+uint8_t LDL_Region_getJA1Delay(enum ldl_region region);
+uint32_t LDL_Region_getOffTimeFactor(enum ldl_region region, uint8_t band);
+uint8_t LDL_Region_getRX1Delay(enum ldl_region region);
+uint8_t LDL_Region_getRX1Offset(enum ldl_region region);
+uint32_t LDL_Region_getRX2Freq(enum ldl_region region);
+uint8_t LDL_Region_getRX2Rate(enum ldl_region region);
+uint8_t LDL_Region_getJoinRate(enum ldl_region region, uint32_t trial);
+void LDL_Region_getDefaultChannels(enum ldl_region region, struct ldl_mac *mac);
+void LDL_Region_processCFList(enum ldl_region region, struct ldl_mac *mac, const uint8_t *cfList, uint8_t cfListLen);
+uint32_t LDL_Region_getMaxDCycleOffLimit(enum ldl_region region);
 
 #ifdef __cplusplus
 }

@@ -30,9 +30,9 @@ static void xor128(uint8_t *acc, const uint8_t *op);
 
 /* functions **********************************************************/
 
-void LDL_CTR_encrypt(struct lora_aes_ctx *ctx, const void *iv, const void *in, void *out, uint8_t len)
+void LDL_CTR_encrypt(struct ldl_aes_ctx *ctx, const void *iv, const void *in, void *out, uint8_t len)
 {
-    LORA_PEDANTIC(ctx != NULL)
+    LDL_PEDANTIC(ctx != NULL)
     
     uint8_t a[16];
     uint8_t s[16];

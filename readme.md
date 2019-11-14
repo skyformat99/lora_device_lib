@@ -48,7 +48,6 @@ See [history file](history.md) for releases.
 - GFSK modulation not supported
 - ABP not supported
 - rejoin not supported
-- has not been through conformance test
 - experimental
 
 ## Getting Started

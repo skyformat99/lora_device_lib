@@ -16,7 +16,7 @@ extern uint32_t system_time;
 
 static int setup(void **user)
 {
-    static struct lora_mac state;
+    static struct ldl_mac state;
     (void)memset(&state, 0, sizeof(state));
     *user = (void *)&state;                
     
@@ -29,73 +29,73 @@ static int setup(void **user)
 
 static void timerCheck_shall_return_false_for_unset_timer(void **user)
 {
-    struct lora_mac *self = (struct lora_mac *)(*user);    
+    struct ldl_mac *self = (struct ldl_mac *)(*user);    
     uint32_t error;
     
-    assert_false( LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error) );
+    assert_false( LDL_MAC_timerCheck(self, LDL_TIMER_WAITA, &error) );
 }
 
 static void timerCheck_shall_return_true_for_immediate(void **user)
 {
-    struct lora_mac *self = (struct lora_mac *)(*user);    
+    struct ldl_mac *self = (struct ldl_mac *)(*user);    
     uint32_t error;
     
-    LDL_MAC_timerSet(self, LORA_TIMER_WAITA, 0U);
+    LDL_MAC_timerSet(self, LDL_TIMER_WAITA, 0U);
     
-    assert_true( LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error) );
+    assert_true( LDL_MAC_timerCheck(self, LDL_TIMER_WAITA, &error) );
     assert_int_equal(0, error);    
 }
 
 static void timerCheck_shall_return_true_only_first_time_only(void **user)
 {
-    struct lora_mac *self = (struct lora_mac *)(*user);    
+    struct ldl_mac *self = (struct ldl_mac *)(*user);    
     uint32_t error;
     
-    LDL_MAC_timerSet(self, LORA_TIMER_WAITA, 0U);
+    LDL_MAC_timerSet(self, LDL_TIMER_WAITA, 0U);
     
-    assert_true( LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error) );
+    assert_true( LDL_MAC_timerCheck(self, LDL_TIMER_WAITA, &error) );
     assert_int_equal(0, error);    
     
-    assert_false( LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error) );
+    assert_false( LDL_MAC_timerCheck(self, LDL_TIMER_WAITA, &error) );
 }
 
 static void timerCheck_shall_return_false_for_future(void **user)
 {
-    struct lora_mac *self = (struct lora_mac *)(*user);    
+    struct ldl_mac *self = (struct ldl_mac *)(*user);    
     uint32_t error;
     
-    LDL_MAC_timerSet(self, LORA_TIMER_WAITA, 1U);
+    LDL_MAC_timerSet(self, LDL_TIMER_WAITA, 1U);
     
-    assert_false( LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error) );
+    assert_false( LDL_MAC_timerCheck(self, LDL_TIMER_WAITA, &error) );
 }
 
 static void timerCheck_shall_return_true_after_time_moves_forward(void **user)
 {
-    struct lora_mac *self = (struct lora_mac *)(*user);    
+    struct ldl_mac *self = (struct ldl_mac *)(*user);    
     uint32_t error;
     
-    LDL_MAC_timerSet(self, LORA_TIMER_WAITA, 1U);
+    LDL_MAC_timerSet(self, LDL_TIMER_WAITA, 1U);
     
-    assert_false( LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error) );
+    assert_false( LDL_MAC_timerCheck(self, LDL_TIMER_WAITA, &error) );
     
     system_time++;
     
-    assert_true( LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error) );    
+    assert_true( LDL_MAC_timerCheck(self, LDL_TIMER_WAITA, &error) );    
     assert_int_equal(0, error);        
 }
 
 static void timerCheck_shall_return_true_and_error_after_time_moves_forward(void **user)
 {
-    struct lora_mac *self = (struct lora_mac *)(*user);    
+    struct ldl_mac *self = (struct ldl_mac *)(*user);    
     uint32_t error;
     
-    LDL_MAC_timerSet(self, LORA_TIMER_WAITA, 1U);
+    LDL_MAC_timerSet(self, LDL_TIMER_WAITA, 1U);
     
     system_time++;
     system_time++;
     system_time++;
     
-    assert_true( LDL_MAC_timerCheck(self, LORA_TIMER_WAITA, &error) );    
+    assert_true( LDL_MAC_timerCheck(self, LDL_TIMER_WAITA, &error) );    
     assert_int_equal(2, error);        
 }
 
@@ -103,58 +103,58 @@ static void timerCheck_shall_return_true_and_error_after_time_moves_forward(void
 
 static void timerTicksUntil_shall_return_max_for_never(void **user)
 {
-    struct lora_mac *self = (struct lora_mac *)(*user);    
+    struct ldl_mac *self = (struct ldl_mac *)(*user);    
     uint32_t error;
     
-    assert_int_equal( UINT32_MAX, LDL_MAC_timerTicksUntil(self, LORA_TIMER_WAITA, &error) );
+    assert_int_equal( UINT32_MAX, LDL_MAC_timerTicksUntil(self, LDL_TIMER_WAITA, &error) );
 }
 
 static void timerTicksUntil_shall_return_zero_for_immediate(void **user)
 {
-    struct lora_mac *self = (struct lora_mac *)(*user); 
+    struct ldl_mac *self = (struct ldl_mac *)(*user); 
     uint32_t error;   
     
-    LDL_MAC_timerSet(self, LORA_TIMER_WAITA, 0);
+    LDL_MAC_timerSet(self, LDL_TIMER_WAITA, 0);
     
-    assert_int_equal( 0, LDL_MAC_timerTicksUntil(self, LORA_TIMER_WAITA, &error) );
+    assert_int_equal( 0, LDL_MAC_timerTicksUntil(self, LDL_TIMER_WAITA, &error) );
 }
 
 static void timerTicksUntil_shall_return_zero_for_past(void **user)
 {
-    struct lora_mac *self = (struct lora_mac *)(*user);    
+    struct ldl_mac *self = (struct ldl_mac *)(*user);    
     uint32_t error;
     
-    LDL_MAC_timerSet(self, LORA_TIMER_WAITA, 0);
+    LDL_MAC_timerSet(self, LDL_TIMER_WAITA, 0);
     
     system_time++;
     
-    assert_int_equal( 0, LDL_MAC_timerTicksUntil(self, LORA_TIMER_WAITA, &error) );
+    assert_int_equal( 0, LDL_MAC_timerTicksUntil(self, LDL_TIMER_WAITA, &error) );
 }
 
 static void timerTicksUntil_shall_return_positive_for_future(void **user)
 {
-    struct lora_mac *self = (struct lora_mac *)(*user);    
+    struct ldl_mac *self = (struct ldl_mac *)(*user);    
     uint32_t error;
     
-    LDL_MAC_timerSet(self, LORA_TIMER_WAITA, 42);
+    LDL_MAC_timerSet(self, LDL_TIMER_WAITA, 42);
     
-    assert_int_equal( 42, LDL_MAC_timerTicksUntil(self, LORA_TIMER_WAITA, &error) );
+    assert_int_equal( 42, LDL_MAC_timerTicksUntil(self, LDL_TIMER_WAITA, &error) );
 }
 
 /* timerTicksUntilNext *****************************************************/
 
 static void timerTicksUntilNext_shall_return_max_for_never(void **user)
 {
-    struct lora_mac *self = (struct lora_mac *)(*user);    
+    struct ldl_mac *self = (struct ldl_mac *)(*user);    
     
     assert_int_equal( UINT32_MAX, LDL_MAC_timerTicksUntilNext(self) );
 }
 
 static void timerTicksUntilNext_shall_return_positive_for_future(void **user)
 {
-    struct lora_mac *self = (struct lora_mac *)(*user);    
+    struct ldl_mac *self = (struct ldl_mac *)(*user);    
     
-    LDL_MAC_timerSet(self, LORA_TIMER_WAITA, 42);
+    LDL_MAC_timerSet(self, LDL_TIMER_WAITA, 42);
     
     assert_int_equal( 42, LDL_MAC_timerTicksUntilNext(self) );
 }

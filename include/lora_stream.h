@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef __LORA_STREAM_H
-#define __LORA_STREAM_H
+#ifndef LDL_STREAM_H
+#define LDL_STREAM_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +29,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 
-struct lora_stream {
+struct ldl_stream {
   
     uint8_t *write;
     const uint8_t *read;
@@ -38,28 +38,28 @@ struct lora_stream {
     bool error;
 };
 
-struct lora_stream * LDL_Stream_init(struct lora_stream *self, void *buf, uint8_t size);
-struct lora_stream * LDL_Stream_initReadOnly(struct lora_stream *self, const void *buf, uint8_t size);
-bool LDL_Stream_read(struct lora_stream *self, void *buf, uint8_t count);
-bool LDL_Stream_write(struct lora_stream *self, const void *buf, uint8_t count);
-uint8_t LDL_Stream_tell(const struct lora_stream *self);
-uint8_t LDL_Stream_remaining(const struct lora_stream *self);
-bool LDL_Stream_peek(const struct lora_stream *self, void *out);
-bool LDL_Stream_seekSet(struct lora_stream *self, uint8_t offset);
-bool LDL_Stream_seekCur(struct lora_stream *self, int16_t offset);
-bool LDL_Stream_error(struct lora_stream *self);
+void LDL_Stream_init(struct ldl_stream *self, void *buf, uint8_t size);
+void LDL_Stream_initReadOnly(struct ldl_stream *self, const void *buf, uint8_t size);
+bool LDL_Stream_read(struct ldl_stream *self, void *buf, uint8_t count);
+bool LDL_Stream_write(struct ldl_stream *self, const void *buf, uint8_t count);
+uint8_t LDL_Stream_tell(const struct ldl_stream *self);
+uint8_t LDL_Stream_remaining(const struct ldl_stream *self);
+bool LDL_Stream_peek(const struct ldl_stream *self, void *out);
+bool LDL_Stream_seekSet(struct ldl_stream *self, uint8_t offset);
+bool LDL_Stream_seekCur(struct ldl_stream *self, int16_t offset);
+bool LDL_Stream_error(struct ldl_stream *self);
 
-bool LDL_Stream_putU8(struct lora_stream *self, uint8_t value);
-bool LDL_Stream_putU16(struct lora_stream *self, uint16_t value);
-bool LDL_Stream_putU24(struct lora_stream *self, uint32_t value);
-bool LDL_Stream_putU32(struct lora_stream *self, uint32_t value);
-bool LDL_Stream_putEUI(struct lora_stream *self, const uint8_t *value);
+bool LDL_Stream_putU8(struct ldl_stream *self, uint8_t value);
+bool LDL_Stream_putU16(struct ldl_stream *self, uint16_t value);
+bool LDL_Stream_putU24(struct ldl_stream *self, uint32_t value);
+bool LDL_Stream_putU32(struct ldl_stream *self, uint32_t value);
+bool LDL_Stream_putEUI(struct ldl_stream *self, const uint8_t *value);
 
-bool LDL_Stream_getU8(struct lora_stream *self, uint8_t *value);
-bool LDL_Stream_getU16(struct lora_stream *self, uint16_t *value);
-bool LDL_Stream_getU24(struct lora_stream *self, uint32_t *value);
-bool LDL_Stream_getU32(struct lora_stream *self, uint32_t *value);
-bool LDL_Stream_getEUI(struct lora_stream *self, uint8_t *value);
+bool LDL_Stream_getU8(struct ldl_stream *self, uint8_t *value);
+bool LDL_Stream_getU16(struct ldl_stream *self, uint16_t *value);
+bool LDL_Stream_getU24(struct ldl_stream *self, uint32_t *value);
+bool LDL_Stream_getU32(struct ldl_stream *self, uint32_t *value);
+bool LDL_Stream_getEUI(struct ldl_stream *self, uint8_t *value);
 
 #ifdef __cplusplus
 }

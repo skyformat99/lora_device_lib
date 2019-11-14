@@ -17,13 +17,13 @@ CMOCKA_DEFINES += -DHAVE_SIGNAL_H
 CMOCKA_DEFINES += -DHAVE_INTTYPES_H
 CMOCKA_DEFINES += -DHAVE_MALLOC_H
 
-DEBUG_DEFINES += -D'LORA_TARGET_INCLUDE="debug_include.h"'
-DEBUG_DEFINES += -DLORA_ENABLE_RADIO_TEST
+DEBUG_DEFINES += -D'LDL_TARGET_INCLUDE="debug_include.h"'
+DEBUG_DEFINES += -DLDL_ENABLE_RADIO_TEST
 
-DEBUG_DEFINES += -DLORA_ENABLE_US_902_928
-DEBUG_DEFINES += -DLORA_ENABLE_AU_915_928
-DEBUG_DEFINES += -DLORA_ENABLE_EU_863_870
-DEBUG_DEFINES += -DLORA_ENABLE_EU_433
+DEBUG_DEFINES += -DLDL_ENABLE_US_902_928
+DEBUG_DEFINES += -DLDL_ENABLE_AU_915_928
+DEBUG_DEFINES += -DLDL_ENABLE_EU_863_870
+DEBUG_DEFINES += -DLDL_ENABLE_EU_433
 
 CFLAGS := -O0 -Wall -ggdb -fprofile-arcs -ftest-coverage $(INCLUDES) $(CMOCKA_DEFINES) $(DEBUG_DEFINES)
 LDFLAGS := -fprofile-arcs -ggdb
@@ -95,8 +95,8 @@ $(DIR_BIN)/tc_frame: $(addprefix $(DIR_BUILD)/, tc_frame.o lora_frame.o lora_str
 	@ echo linking $@
 	@ $(CC) $(LDFLAGS) $^ -o $@
 
-$(DIR_BIN)/tc_frame_with_encryption: CFLAGS += -DLORA_ENABLE_SX1272
-$(DIR_BIN)/tc_frame_with_encryption: CFLAGS += -DLORA_ENABLE_SX1276
+$(DIR_BIN)/tc_frame_with_encryption: CFLAGS += -DLDL_ENABLE_SX1272
+$(DIR_BIN)/tc_frame_with_encryption: CFLAGS += -DLDL_ENABLE_SX1276
 $(DIR_BIN)/tc_frame_with_encryption: $(addprefix $(DIR_BUILD)/, $(OBJ) tc_frame_with_encryption.o mock_lora_system.o mock_lora_chip.o $(OBJ_CMOCKA))
 	@ echo linking $@
 	@ $(CC) $(LDFLAGS) $^ -o $@
@@ -110,14 +110,14 @@ $(DIR_BIN)/tc_frame_with_encryption: $(addprefix $(DIR_BUILD)/, $(OBJ) tc_frame_
 #	@ echo linking $@
 #	@ $(CC) $(LDFLAGS) $^ -o $@
 
-$(DIR_BIN)/tc_input: CFLAGS += -DLORA_ENABLE_SX1272
-$(DIR_BIN)/tc_input: CFLAGS += -DLORA_ENABLE_SX1276
+$(DIR_BIN)/tc_input: CFLAGS += -DLDL_ENABLE_SX1272
+$(DIR_BIN)/tc_input: CFLAGS += -DLDL_ENABLE_SX1276
 $(DIR_BIN)/tc_input: $(addprefix $(DIR_BUILD)/, $(OBJ) tc_input.o mock_lora_system.o mock_lora_chip.o $(OBJ_CMOCKA))
 	@ echo linking $@
 	@ $(CC) $(LDFLAGS) $^ -o $@
 
-$(DIR_BIN)/tc_timer: CFLAGS += -DLORA_ENABLE_SX1272
-$(DIR_BIN)/tc_timer: CFLAGS += -DLORA_ENABLE_SX1276
+$(DIR_BIN)/tc_timer: CFLAGS += -DLDL_ENABLE_SX1272
+$(DIR_BIN)/tc_timer: CFLAGS += -DLDL_ENABLE_SX1276
 $(DIR_BIN)/tc_timer: $(addprefix $(DIR_BUILD)/, $(OBJ) tc_timer.o mock_lora_system.o mock_lora_chip.o $(OBJ_CMOCKA))
 	@ echo linking $@
 	@ $(CC) $(LDFLAGS) $^ -o $@

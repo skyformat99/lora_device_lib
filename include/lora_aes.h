@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef __LORA_AES_H
-#define __LORA_AES_H
+#ifndef LDL_AES_H
+#define LDL_AES_H
 
 /** @file */
 
@@ -48,15 +48,11 @@ extern "C" {
 #include <stdint.h>
 
 /** AES state */
-struct lora_aes_ctx {
+struct ldl_aes_ctx {
 
     uint8_t k[240U];
     uint8_t r;
 };
-
-#ifndef AES_BLOCK_SIZE
-    #define AES_BLOCK_SIZE 16U
-#endif
 
 /** Initialise AES block cipher
  * 
@@ -64,7 +60,7 @@ struct lora_aes_ctx {
  * @param[in] key pointer to 16 byte key
  * 
  * */
-void LDL_AES_init(struct lora_aes_ctx *ctx, const void *key);
+void LDL_AES_init(struct ldl_aes_ctx *ctx, const void *key);
 
 /** Encrypt a block of data
  * 
@@ -72,7 +68,7 @@ void LDL_AES_init(struct lora_aes_ctx *ctx, const void *key);
  * @param[in] s pointer to 16 byte block of data (any alignment)
  * 
  * */
-void LDL_AES_encrypt(const struct lora_aes_ctx *ctx, void *s);
+void LDL_AES_encrypt(const struct ldl_aes_ctx *ctx, void *s);
 
 /** Decrypt a block of data
  * 
@@ -80,7 +76,7 @@ void LDL_AES_encrypt(const struct lora_aes_ctx *ctx, void *s);
  * @param[in] s pointer to 16 byte block of data (any alignment)
  * 
  * */
-void LDL_AES_decrypt(const struct lora_aes_ctx *ctx, void *s);
+void LDL_AES_decrypt(const struct ldl_aes_ctx *ctx, void *s);
 
 #ifdef __cplusplus
 }

@@ -23,7 +23,7 @@
 #include "lora_debug.h"
 #include "lora_mac.h"
 
-#ifdef LORA_ENABLE_AVR
+#ifdef LDL_ENABLE_AVR
 
     #include <avr/pgmspace.h>
     
@@ -40,205 +40,205 @@
     
 /* static function prototypes *****************************************/
 
-static bool upRateRange(enum lora_region region, uint8_t chIndex, uint8_t *minRate, uint8_t *maxRate);
+static bool upRateRange(enum ldl_region region, uint8_t chIndex, uint8_t *minRate, uint8_t *maxRate);
 static uint8_t unpackCFListMask(const uint8_t *cfList, uint16_t *mask);
 static uint8_t unpackCFListFreq(const uint8_t *cfList, uint32_t *freq);
 
 /* functions **********************************************************/
 
-void LDL_Region_convertRate(enum lora_region region, uint8_t rate, enum lora_spreading_factor *sf, enum lora_signal_bandwidth *bw, uint8_t *mtu)
+void LDL_Region_convertRate(enum ldl_region region, uint8_t rate, enum ldl_spreading_factor *sf, enum ldl_signal_bandwidth *bw, uint8_t *mtu)
 {
-    LORA_PEDANTIC(sf != NULL)
-    LORA_PEDANTIC(bw != NULL)
-    LORA_PEDANTIC(mtu != NULL)
+    LDL_PEDANTIC(sf != NULL)
+    LDL_PEDANTIC(bw != NULL)
+    LDL_PEDANTIC(mtu != NULL)
     
     switch(region){ 
-#if defined(LORA_ENABLE_EU_863_870) || defined(LORA_ENABLE_EU_433)                              
-#   ifdef LORA_ENABLE_EU_863_870    
-    case EU_863_870:
+#if defined(LDL_ENABLE_EU_863_870) || defined(LDL_ENABLE_EU_433)                              
+#   ifdef LDL_ENABLE_EU_863_870    
+    case LDL_EU_863_870:
 #   endif    
-#   ifdef LORA_ENABLE_EU_433    
-    case EU_433:
+#   ifdef LDL_ENABLE_EU_433    
+    case LDL_EU_433:
 #   endif        
         switch(rate){
         case 0U:
-            *sf = SF_12;
-            *bw = BW_125;
+            *sf = LDL_SF_12;
+            *bw = LDL_BW_125;
             *mtu = 59U;
             break;
         case 1U:
-            *sf = SF_11;
-            *bw = BW_125;
+            *sf = LDL_SF_11;
+            *bw = LDL_BW_125;
             *mtu = 59U;
             break;
         case 2U:
-            *sf = SF_10;
-            *bw = BW_125;
+            *sf = LDL_SF_10;
+            *bw = LDL_BW_125;
             *mtu = 59U;
             break;
         case 3U:
-            *sf = SF_9;
-            *bw = BW_125;
+            *sf = LDL_SF_9;
+            *bw = LDL_BW_125;
             *mtu = 123U;
             break;
         case 4U:
-            *sf = SF_8;
-            *bw = BW_125;
+            *sf = LDL_SF_8;
+            *bw = LDL_BW_125;
             *mtu = 250U;
             break;
         case 5U:        
-            *sf = SF_7;
-            *bw = BW_125;
+            *sf = LDL_SF_7;
+            *bw = LDL_BW_125;
             *mtu = 250U;
             break;
         case 6U:
-            *sf = SF_7;
-            *bw = BW_250;
+            *sf = LDL_SF_7;
+            *bw = LDL_BW_250;
             *mtu = 250U;
             break;                        
         default:
-            *sf = SF_7;
-            *bw = BW_125;
+            *sf = LDL_SF_7;
+            *bw = LDL_BW_125;
             *mtu = 250U;
-            LORA_INFO(NULL,"invalid rate")
+            LDL_INFO(NULL,"invalid rate")
             break;
         }
         break;
 #endif        
-#ifdef LORA_ENABLE_US_902_928
-    case US_902_928:
+#ifdef LDL_ENABLE_US_902_928
+    case LDL_US_902_928:
     
         switch(rate){
         case 0U:
-            *sf = SF_10;
-            *bw = BW_125;
+            *sf = LDL_SF_10;
+            *bw = LDL_BW_125;
             *mtu = 19U;
             break;
         case 1U:
-            *sf = SF_9;
-            *bw = BW_125;
+            *sf = LDL_SF_9;
+            *bw = LDL_BW_125;
             *mtu = 61U;
             break;
         case 2U:
-            *sf = SF_8;
-            *bw = BW_125;
+            *sf = LDL_SF_8;
+            *bw = LDL_BW_125;
             *mtu = 133U;
             break;
         case 3U:
-            *sf = SF_7;
-            *bw = BW_125;
+            *sf = LDL_SF_7;
+            *bw = LDL_BW_125;
             *mtu = 250U;
             break;
         case 4U:
         case 12U:
-            *sf = SF_8;
-            *bw = BW_500;
+            *sf = LDL_SF_8;
+            *bw = LDL_BW_500;
             *mtu = 250U;
             break;
         case 8U:
-            *sf = SF_12;
-            *bw = BW_500;
+            *sf = LDL_SF_12;
+            *bw = LDL_BW_500;
             *mtu = 61U;
             break;
         case 9U:
-            *sf = SF_11;
-            *bw = BW_500;
+            *sf = LDL_SF_11;
+            *bw = LDL_BW_500;
             *mtu = 137U;
             break;
         case 10U:
-            *sf = SF_10;
-            *bw = BW_500;
+            *sf = LDL_SF_10;
+            *bw = LDL_BW_500;
             *mtu = 250U;
             break;
         case 11U:
-            *sf = SF_9;
-            *bw = BW_500;
+            *sf = LDL_SF_9;
+            *bw = LDL_BW_500;
             *mtu = 250U;
             break;        
         case 13U:
-            *sf = SF_7;
-            *bw = BW_500;
+            *sf = LDL_SF_7;
+            *bw = LDL_BW_500;
             *mtu = 250U;
             break;
         default:
-            *sf = SF_7;
-            *bw = BW_125;
+            *sf = LDL_SF_7;
+            *bw = LDL_BW_125;
             *mtu = 250U;
-            LORA_INFO(NULL,"invalid rate")
+            LDL_INFO(NULL,"invalid rate")
             break;
         }    
         break;
 #endif                
-#ifdef LORA_ENABLE_AU_915_928
-    case AU_915_928:
+#ifdef LDL_ENABLE_AU_915_928
+    case LDL_AU_915_928:
     
         switch(rate){
         case 0U:
-            *sf = SF_12;
-            *bw = BW_125;
+            *sf = LDL_SF_12;
+            *bw = LDL_BW_125;
             *mtu = 59U;
             break;
         case 1U:
-            *sf = SF_11;
-            *bw = BW_125;
+            *sf = LDL_SF_11;
+            *bw = LDL_BW_125;
             *mtu = 59U;
             break;
         case 2U:
-            *sf = SF_10;
-            *bw = BW_125;
+            *sf = LDL_SF_10;
+            *bw = LDL_BW_125;
             *mtu = 59U;
             break;
         case 3U:
-            *sf = SF_9;
-            *bw = BW_125;
+            *sf = LDL_SF_9;
+            *bw = LDL_BW_125;
             *mtu = 123U;
             break;
         case 4U:
-            *sf = SF_8;
-            *bw = BW_125;
+            *sf = LDL_SF_8;
+            *bw = LDL_BW_125;
             *mtu = 250U;
             break;
         case 5U:
-            *sf = SF_7;
-            *bw = BW_125;
+            *sf = LDL_SF_7;
+            *bw = LDL_BW_125;
             *mtu = 250U;
             break;
         case 6U:
         case 12U:
-            *sf = SF_8;
-            *bw = BW_500;
+            *sf = LDL_SF_8;
+            *bw = LDL_BW_500;
             *mtu = 250U;
             break;
         case 8U:
-            *sf = SF_12;
-            *bw = BW_500;
+            *sf = LDL_SF_12;
+            *bw = LDL_BW_500;
             *mtu = 61U;
             break;
         case 9U:
-            *sf = SF_11;
-            *bw = BW_500;
+            *sf = LDL_SF_11;
+            *bw = LDL_BW_500;
             *mtu = 137U;
             break;
         case 10U:
-            *sf = SF_10;
-            *bw = BW_500;
+            *sf = LDL_SF_10;
+            *bw = LDL_BW_500;
             *mtu = 250U;
             break;
         case 11U:
-            *sf = SF_9;
-            *bw = BW_500;
+            *sf = LDL_SF_9;
+            *bw = LDL_BW_500;
             *mtu = 250U;
             break;        
         case 13U:
-            *sf = SF_7;
-            *bw = BW_500;
+            *sf = LDL_SF_7;
+            *bw = LDL_BW_500;
             *mtu = 250U;
             break;        
         default:
-            *sf = SF_7;
-            *bw = BW_125;
+            *sf = LDL_SF_7;
+            *bw = LDL_BW_125;
             *mtu = 250U;
-            LORA_INFO(NULL,"invalid rate")
+            LDL_INFO(NULL,"invalid rate")
             break;
         }    
         break;
@@ -248,15 +248,15 @@ void LDL_Region_convertRate(enum lora_region region, uint8_t rate, enum lora_spr
     }
 }
 
-bool LDL_Region_getBand(enum lora_region region, uint32_t freq, uint8_t *band)
+bool LDL_Region_getBand(enum ldl_region region, uint32_t freq, uint8_t *band)
 {
-    LORA_PEDANTIC(band != NULL)
+    LDL_PEDANTIC(band != NULL)
 
     bool retval = false;
 
     switch(region){
-#ifdef LORA_ENABLE_EU_863_870        
-    case EU_863_870:
+#ifdef LDL_ENABLE_EU_863_870        
+    case LDL_EU_863_870:
     
         retval = true;
     
@@ -295,7 +295,7 @@ bool LDL_Region_getBand(enum lora_region region, uint32_t freq, uint8_t *band)
     return retval;
 }
 
-bool LDL_Region_isDynamic(enum lora_region region)
+bool LDL_Region_isDynamic(enum ldl_region region)
 {
     bool retval;
     
@@ -303,13 +303,13 @@ bool LDL_Region_isDynamic(enum lora_region region)
     default:
         retval = true;
         break;        
-#ifdef LORA_ENABLE_US_902_928
-    case US_902_928:         
+#ifdef LDL_ENABLE_US_902_928
+    case LDL_US_902_928:         
         retval = false;
         break;
 #endif
-#ifdef LORA_ENABLE_AU_915_928
-    case AU_915_928:
+#ifdef LDL_ENABLE_AU_915_928
+    case LDL_AU_915_928:
         retval = false;                    
         break;
 #endif        
@@ -318,15 +318,15 @@ bool LDL_Region_isDynamic(enum lora_region region)
     return retval;
 }
 
-bool LDL_Region_getChannel(enum lora_region region, uint8_t chIndex, uint32_t *freq, uint8_t *minRate, uint8_t *maxRate)
+bool LDL_Region_getChannel(enum ldl_region region, uint8_t chIndex, uint32_t *freq, uint8_t *minRate, uint8_t *maxRate)
 {
     bool retval = false;
     
     switch(region){
     default:
         break;    
-#ifdef LORA_ENABLE_US_902_928
-    case US_902_928:         
+#ifdef LDL_ENABLE_US_902_928
+    case LDL_US_902_928:         
 
         retval = true;
         
@@ -348,8 +348,8 @@ bool LDL_Region_getChannel(enum lora_region region, uint8_t chIndex, uint32_t *f
         }
         break;
 #endif
-#ifdef LORA_ENABLE_AU_915_928
-    case AU_915_928:
+#ifdef LDL_ENABLE_AU_915_928
+    case LDL_AU_915_928:
     
         retval = true;
         
@@ -376,7 +376,7 @@ bool LDL_Region_getChannel(enum lora_region region, uint8_t chIndex, uint32_t *f
     return retval;
 }
 
-uint8_t LDL_Region_numChannels(enum lora_region region)
+uint8_t LDL_Region_numChannels(enum ldl_region region)
 {
     uint8_t retval;
     
@@ -384,12 +384,12 @@ uint8_t LDL_Region_numChannels(enum lora_region region)
     default:
         retval = 16U;    
         break;
-#if defined(LORA_ENABLE_US_902_928)  || defined(LORA_ENABLE_AU_915_928)              
-#   ifdef LORA_ENABLE_US_902_928
-    case US_902_928:
+#if defined(LDL_ENABLE_US_902_928)  || defined(LDL_ENABLE_AU_915_928)              
+#   ifdef LDL_ENABLE_US_902_928
+    case LDL_US_902_928:
 #   endif                 
-#   ifdef LORA_ENABLE_AU_915_928
-    case AU_915_928:
+#   ifdef LDL_ENABLE_AU_915_928
+    case LDL_AU_915_928:
 #   endif     
            
         retval = 72U;
@@ -400,9 +400,9 @@ uint8_t LDL_Region_numChannels(enum lora_region region)
     return retval;    
 }
 
-void LDL_Region_getDefaultChannels(enum lora_region region, struct lora_mac *mac)
+void LDL_Region_getDefaultChannels(enum ldl_region region, struct ldl_mac *mac)
 {
-    LORA_PEDANTIC(mac != NULL)
+    LDL_PEDANTIC(mac != NULL)
     
     uint8_t minRate;
     uint8_t maxRate;
@@ -410,8 +410,8 @@ void LDL_Region_getDefaultChannels(enum lora_region region, struct lora_mac *mac
     switch(region){
     default:
         break;    
-#ifdef LORA_ENABLE_EU_863_870
-    case EU_863_870:
+#ifdef LDL_ENABLE_EU_863_870
+    case LDL_EU_863_870:
     
         (void)upRateRange(region, 0U, &minRate, &maxRate);
         
@@ -420,8 +420,8 @@ void LDL_Region_getDefaultChannels(enum lora_region region, struct lora_mac *mac
         LDL_MAC_addChannel(mac, 2U, 868500000UL, minRate, maxRate);        
         break;
 #endif        
-#ifdef LORA_ENABLE_EU_433    
-    case EU_433:
+#ifdef LDL_ENABLE_EU_433    
+    case LDL_EU_433:
     
         (void)upRateRange(region, 0U, &minRate, &maxRate);
         
@@ -435,7 +435,7 @@ void LDL_Region_getDefaultChannels(enum lora_region region, struct lora_mac *mac
 
 
 
-void LDL_Region_processCFList(enum lora_region region, struct lora_mac *mac, const uint8_t *cfList, uint8_t cfListLen)
+void LDL_Region_processCFList(enum ldl_region region, struct ldl_mac *mac, const uint8_t *cfList, uint8_t cfListLen)
 {
     if(cfListLen == 16U){
     
@@ -443,13 +443,13 @@ void LDL_Region_processCFList(enum lora_region region, struct lora_mac *mac, con
         default:
             break;
 
-#if defined(LORA_ENABLE_EU_863_870) || defined(LORA_ENABLE_EU_433)
+#if defined(LDL_ENABLE_EU_863_870) || defined(LDL_ENABLE_EU_433)
 
-#   ifdef LORA_ENABLE_EU_863_870        
-        case EU_863_870:
+#   ifdef LDL_ENABLE_EU_863_870        
+        case LDL_EU_863_870:
 #   endif
-#   ifdef LORA_ENABLE_EU_433
-        case EU_433:
+#   ifdef LDL_ENABLE_EU_433
+        case LDL_EU_433:
 #   endif        
            /* 0 means frequency list */
            if(cfList[15] == 0U){
@@ -460,26 +460,26 @@ void LDL_Region_processCFList(enum lora_region region, struct lora_mac *mac, con
                 uint8_t i;
                 uint8_t pos;
                 
-                for(i=0U,pos=0U; i < 4U; i++){
+                for(i=3U,pos=0U; i < 8U; i++){
                 
                      pos += unpackCFListFreq(&cfList[pos], &freq);
                      
-                     (void)upRateRange(region, i+4U, &minRate, &maxRate);                 
+                     (void)upRateRange(region, i, &minRate, &maxRate);                 
                      
-                     (void)LDL_MAC_addChannel(mac, i+4U, freq, minRate, maxRate);
+                     (void)LDL_MAC_addChannel(mac, i, freq, minRate, maxRate);
                 }            
             }        
             break;
 #endif  
 
-#if defined(LORA_ENABLE_US_902_928) || defined(LORA_ENABLE_AU_915_928)
+#if defined(LDL_ENABLE_US_902_928) || defined(LDL_ENABLE_AU_915_928)
       
-#   ifdef LORA_ENABLE_US_902_928
-        case US_902_928:
+#   ifdef LDL_ENABLE_US_902_928
+        case LDL_US_902_928:
             break;
 #   endif
-#   ifdef LORA_ENABLE_AU_915_928
-        case AU_915_928:        
+#   ifdef LDL_ENABLE_AU_915_928
+        case LDL_AU_915_928:        
 #   endif
             /* 1 means mask list */
            if(cfList[15] == 1U){
@@ -508,15 +508,15 @@ void LDL_Region_processCFList(enum lora_region region, struct lora_mac *mac, con
     }    
 }
 
-uint32_t LDL_Region_getOffTimeFactor(enum lora_region region, uint8_t band)
+uint32_t LDL_Region_getOffTimeFactor(enum ldl_region region, uint8_t band)
 {
     uint32_t retval = 0UL;
     
     switch(region){
     default:
         break;    
-#ifdef LORA_ENABLE_EU_863_870    
-    case EU_863_870:
+#ifdef LDL_ENABLE_EU_863_870    
+    case LDL_EU_863_870:
     
         switch(band){
         case 0U:
@@ -535,8 +535,8 @@ uint32_t LDL_Region_getOffTimeFactor(enum lora_region region, uint8_t band)
         }
         break;
 #endif        
-#ifdef LORA_ENABLE_EU_433    
-    case EU_433:        
+#ifdef LDL_ENABLE_EU_433    
+    case LDL_EU_433:        
         retval = 100UL;
         break;    
 #endif
@@ -545,7 +545,7 @@ uint32_t LDL_Region_getOffTimeFactor(enum lora_region region, uint8_t band)
     return retval;    
 }
 
-bool LDL_Region_validateRate(enum lora_region region, uint8_t chIndex, uint8_t minRate, uint8_t maxRate)
+bool LDL_Region_validateRate(enum ldl_region region, uint8_t chIndex, uint8_t minRate, uint8_t maxRate)
 {
     bool retval = false;
     uint8_t min;
@@ -562,14 +562,14 @@ bool LDL_Region_validateRate(enum lora_region region, uint8_t chIndex, uint8_t m
     return retval;
 }
 
-bool LDL_Region_validateFreq(enum lora_region region, uint8_t chIndex, uint32_t freq)
+bool LDL_Region_validateFreq(enum ldl_region region, uint8_t chIndex, uint32_t freq)
 {
     return true;
 }
 
-void LDL_Region_getRX1DataRate(enum lora_region region, uint8_t tx_rate, uint8_t rx1_offset, uint8_t *rx1_rate)
+void LDL_Region_getRX1DataRate(enum ldl_region region, uint8_t tx_rate, uint8_t rx1_offset, uint8_t *rx1_rate)
 {
-    LORA_PEDANTIC(rx1_rate != NULL)
+    LDL_PEDANTIC(rx1_rate != NULL)
 
     const uint8_t *ptr = NULL;
     uint16_t i = 0U;
@@ -577,12 +577,12 @@ void LDL_Region_getRX1DataRate(enum lora_region region, uint8_t tx_rate, uint8_t
     
     switch(region){
     default:
-#if defined(LORA_ENABLE_EU_863_870) || defined(LORA_ENABLE_EU_433)        
-#   ifdef LORA_ENABLE_EU_863_870
-    case EU_863_870:
+#if defined(LDL_ENABLE_EU_863_870) || defined(LDL_ENABLE_EU_433)        
+#   ifdef LDL_ENABLE_EU_863_870
+    case LDL_EU_863_870:
 #   endif
-#   ifdef LORA_ENABLE_EU_433
-    case EU_433:
+#   ifdef LDL_ENABLE_EU_433
+    case LDL_EU_433:
 #   endif    
     {
         static const uint8_t rates[] PROGMEM = {
@@ -602,8 +602,8 @@ void LDL_Region_getRX1DataRate(enum lora_region region, uint8_t tx_rate, uint8_t
     }
         break;                   
 #endif        
-#ifdef LORA_ENABLE_US_902_928
-    case US_902_928:        
+#ifdef LDL_ENABLE_US_902_928
+    case LDL_US_902_928:        
     {
         static const uint8_t rates[] PROGMEM = {
             10U, 9U,  8U,  8U,
@@ -619,8 +619,8 @@ void LDL_Region_getRX1DataRate(enum lora_region region, uint8_t tx_rate, uint8_t
     }
         break;
 #endif        
-#ifdef LORA_ENABLE_AU_915_928
-    case AU_915_928:        
+#ifdef LDL_ENABLE_AU_915_928
+    case LDL_AU_915_928:        
     {
         static const uint8_t rates[] PROGMEM = {
             8U,  8U,  8U,  8U,  8U,  8U,
@@ -649,23 +649,23 @@ void LDL_Region_getRX1DataRate(enum lora_region region, uint8_t tx_rate, uint8_t
         else{
                         
             *rx1_rate = tx_rate;
-            LORA_INFO(NULL,"out of range error")
+            LDL_INFO(NULL,"out of range error")
         }
     }        
 }
 
-void LDL_Region_getRX1Freq(enum lora_region region, uint32_t txFreq, uint8_t chIndex, uint32_t *freq)
+void LDL_Region_getRX1Freq(enum ldl_region region, uint32_t txFreq, uint8_t chIndex, uint32_t *freq)
 {
     switch(region){
     default:
         *freq = txFreq;
         break;        
-#if defined(LORA_ENABLE_US_902_928)  || defined(LORA_ENABLE_AU_915_928)              
-#   ifdef LORA_ENABLE_US_902_928
-    case US_902_928:
+#if defined(LDL_ENABLE_US_902_928)  || defined(LDL_ENABLE_AU_915_928)              
+#   ifdef LDL_ENABLE_US_902_928
+    case LDL_US_902_928:
 #   endif                 
-#   ifdef LORA_ENABLE_AU_915_928
-    case AU_915_928:
+#   ifdef LDL_ENABLE_AU_915_928
+    case LDL_AU_915_928:
 #   endif     
                
         *freq = 923300000UL + ((uint32_t)(chIndex % 8U) * 600000UL);       
@@ -674,44 +674,44 @@ void LDL_Region_getRX1Freq(enum lora_region region, uint32_t txFreq, uint8_t chI
     }
 }
 
-uint8_t LDL_Region_getRX1Delay(enum lora_region region)
+uint8_t LDL_Region_getRX1Delay(enum ldl_region region)
 {
     return 1U;    
 }
 
-uint8_t LDL_Region_getJA1Delay(enum lora_region region)
+uint8_t LDL_Region_getJA1Delay(enum ldl_region region)
 {
     return 5U;        
 }
 
-uint8_t LDL_Region_getRX1Offset(enum lora_region region)
+uint8_t LDL_Region_getRX1Offset(enum ldl_region region)
 {
     return 0U;        
 }
 
-uint32_t LDL_Region_getRX2Freq(enum lora_region region)
+uint32_t LDL_Region_getRX2Freq(enum ldl_region region)
 {
     uint32_t retval;
     
     switch(region){
     default:
-#ifdef LORA_ENABLE_EU_863_870    
-    case EU_863_870:
+#ifdef LDL_ENABLE_EU_863_870    
+    case LDL_EU_863_870:
         retval = 869525000UL;
         break;    
 #endif
-#ifdef LORA_ENABLE_EU_433        
-    case EU_433:
+#ifdef LDL_ENABLE_EU_433        
+    case LDL_EU_433:
         retval = 434665000UL;
         break;    
 #endif
-#ifdef LORA_ENABLE_US_902_928
-    case US_902_928:         
+#ifdef LDL_ENABLE_US_902_928
+    case LDL_US_902_928:         
         retval = 923300000UL;
         break;        
 #endif
-#ifdef LORA_ENABLE_AU_915_928
-    case AU_915_928:        
+#ifdef LDL_ENABLE_AU_915_928
+    case LDL_AU_915_928:        
         retval = 923300000UL;
         break;        
 #endif        
@@ -720,29 +720,29 @@ uint32_t LDL_Region_getRX2Freq(enum lora_region region)
     return retval; 
 }
 
-uint8_t LDL_Region_getRX2Rate(enum lora_region region)
+uint8_t LDL_Region_getRX2Rate(enum ldl_region region)
 {
     uint8_t retval;
     
     switch(region){
     default:
-#ifdef LORA_ENABLE_EU_863_870
-    case EU_863_870:
+#ifdef LDL_ENABLE_EU_863_870
+    case LDL_EU_863_870:
         retval = 0U;
         break;
 #endif
-#ifdef LORA_ENABLE_EU_433
-    case EU_433:
+#ifdef LDL_ENABLE_EU_433
+    case LDL_EU_433:
         retval = 0U;
         break;
 #endif        
-#ifdef LORA_ENABLE_US_902_928
-    case US_902_928:     
+#ifdef LDL_ENABLE_US_902_928
+    case LDL_US_902_928:     
         retval = 8U;
         break;
 #endif
-#ifdef LORA_ENABLE_AU_915_928
-    case AU_915_928:
+#ifdef LDL_ENABLE_AU_915_928
+    case LDL_AU_915_928:
         retval = 8U;
         break;
 #endif                
@@ -751,13 +751,13 @@ uint8_t LDL_Region_getRX2Rate(enum lora_region region)
     return retval; 
 }
 
-bool LDL_Region_validateTXPower(enum lora_region region, uint8_t power)
+bool LDL_Region_validateTXPower(enum ldl_region region, uint8_t power)
 {
     bool retval = false;
     
     switch(region){ 
-#ifdef LORA_ENABLE_EU_863_870               
-    case EU_863_870:
+#ifdef LDL_ENABLE_EU_863_870               
+    case LDL_EU_863_870:
         
         if(power <= 7U){
             
@@ -765,8 +765,8 @@ bool LDL_Region_validateTXPower(enum lora_region region, uint8_t power)
         }
         break;
 #endif
-#ifdef LORA_ENABLE_EU_433        
-    case EU_433:
+#ifdef LDL_ENABLE_EU_433        
+    case LDL_EU_433:
     
         if(power <= 5U){
             
@@ -774,12 +774,12 @@ bool LDL_Region_validateTXPower(enum lora_region region, uint8_t power)
         }
         break;
 #endif            
-#if defined(LORA_ENABLE_US_902_928)  || defined(LORA_ENABLE_AU_915_928)              
-#   ifdef LORA_ENABLE_US_902_928
-    case US_902_928:
+#if defined(LDL_ENABLE_US_902_928)  || defined(LDL_ENABLE_AU_915_928)              
+#   ifdef LDL_ENABLE_US_902_928
+    case LDL_US_902_928:
 #   endif                 
-#   ifdef LORA_ENABLE_AU_915_928
-    case AU_915_928:
+#   ifdef LDL_ENABLE_AU_915_928
+    case LDL_AU_915_928:
 #   endif     
         
         if(power <= 10U){
@@ -795,13 +795,13 @@ bool LDL_Region_validateTXPower(enum lora_region region, uint8_t power)
     return retval;
 }
 
-int16_t LDL_Region_getTXPower(enum lora_region region, uint8_t power)
+int16_t LDL_Region_getTXPower(enum ldl_region region, uint8_t power)
 {
     int16_t retval = 0;
     
     switch(region){ 
-#ifdef LORA_ENABLE_EU_863_870               
-    case EU_863_870:
+#ifdef LDL_ENABLE_EU_863_870               
+    case LDL_EU_863_870:
         
         if(power <= 7U){
             
@@ -813,8 +813,8 @@ int16_t LDL_Region_getTXPower(enum lora_region region, uint8_t power)
         }
         break;
 #endif
-#ifdef LORA_ENABLE_EU_433        
-    case EU_433:
+#ifdef LDL_ENABLE_EU_433        
+    case LDL_EU_433:
     
         if(power <= 5U){
             
@@ -826,12 +826,12 @@ int16_t LDL_Region_getTXPower(enum lora_region region, uint8_t power)
         }
         break;
 #endif            
-#if defined(LORA_ENABLE_US_902_928)  || defined(LORA_ENABLE_AU_915_928)              
-#   ifdef LORA_ENABLE_US_902_928
-    case US_902_928:
+#if defined(LDL_ENABLE_US_902_928)  || defined(LDL_ENABLE_AU_915_928)              
+#   ifdef LDL_ENABLE_US_902_928
+    case LDL_US_902_928:
 #   endif                 
-#   ifdef LORA_ENABLE_AU_915_928
-    case AU_915_928:
+#   ifdef LDL_ENABLE_AU_915_928
+    case LDL_AU_915_928:
 #   endif     
         
         if(power <= 10U){
@@ -851,24 +851,24 @@ int16_t LDL_Region_getTXPower(enum lora_region region, uint8_t power)
     return retval;
 }
 
-uint8_t LDL_Region_getJoinRate(enum lora_region region, uint32_t trial)
+uint8_t LDL_Region_getJoinRate(enum ldl_region region, uint32_t trial)
 {
     uint8_t retval = 0U;
     
     switch(region){    
-#if defined(LORA_ENABLE_EU_863_870) || defined(LORA_ENABLE_EU_433)                      
-#   ifdef LORA_ENABLE_EU_863_870    
-    case EU_863_870:
+#if defined(LDL_ENABLE_EU_863_870) || defined(LDL_ENABLE_EU_433)                      
+#   ifdef LDL_ENABLE_EU_863_870    
+    case LDL_EU_863_870:
 #   endif    
-#   ifdef LORA_ENABLE_EU_433    
-    case EU_433:
+#   ifdef LDL_ENABLE_EU_433    
+    case LDL_EU_433:
 #   endif       
-        retval = 5U - (trial % (6U - LORA_DEFAULT_RATE));
+        retval = 5U - (trial % (6U - LDL_DEFAULT_RATE));
         break;
 #endif        
-#if defined(LORA_ENABLE_US_902_928)        
-#   ifdef LORA_ENABLE_US_902_928
-    case US_902_928:
+#if defined(LDL_ENABLE_US_902_928)        
+#   ifdef LDL_ENABLE_US_902_928
+    case LDL_US_902_928:
 #   endif           
         if((trial & 1U) > 0U){
             
@@ -876,13 +876,13 @@ uint8_t LDL_Region_getJoinRate(enum lora_region region, uint32_t trial)
         }
         else{
             
-            retval = 3U - ((trial >> 1U) % (4U - LORA_DEFAULT_RATE));
+            retval = 3U - ((trial >> 1U) % (4U - LDL_DEFAULT_RATE));
         }
         break;
 #endif
-#if defined(LORA_ENABLE_AU_915_928)              
-#   ifdef LORA_ENABLE_AU_915_928
-    case AU_915_928:
+#if defined(LDL_ENABLE_AU_915_928)              
+#   ifdef LDL_ENABLE_AU_915_928
+    case LDL_AU_915_928:
 #   endif                
         if((trial & 1U) > 0U){
             
@@ -890,7 +890,7 @@ uint8_t LDL_Region_getJoinRate(enum lora_region region, uint32_t trial)
         }
         else{
             
-            retval = 4U - ((trial >> 1U) % (5U - LORA_DEFAULT_RATE));
+            retval = 4U - ((trial >> 1U) % (5U - LDL_DEFAULT_RATE));
         }
         break;
 #endif        
@@ -901,19 +901,31 @@ uint8_t LDL_Region_getJoinRate(enum lora_region region, uint32_t trial)
     return retval;
 }
 
+uint32_t LDL_Region_getMaxDCycleOffLimit(enum ldl_region region)
+{
+    /* I've only checked this for ETSI:
+     * 
+     * duty-cycle is evaluated over one hour therefore we can effectively
+     * limit ourselves by never accumulating more than one hour of 
+     * off-time.
+     * 
+     * */
+    return (60UL*60UL*1000UL);
+}
+
 /* static functions ***************************************************/
 
-static bool upRateRange(enum lora_region region, uint8_t chIndex, uint8_t *minRate, uint8_t *maxRate)
+static bool upRateRange(enum ldl_region region, uint8_t chIndex, uint8_t *minRate, uint8_t *maxRate)
 {
     bool retval = false;
     
     switch(region){    
-#if defined(LORA_ENABLE_EU_863_870) || defined(LORA_ENABLE_EU_433)                      
-#   ifdef LORA_ENABLE_EU_863_870    
-    case EU_863_870:
+#if defined(LDL_ENABLE_EU_863_870) || defined(LDL_ENABLE_EU_433)                      
+#   ifdef LDL_ENABLE_EU_863_870    
+    case LDL_EU_863_870:
 #   endif    
-#   ifdef LORA_ENABLE_EU_433    
-    case EU_433:
+#   ifdef LDL_ENABLE_EU_433    
+    case LDL_EU_433:
 #   endif       
     
         if(chIndex < 16U){
@@ -924,8 +936,8 @@ static bool upRateRange(enum lora_region region, uint8_t chIndex, uint8_t *minRa
         }
         break;
 #endif        
-#ifdef LORA_ENABLE_US_902_928
-    case US_902_928:
+#ifdef LDL_ENABLE_US_902_928
+    case LDL_US_902_928:
     
         if(chIndex <= 71U){
     
@@ -944,8 +956,8 @@ static bool upRateRange(enum lora_region region, uint8_t chIndex, uint8_t *minRa
         }
         break;        
 #endif    
-#ifdef LORA_ENABLE_AU_915_928
-    case AU_915_928:
+#ifdef LDL_ENABLE_AU_915_928
+    case LDL_AU_915_928:
     
         if(chIndex <= 71U){
     
@@ -975,11 +987,11 @@ static bool upRateRange(enum lora_region region, uint8_t chIndex, uint8_t *minRa
 
 static uint8_t unpackCFListFreq(const uint8_t *cfList, uint32_t *freq)
 {
-    *freq = cfList[0];
+    *freq = cfList[2];
     *freq <<= 8;
     *freq |= cfList[1];
     *freq <<= 8;
-    *freq |= cfList[2];
+    *freq |= cfList[0];
     
     *freq *= 100UL;
     
@@ -988,13 +1000,13 @@ static uint8_t unpackCFListFreq(const uint8_t *cfList, uint32_t *freq)
 
 static uint8_t unpackCFListMask(const uint8_t *cfList, uint16_t *mask)
 {
-    *mask = cfList[0];
+    *mask = cfList[1];
     *mask <<= 8;
-    *mask |= cfList[1];
+    *mask |= cfList[0];
     
     return 2U;    
 }
 
-#ifndef LORA_ENABLE_AVR
+#ifndef LDL_ENABLE_AVR
     #undef memcpy_P
 #endif

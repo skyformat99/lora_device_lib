@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef __LORA_OPS_H
-#define __LORA_OPS_H
+#ifndef LDL_OPS_H
+#define LDL_OPS_H
 
 /* "operations" 
  * 
@@ -30,7 +30,7 @@
  * It also provides some handy interfaces for testing that the MIC
  * and encryption works as expected.
  * 
- * For our sanity these functions depend on state in lora_mac but
+ * For our sanity these functions depend on state in ldl_mac but
  * they should never change it directly.
  * 
  * */
@@ -38,28 +38,29 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-struct lora_mac;
-struct lora_frame_data;
-struct lora_frame_down;
-struct lora_frame_join_request;
+struct ldl_mac;
+struct ldl_frame_data;
+struct ldl_frame_down;
+struct ldl_frame_join_request;
+struct ldl_system_identity;
 
-struct lora_block {
+struct ldl_block {
     
     uint8_t value[16U];
 };
 
-/* derive all session keys and write to lora_sm */
-void LDL_OPS_deriveKeys(struct lora_mac *self, uint32_t joinNonce, uint32_t netID, uint16_t devNonce);
-void LDL_OPS_deriveKeys2(struct lora_mac *self, uint32_t joinNonce, const uint8_t *joinEUI, const uint8_t *devEUI, uint16_t devNonce);
+/* derive all session keys and write to ldl_sm */
+void LDL_OPS_deriveKeys(struct ldl_mac *self, uint32_t joinNonce, uint32_t netID, uint16_t devNonce);
+void LDL_OPS_deriveKeys2(struct ldl_mac *self, uint32_t joinNonce, const uint8_t *joinEUI, const uint8_t *devEUI, uint16_t devNonce);
 
-/* decode and verify a frame (depends on lora_mac state but does not modify directly) */
-bool LDL_OPS_receiveFrame(struct lora_mac *self, struct lora_frame_down *f, uint8_t *in, uint8_t len);
+/* decode and verify a frame (depends on ldl_mac state but does not modify directly) */
+bool LDL_OPS_receiveFrame(struct ldl_mac *self, struct ldl_frame_down *f, const struct ldl_system_identity *id, uint8_t *in, uint8_t len);
 
-/* encode a frame  (depends on lora_mac state but does not modify directly)  */
-uint8_t LDL_OPS_prepareData(struct lora_mac *self, const struct lora_frame_data *f, uint8_t *out, uint8_t max);
-uint8_t LDL_OPS_prepareJoinRequest(struct lora_mac *self, const struct lora_frame_join_request *f, uint8_t *out, uint8_t max);
+/* encode a frame  (depends on ldl_mac state but does not modify directly)  */
+uint8_t LDL_OPS_prepareData(struct ldl_mac *self, const struct ldl_frame_data *f, uint8_t *out, uint8_t max);
+uint8_t LDL_OPS_prepareJoinRequest(struct ldl_mac *self, const struct ldl_frame_join_request *f, uint8_t *out, uint8_t max);
 
-/* derive expected 32 bit downcounter from 16 least significant bits and update the copy in lora_mac */
-void LDL_OPS_syncDownCounter(struct lora_mac *self, uint8_t port, uint16_t counter);
+/* derive expected 32 bit downcounter from 16 least significant bits and update the copy in ldl_mac */
+void LDL_OPS_syncDownCounter(struct ldl_mac *self, uint8_t port, uint16_t counter);
 
 #endif

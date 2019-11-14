@@ -32,7 +32,7 @@ uint32_t LDL_System_eps(void)
     return 0UL;
 }
 
-void LDL_System_getIdentity(void *receiver, struct lora_system_identity *value)
+void LDL_System_getIdentity(void *receiver, struct ldl_system_identity *value)
 {
     struct mock_system_param *self = (struct mock_system_param *)receiver;    
     (void)memcpy(value, &self->identity, sizeof(*value));
@@ -49,11 +49,11 @@ uint8_t LDL_System_getBatteryLevel(void *receiver)
     return self->battery_level;    
 }
 
-bool LDL_System_restoreContext(void *receiver, struct lora_mac_session *value)
+bool LDL_System_restoreContext(void *receiver, struct ldl_mac_session *value)
 {
     return false;
 }
 
-void LDL_System_saveContext(void *receiver, const struct lora_mac_session *value)
+void LDL_System_saveContext(void *receiver, const struct ldl_mac_session *value)
 {
 }

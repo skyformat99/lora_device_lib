@@ -19,8 +19,8 @@
  *
  * */
 
-#ifndef __LORA_PLATFORM_H
-#define __LORA_PLATFORM_H
+#ifndef LDL_PLATFORM_H
+#define LDL_PLATFORM_H
 
 /** @file */
 
@@ -33,32 +33,32 @@
  * These can be defined in two ways:
  * 
  * - using your build system (e.g. using -D)
- * - in a header file which is then included using the #LORA_TARGET_INCLUDE macro
+ * - in a header file which is then included using the #LDL_TARGET_INCLUDE macro
  * 
  * @{
  * */
 
-#ifndef LORA_MAX_PACKET
+#ifndef LDL_MAX_PACKET
     /** Redefine this to reduce the stack and data memory footprint.
      * 
      * The maximum allowable size is UINT8_MAX bytes
      * 
      * */
-    #define LORA_MAX_PACKET UINT8_MAX    
+    #define LDL_MAX_PACKET UINT8_MAX    
 #endif
  
-#ifndef LORA_DEFAULT_RATE
+#ifndef LDL_DEFAULT_RATE
     /** Redefine to limit maximum rate to this setting
      * 
      * Useful if you want to avoid a large spreading factor if your
      * hardware doesn't support it.
      * 
      * */
-    #define LORA_DEFAULT_RATE 1U
+    #define LDL_DEFAULT_RATE 1U
 
 #endif
 
-#ifndef LORA_REDUNDANCY_MAX
+#ifndef LDL_REDUNDANCY_MAX
     /** Redefine to limit the maximum redundancy setting 
      * 
      * (i.e. LinkADRReq.redundancy.NbTrans)
@@ -70,13 +70,13 @@
      * e.g.
      * 
      * @code{.c}
-     * #define LORA_REDUNDANCY_MAX 3
+     * #define LDL_REDUNDANCY_MAX 3
      * @endcode
      * 
      * would ensure there will never be more than 3 redundant frames.
      * 
      * */
-    #define LORA_REDUNDANCY_MAX 0xfU
+    #define LDL_REDUNDANCY_MAX 0xfU
 #endif
 
 #ifdef DOXYGEN
@@ -91,127 +91,127 @@
      * Example (defined from a makefile):
      * 
      * @code
-     * -DLORA_TARGET_INCLUDE='"target_specific.h"'
+     * -DLDL_TARGET_INCLUDE='"target_specific.h"'
      * @endcode
      * 
      * Where `target_specific.h` would be kept somewhere on the include
      * search path.
      * 
      * */
-    #define LORA_TARGET_INCLUDE
-    #undef LORA_TARGET_INCLUDE
+    #define LDL_TARGET_INCLUDE
+    #undef LDL_TARGET_INCLUDE
     
     /** 
      * Define to add support for SX1272
      * 
      * */
-    #define LORA_ENABLE_SX1272
-    //#undef LORA_ENABLE_SX1272
+    #define LDL_ENABLE_SX1272
+    //#undef LDL_ENABLE_SX1272
 
     /** 
      * Define to add support for SX1276
      * 
      * */
-    #define LORA_ENABLE_SX1276
-    //#undef LORA_ENABLE_SX1276 
+    #define LDL_ENABLE_SX1276
+    //#undef LDL_ENABLE_SX1276 
 
     /** 
      * Define to remove parts of the codec not required for a device
      * 
      * */
-     #define LORA_DISABLE_FULL_CODEC
-     #undef LORA_DISABLE_FULL_CODEC
+     #define LDL_DISABLE_FULL_CODEC
+     #undef LDL_DISABLE_FULL_CODEC
 
     /** 
      * Define to remove the link-check feature.
      * 
      * */
-    #define LORA_DISABLE_CHECK 
-    #undef LORA_DISABLE_CHECK
+    #define LDL_DISABLE_CHECK 
+    #undef LDL_DISABLE_CHECK
 
     /** 
      * Define to remove event generation when RX1 and RX2 are opened.
      * 
      * */
-    #define LORA_DISABLE_SLOT_EVENT
-    #undef LORA_DISABLE_SLOT_EVENT
+    #define LDL_DISABLE_SLOT_EVENT
+    #undef LDL_DISABLE_SLOT_EVENT
 
     /** 
      * Define to remove event generation when TX completes.
      * 
      * */
-    #define LORA_DISABLE_TX_COMPLETE_EVENT
-    #undef LORA_DISABLE_TX_COMPLETE_EVENT 
+    #define LDL_DISABLE_TX_COMPLETE_EVENT
+    #undef LDL_DISABLE_TX_COMPLETE_EVENT 
 
     /** 
      * Define to remove event generation when TX begins.
      * 
      * */
-    #define LORA_DISABLE_TX_BEGIN_EVENT  
-    #undef LORA_DISABLE_TX_BEGIN_EVENT 
+    #define LDL_DISABLE_TX_BEGIN_EVENT  
+    #undef LDL_DISABLE_TX_BEGIN_EVENT 
 
     /**
      * Define to remove event generation for downstream stats
      * 
      * */
-    #define LORA_DISABLE_DOWNSTREAM_EVENT
-    #undef LORA_DISABLE_DOWNSTREAM_EVENT
+    #define LDL_DISABLE_DOWNSTREAM_EVENT
+    #undef LDL_DISABLE_DOWNSTREAM_EVENT
     
     /**
      * Define to remove event generation for chip error event
      * 
      * */
-    #define LORA_DISABLE_CHIP_ERROR_EVENT
-    #undef LORA_DISABLE_CHIP_ERROR_EVENT
+    #define LDL_DISABLE_CHIP_ERROR_EVENT
+    #undef LDL_DISABLE_CHIP_ERROR_EVENT
     
     /**
      * Define to remove event generation for mac reset event
      * 
      * */
-    #define LORA_DISABLE_MAC_RESET_EVENT
-    #undef LORA_DISABLE_MAC_RESET_EVENT
+    #define LDL_DISABLE_MAC_RESET_EVENT
+    #undef LDL_DISABLE_MAC_RESET_EVENT
     
     /**
      * Define to remove RX event
      * 
      * */
-    #define LORA_DISABLE_RX_EVENT
-    #undef LORA_DISABLE_RX_EVENT
+    #define LDL_DISABLE_RX_EVENT
+    #undef LDL_DISABLE_RX_EVENT
     
     /**
      * Define to remove startup event
      * 
      * */
-    #define LORA_DISABLE_MAC_STARTUP_EVENT
-    #undef LORA_DISABLE_MAC_STARTUP_EVENT
+    #define LDL_DISABLE_MAC_STARTUP_EVENT
+    #undef LDL_DISABLE_MAC_STARTUP_EVENT
     
     /**
      * Define to remove join timeout event
      * 
      * */
-    #define LORA_DISABLE_JOIN_TIMEOUT_EVENT
-    #undef LORA_DISABLE_JOIN_TIMEOUT_EVENT
+    #define LDL_DISABLE_JOIN_TIMEOUT_EVENT
+    #undef LDL_DISABLE_JOIN_TIMEOUT_EVENT
     
     /**
      * Define to remove data complete event
      * 
      * */
-    #define LORA_DISABLE_DATA_COMPLETE_EVENT
-    #undef LORA_DISABLE_DATA_COMPLETE_EVENT
+    #define LDL_DISABLE_DATA_COMPLETE_EVENT
+    #undef LDL_DISABLE_DATA_COMPLETE_EVENT
     
     /**
      * Define to remove data timeout event
      * 
      * */
-    #define LORA_DISABLE_DATA_TIMEOUT_EVENT
-    #undef LORA_DISABLE_DATA_TIMEOUT_EVENT
+    #define LDL_DISABLE_DATA_TIMEOUT_EVENT
+    #undef LDL_DISABLE_DATA_TIMEOUT_EVENT
     
     /**
      * Define to remove join complete event
      * 
      * */
-    #define LORA_DISABLE_JOIN_COMPLETE_EVENT
-    #undef LORA_DISABLE_JOIN_COMPLETE_EVENT
+    #define LDL_DISABLE_JOIN_COMPLETE_EVENT
+    #undef LDL_DISABLE_JOIN_COMPLETE_EVENT
     
     /** 
      * Define to add a startup delay (in milliseconds) to when bands become
@@ -223,72 +223,61 @@
      * If undefined this defaults to zero.
      * 
      * */
-    #define LORA_STARTUP_DELAY
-    #undef LORA_STARTUP_DELAY
+    #define LDL_STARTUP_DELAY
+    #undef LDL_STARTUP_DELAY
     
     /**
      * Define to enable support for AU_915_928
      * 
      * */
-    #define LORA_ENABLE_AU_915_928
-    //#undef LORA_ENABLE_AU_915_928
+    #define LDL_ENABLE_AU_915_928
+    //#undef LDL_ENABLE_AU_915_928
     
     /**
      * Define to enable support for EU_863_870
      * 
      * */
-    #define LORA_ENABLE_EU_863_870
-    //#undef LORA_ENABLE_EU_863_870
+    #define LDL_ENABLE_EU_863_870
+    //#undef LDL_ENABLE_EU_863_870
     
     /**
      * Define to enable support for EU_433
      * 
      * */
-    #define LORA_ENABLE_EU_433
-    //#undef LORA_ENABLE_EU_433
+    #define LDL_ENABLE_EU_433
+    //#undef LDL_ENABLE_EU_433
     
     /**
      * Define to enable support for US_902_928
      * 
      * */
-    #define LORA_ENABLE_US_902_928
-    //#undef LORA_ENABLE_US_902_928
+    #define LDL_ENABLE_US_902_928
+    //#undef LDL_ENABLE_US_902_928
 
     /**
      * Define to keep RX buffer in mac state rather than
      * on the stack.
      * 
-     * This will save the stack from growing by #LORA_MAX_PACKET bytes
+     * This will save the stack from growing by #LDL_MAX_PACKET bytes
      * when LDL_MAC_process() is called.
      * 
      * */
-    #define LORA_ENABLE_STATIC_RX_BUFFER
-    #undef LORA_ENABLE_STATIC_RX_BUFFER
-
-    /** 
-     * Define to include LoRaWAN 1.1 features in build
-     * 
-     * This is backwards compatible with 1.0 but will require
-     * more resources.
-     * 
-     * */
-    #define LORA_ENABLE_POINT_ONE
-    #undef LORA_ENABLE_POINT_ONE
-    
+    #define LDL_ENABLE_STATIC_RX_BUFFER
+    #undef LDL_ENABLE_STATIC_RX_BUFFER
     
     /**
-     * Define to remove the #LORA_MAC_SESSION_UPDATED event
+     * Define to remove the #LDL_MAC_SESSION_UPDATED event
      * 
      * This event is useful when session is saved to non-volatile memory
      * 
      * */
-    #define LORA_DISABLE_SESSION_UPDATE
-    #undef LORA_DISABLE_SESSION_UPDATE
+    #define LDL_DISABLE_SESSION_UPDATE
+    #undef LDL_DISABLE_SESSION_UPDATE
 
 #endif
 
-#ifdef LORA_TARGET_INCLUDE
-    #include LORA_TARGET_INCLUDE    
+#ifdef LDL_TARGET_INCLUDE
+    #include LDL_TARGET_INCLUDE    
 #endif
 
 

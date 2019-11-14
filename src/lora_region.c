@@ -460,13 +460,13 @@ void LDL_Region_processCFList(enum lora_region region, struct lora_mac *mac, con
                 uint8_t i;
                 uint8_t pos;
                 
-                for(i=0U,pos=0U; i < 4U; i++){
+                for(i=3U,pos=0U; i < 8U; i++){
                 
                      pos += unpackCFListFreq(&cfList[pos], &freq);
                      
-                     (void)upRateRange(region, i+4U, &minRate, &maxRate);                 
+                     (void)upRateRange(region, i, &minRate, &maxRate);                 
                      
-                     (void)LDL_MAC_addChannel(mac, i+4U, freq, minRate, maxRate);
+                     (void)LDL_MAC_addChannel(mac, i, freq, minRate, maxRate);
                 }            
             }        
             break;
@@ -987,11 +987,11 @@ static bool upRateRange(enum lora_region region, uint8_t chIndex, uint8_t *minRa
 
 static uint8_t unpackCFListFreq(const uint8_t *cfList, uint32_t *freq)
 {
-    *freq = cfList[0];
+    *freq = cfList[2];
     *freq <<= 8;
     *freq |= cfList[1];
     *freq <<= 8;
-    *freq |= cfList[2];
+    *freq |= cfList[0];
     
     *freq *= 100UL;
     
@@ -1000,9 +1000,9 @@ static uint8_t unpackCFListFreq(const uint8_t *cfList, uint32_t *freq)
 
 static uint8_t unpackCFListMask(const uint8_t *cfList, uint16_t *mask)
 {
-    *mask = cfList[0];
+    *mask = cfList[1];
     *mask <<= 8;
-    *mask |= cfList[1];
+    *mask |= cfList[0];
     
     return 2U;    
 }

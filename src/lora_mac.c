@@ -1180,6 +1180,8 @@ bool LDL_MAC_addChannel(struct lora_mac *self, uint8_t chIndex, uint32_t freq, u
 {
     LORA_PEDANTIC(self != NULL)
     
+    LORA_DEBUG(self->app, "adding chIndex=%u freq=%"PRIu32" minRate=%u maxRate=%u", chIndex, freq, minRate, maxRate)
+    
     return setChannel(self->ctx.chConfig, self->region, chIndex, freq, minRate, maxRate);
 }
 

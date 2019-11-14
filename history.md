@@ -2,9 +2,13 @@
 
 ## 0.2.0
 
+Warning: this update has a significant number of interface name changes. 
+
 ### features
 
-- LoRaWAN 1.1 support
+- partial LoRaWAN 1.1 support
+    - key derivation
+    - optNeg branching in join
 - encryption and key management is now the domain of the Security Module (SM)
     - keys are referenced by descriptors
     - cipher/plain text is sent to SM for processing
@@ -24,6 +28,8 @@
 
 ### changes
 
+- added   LDL and ldl prefixes to all enums that were not yet prefixed
+- changed all LORA and lora prefixes to LDL and ldl for consistency
 - added   LDL_Radio_interrupt() to take over from LDL_MAC_interrupt()
 - changed LDL_MAC_interrupt() to LDL_MAC_radioEvent() which gets called by LDL_Radio_interrupt()
 - changed lora_frame.c and lora_mac_commands.c to use the same pack/unpack code

@@ -117,13 +117,6 @@
     //#undef LDL_ENABLE_SX1276 
 
     /** 
-     * Define to remove parts of the codec not required for a device
-     * 
-     * */
-     #define LDL_DISABLE_FULL_CODEC
-     #undef LDL_DISABLE_FULL_CODEC
-
-    /** 
      * Define to remove the link-check feature.
      * 
      * */

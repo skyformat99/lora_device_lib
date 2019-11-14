@@ -71,7 +71,6 @@
 /* do not change ******************************************************/
 
 #define LDL_ENABLE_AVR
-#define LDL_DISABLE_FULL_CODEC
 #define LDL_SYSTEM_ENTER_CRITICAL(APP) ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
 #define LDL_SYSTEM_LEAVE_CRITICAL(APP) }
 

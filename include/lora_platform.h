@@ -116,13 +116,6 @@
     //#undef LDL_ENABLE_SX1276 
 
     /** 
-     * Define to remove parts of the codec not required for a device
-     * 
-     * */
-     #define LDL_DISABLE_FULL_CODEC
-     #undef LDL_DISABLE_FULL_CODEC
-
-    /** 
      * Define to remove the link-check feature.
      * 
      * */
@@ -218,7 +211,7 @@
      * available.
      * 
      * This is an optional safety feature to ensure a device stuck
-     * in a reset loop does transmit too often.
+     * in a reset loop doesn't transmit too often.
      *
      * If undefined this defaults to zero.
      * 

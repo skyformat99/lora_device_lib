@@ -6,8 +6,6 @@
 
 struct mock_system_param {
 
-    struct ldl_system_identity identity;
-    
     uint8_t battery_level;
     
     uint16_t upCounter;

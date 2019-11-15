@@ -98,7 +98,7 @@ uint8_t LDL_MAC_sizeofCommandUp(enum ldl_mac_cmd_type type)
 
 void LDL_MAC_putLinkCheckReq(struct ldl_stream *s)
 {
-    LDL_Stream_putU8(s, typeToTag(LDL_CMD_LINK_CHECK));
+    (void)LDL_Stream_putU8(s, typeToTag(LDL_CMD_LINK_CHECK));
 }
 
 void LDL_MAC_putLinkADRAns(struct ldl_stream *s, const struct ldl_link_adr_ans *value)
@@ -107,13 +107,13 @@ void LDL_MAC_putLinkADRAns(struct ldl_stream *s, const struct ldl_link_adr_ans *
     
     buf = (value->powerOK ? 4U : 0U) | (value->dataRateOK ? 2U : 0U) | (value->channelMaskOK ? 1U : 0U);
     
-    LDL_Stream_putU8(s, typeToTag(LDL_CMD_LINK_ADR));        
-    LDL_Stream_putU8(s, buf);
+    (void)LDL_Stream_putU8(s, typeToTag(LDL_CMD_LINK_ADR));        
+    (void)LDL_Stream_putU8(s, buf);
 }
 
 void LDL_MAC_putDutyCycleAns(struct ldl_stream *s)
 {
-    LDL_Stream_putU8(s, typeToTag(LDL_CMD_DUTY_CYCLE));
+    (void)LDL_Stream_putU8(s, typeToTag(LDL_CMD_DUTY_CYCLE));
 }
 
 void LDL_MAC_putRXParamSetupAns(struct ldl_stream *s, const struct ldl_rx_param_setup_ans *value)
@@ -122,15 +122,15 @@ void LDL_MAC_putRXParamSetupAns(struct ldl_stream *s, const struct ldl_rx_param_
     
     buf = (value->rx1DROffsetOK ? 4U : 0U) | (value->rx2DataRateOK ? 2U : 0U) | (value->channelOK ? 1U : 0U);
     
-    LDL_Stream_putU8(s, typeToTag(LDL_CMD_RX_PARAM_SETUP));
-    LDL_Stream_putU8(s, buf);
+    (void)LDL_Stream_putU8(s, typeToTag(LDL_CMD_RX_PARAM_SETUP));
+    (void)LDL_Stream_putU8(s, buf);
 }
 
 void LDL_MAC_putDevStatusAns(struct ldl_stream *s, const struct ldl_dev_status_ans *value)
 {
-    LDL_Stream_putU8(s, typeToTag(LDL_CMD_DEV_STATUS));
-    LDL_Stream_putU8(s, value->battery);
-    LDL_Stream_putU8(s, value->margin);           
+    (void)LDL_Stream_putU8(s, typeToTag(LDL_CMD_DEV_STATUS));
+    (void)LDL_Stream_putU8(s, value->battery);
+    (void)LDL_Stream_putU8(s, value->margin);           
 }
 
 void LDL_MAC_putNewChannelAns(struct ldl_stream *s, const struct ldl_new_channel_ans *value)
@@ -139,8 +139,8 @@ void LDL_MAC_putNewChannelAns(struct ldl_stream *s, const struct ldl_new_channel
     
     buf = (value->dataRateRangeOK ? 2U : 0U) | (value->channelFrequencyOK ? 1U : 0U);
     
-    LDL_Stream_putU8(s, typeToTag(LDL_CMD_NEW_CHANNEL));
-    LDL_Stream_putU8(s, buf);           
+    (void)LDL_Stream_putU8(s, typeToTag(LDL_CMD_NEW_CHANNEL));
+    (void)LDL_Stream_putU8(s, buf);           
 }
 
 
@@ -150,40 +150,40 @@ void LDL_MAC_putDLChannelAns(struct ldl_stream *s, const struct ldl_dl_channel_a
     
     buf = (value->uplinkFreqOK ? 2U : 0U) | (value->channelFrequencyOK ? 1U : 0U);
     
-    LDL_Stream_putU8(s, typeToTag(LDL_CMD_DL_CHANNEL));
-    LDL_Stream_putU8(s, buf);    
+    (void)LDL_Stream_putU8(s, typeToTag(LDL_CMD_DL_CHANNEL));
+    (void)LDL_Stream_putU8(s, buf);    
 }
 
 void LDL_MAC_putRXTimingSetupAns(struct ldl_stream *s)
 {
-    LDL_Stream_putU8(s, typeToTag(LDL_CMD_RX_TIMING_SETUP));
+    (void)LDL_Stream_putU8(s, typeToTag(LDL_CMD_RX_TIMING_SETUP));
 }
 
 void LDL_MAC_putTXParamSetupAns(struct ldl_stream *s)
 {
-    LDL_Stream_putU8(s, typeToTag(LDL_CMD_TX_PARAM_SETUP));
+    (void)LDL_Stream_putU8(s, typeToTag(LDL_CMD_TX_PARAM_SETUP));
 }
 
 void LDL_MAC_putRekeyInd(struct ldl_stream *s, const struct ldl_rekey_ind *value)
 {
-    LDL_Stream_putU8(s, typeToTag(LDL_CMD_REKEY));
-    LDL_Stream_putU8(s, value->version);
+    (void)LDL_Stream_putU8(s, typeToTag(LDL_CMD_REKEY));
+    (void)LDL_Stream_putU8(s, value->version);
 }
 
 void LDL_MAC_putADRParamSetupAns(struct ldl_stream *s)
 {
-    LDL_Stream_putU8(s, typeToTag(LDL_CMD_ADR_PARAM_SETUP));
+    (void)LDL_Stream_putU8(s, typeToTag(LDL_CMD_ADR_PARAM_SETUP));
 }
 
 void LDL_MAC_putDeviceTimeReq(struct ldl_stream *s)
 {
-    LDL_Stream_putU8(s, typeToTag(LDL_CMD_DEVICE_TIME));
+    (void)LDL_Stream_putU8(s, typeToTag(LDL_CMD_DEVICE_TIME));
 }
 
 void LDL_MAC_putRejoinParamSetupAns(struct ldl_stream *s, struct ldl_rejoin_param_setup_ans *value)
 {
-    LDL_Stream_putU8(s, typeToTag(LDL_CMD_REJOIN_PARAM_SETUP));
-    LDL_Stream_putU8(s, value->timeOK);
+    (void)LDL_Stream_putU8(s, typeToTag(LDL_CMD_REJOIN_PARAM_SETUP));
+    (void)LDL_Stream_putU8(s, value->timeOK);
 }
 
 bool LDL_MAC_getDownCommand(struct ldl_stream *s, struct ldl_downstream_cmd *cmd)
@@ -201,22 +201,22 @@ bool LDL_MAC_getDownCommand(struct ldl_stream *s, struct ldl_downstream_cmd *cmd
                 
             case LDL_CMD_LINK_CHECK:
                 
-                LDL_Stream_getU8(s, &cmd->fields.linkCheck.margin);
-                LDL_Stream_getU8(s, &cmd->fields.linkCheck.gwCount);    
+                (void)LDL_Stream_getU8(s, &cmd->fields.linkCheck.margin);
+                (void)LDL_Stream_getU8(s, &cmd->fields.linkCheck.gwCount);    
                 break;
                 
             case LDL_CMD_LINK_ADR:                    
             {
                 uint8_t buf;
                 
-                LDL_Stream_getU8(s, &buf);
+                (void)LDL_Stream_getU8(s, &buf);
                 
                 cmd->fields.linkADR.dataRate = buf >> 4;
                 cmd->fields.linkADR.txPower = buf & 0xfU;
                 
-                LDL_Stream_getU16(s, &cmd->fields.linkADR.channelMask);
+                (void)LDL_Stream_getU16(s, &cmd->fields.linkADR.channelMask);
                         
-                LDL_Stream_getU8(s, &buf);
+                (void)LDL_Stream_getU8(s, &buf);
                         
                 cmd->fields.linkADR.channelMaskControl = (buf >> 4) & 0x7U;
                 cmd->fields.linkADR.nbTrans = buf & 0xfU;
@@ -225,14 +225,14 @@ bool LDL_MAC_getDownCommand(struct ldl_stream *s, struct ldl_downstream_cmd *cmd
             
             case LDL_CMD_DUTY_CYCLE:                
             
-                LDL_Stream_getU8(s, &cmd->fields.dutyCycle.maxDutyCycle);
+                (void)LDL_Stream_getU8(s, &cmd->fields.dutyCycle.maxDutyCycle);
                 cmd->fields.dutyCycle.maxDutyCycle &= 0xfU;             
                 break;
             
             case LDL_CMD_RX_PARAM_SETUP:
             
-                LDL_Stream_getU8(s, &cmd->fields.rxParamSetup.rx1DROffset);
-                LDL_Stream_getU24(s, &cmd->fields.rxParamSetup.freq);                 
+                (void)LDL_Stream_getU8(s, &cmd->fields.rxParamSetup.rx1DROffset);
+                (void)LDL_Stream_getU24(s, &cmd->fields.rxParamSetup.freq);                 
                 break;
             
             case LDL_CMD_DEV_STATUS:
@@ -244,9 +244,9 @@ bool LDL_MAC_getDownCommand(struct ldl_stream *s, struct ldl_downstream_cmd *cmd
             {
                 uint8_t buf;
     
-                LDL_Stream_getU8(s, &cmd->fields.newChannel.chIndex);        
-                LDL_Stream_getU24(s, &cmd->fields.newChannel.freq);
-                LDL_Stream_getU8(s, &buf);
+                (void)LDL_Stream_getU8(s, &cmd->fields.newChannel.chIndex);        
+                (void)LDL_Stream_getU24(s, &cmd->fields.newChannel.freq);
+                (void)LDL_Stream_getU8(s, &buf);
 
                 cmd->fields.newChannel.maxDR = buf >> 4;
                 cmd->fields.newChannel.minDR = buf & 0xfU;           
@@ -255,13 +255,13 @@ bool LDL_MAC_getDownCommand(struct ldl_stream *s, struct ldl_downstream_cmd *cmd
                 
             case LDL_CMD_DL_CHANNEL:
             
-                LDL_Stream_getU8(s, &cmd->fields.dlChannel.chIndex);
-                LDL_Stream_getU24(s, &cmd->fields.dlChannel.freq);     
+                (void)LDL_Stream_getU8(s, &cmd->fields.dlChannel.chIndex);
+                (void)LDL_Stream_getU24(s, &cmd->fields.dlChannel.freq);     
                 break;
             
             case LDL_CMD_RX_TIMING_SETUP:
             
-                LDL_Stream_getU8(s, &cmd->fields.rxTimingSetup.delay);
+                (void)LDL_Stream_getU8(s, &cmd->fields.rxTimingSetup.delay);
                 cmd->fields.rxTimingSetup.delay &= 0xfU;   
                 break;
             
@@ -269,7 +269,7 @@ bool LDL_MAC_getDownCommand(struct ldl_stream *s, struct ldl_downstream_cmd *cmd
             {
                 uint8_t buf;
                 
-                LDL_Stream_getU8(s, &buf);
+                (void)LDL_Stream_getU8(s, &buf);
                 
                 cmd->fields.txParamSetup.downlinkDwell = ((buf & 0x20U) == 0x20U); 
                 cmd->fields.txParamSetup.uplinkDwell = ((buf & 0x10U) == 0x10U); 
@@ -279,7 +279,7 @@ bool LDL_MAC_getDownCommand(struct ldl_stream *s, struct ldl_downstream_cmd *cmd
             
             case LDL_CMD_REKEY:
             
-                LDL_Stream_getU8(s, &cmd->fields.rekey.version);
+                (void)LDL_Stream_getU8(s, &cmd->fields.rekey.version);
                 cmd->fields.rekey.version &= 0xfU; 
                 break;
             
@@ -287,7 +287,7 @@ bool LDL_MAC_getDownCommand(struct ldl_stream *s, struct ldl_downstream_cmd *cmd
             {
                 uint8_t buf;
                 
-                LDL_Stream_getU8(s, &buf);
+                (void)LDL_Stream_getU8(s, &buf);
     
                 cmd->fields.adrParamSetup.limit_exp = buf >> 4;
                 cmd->fields.adrParamSetup.delay_exp = buf & 0xfU;
@@ -296,15 +296,15 @@ bool LDL_MAC_getDownCommand(struct ldl_stream *s, struct ldl_downstream_cmd *cmd
             
             case LDL_CMD_DEVICE_TIME:
             
-                LDL_Stream_getU32(s, &cmd->fields.deviceTime.seconds);
-                LDL_Stream_getU8(s, &cmd->fields.deviceTime.fractions);
+                (void)LDL_Stream_getU32(s, &cmd->fields.deviceTime.seconds);
+                (void)LDL_Stream_getU8(s, &cmd->fields.deviceTime.fractions);
                 break;
             
             case LDL_CMD_FORCE_REJOIN:
             {
                 uint16_t buf;
     
-                LDL_Stream_getU16(s, &buf);
+                (void)LDL_Stream_getU16(s, &buf);
                 
                 cmd->fields.forceRejoin.period = (buf >> 10) & 0x7U;
                 cmd->fields.forceRejoin.max_retries = (buf >> 7) & 0x7U;
@@ -317,7 +317,7 @@ bool LDL_MAC_getDownCommand(struct ldl_stream *s, struct ldl_downstream_cmd *cmd
             {
                 uint8_t buf;
     
-                LDL_Stream_getU8(s, &buf);
+                (void)LDL_Stream_getU8(s, &buf);
                 
                 cmd->fields.rejoinParamSetup.maxTimeN = buf >> 4;
                 cmd->fields.rejoinParamSetup.maxCountN = buf & 0xfU;

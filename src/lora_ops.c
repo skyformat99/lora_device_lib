@@ -25,17 +25,25 @@
 #include "lora_system.h"
 #include "lora_frame.h"
 #include "lora_debug.h"
+#include <string.h>
+
+struct ldl_block {
+    
+    uint8_t value[16U];
+};
 
 /* static function prototypes *****************************************/
 
-static void hdrDataDown(struct ldl_block *iv, uint32_t devAddr, uint32_t downCounter, uint8_t len);
-static void hdrDataUp2(struct ldl_block *iv, uint16_t confirmCounter, uint8_t rate, uint8_t chIndex, uint32_t devAddr, uint32_t upCounter, uint8_t len);
-static void hdrDataUp(struct ldl_block *iv, uint32_t devAddr, uint32_t upCounter, uint8_t len);
-static void dataIV(struct ldl_block *iv, uint32_t devAddr, bool upstream, uint32_t counter);
+static void initA(struct ldl_block *a, uint32_t devAddr, bool up, uint32_t counter);
+static void initB(struct ldl_block *b, uint16_t confirmCounter, uint8_t rate, uint8_t chIndex, bool up, uint32_t devAddr, uint32_t upCounter, uint8_t len);
+
 static uint32_t deriveDownCounter(struct ldl_mac *self, uint8_t port, uint16_t counter);
-static uint32_t micDataUp(struct ldl_mac *self, uint32_t devAddr, uint32_t upCounter, const void *data, uint8_t len);
-static void hdrDataDown2(struct ldl_block *iv, uint16_t confirmCounter, uint32_t devAddr, uint32_t downCounter, uint8_t len);
-static uint32_t micDataUp2(struct ldl_mac *self, uint16_t confirmCounter, uint8_t rate, uint8_t chIndex, uint32_t devAddr, uint32_t upCounter, const void *data, uint8_t len);
+
+static uint8_t putU8(uint8_t *buf, uint8_t value);
+static uint8_t putU16(uint8_t *buf, uint16_t value);
+static uint8_t putU24(uint8_t *buf, uint32_t value);
+static uint8_t putU32(uint8_t *buf, uint32_t value);
+static uint8_t putEUI(uint8_t *buf, const uint8_t *value);
 
 /* functions **********************************************************/
 
@@ -56,145 +64,131 @@ void LDL_OPS_syncDownCounter(struct ldl_mac *self, uint8_t port, uint16_t counte
         self->ctx.appDown = (uint16_t)(derived >> 16);
     }    
 }
-
-void LDL_OPS_deriveKeys(struct ldl_mac *self, uint32_t joinNonce, uint32_t netID, uint16_t devNonce)
-{
-    LDL_PEDANTIC(self != NULL)
-    
-    struct ldl_block iv;
-    
-    /* iv.value[0] below */
-    
-    iv.value[1] = joinNonce;
-    iv.value[2] = joinNonce >> 8;
-    iv.value[3] = joinNonce >> 16;
-    
-    iv.value[4] = netID;
-    iv.value[5] = netID >> 8;
-    iv.value[6] = netID >> 16;
-    
-    iv.value[7] = devNonce;
-    iv.value[8] = devNonce >> 8;
-    
-    iv.value[9] = 0U;
-    iv.value[10] = 0U;
-    iv.value[11] = 0U;
-    iv.value[12] = 0U;
-    iv.value[13] = 0U;
-    iv.value[14] = 0U;
-    iv.value[15] = 0U;   
-    
-    LDL_SM_beginUpdateSessionKey(self->sm); 
-    {    
-        iv.value[0] = 2U;
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_APPS, LDL_SM_KEY_NWK, &iv);
-        
-        iv.value[0] = 1U;
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_FNWKSINT, LDL_SM_KEY_NWK, &iv);    
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_SNWKSINT, LDL_SM_KEY_NWK, &iv);
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_NWKSENC, LDL_SM_KEY_NWK, &iv);
-    }
-    LDL_SM_endUpdateSessionKey(self->sm);    
-}
                   
-void LDL_OPS_deriveKeys2(struct ldl_mac *self, uint32_t joinNonce, const uint8_t *joinEUI, const uint8_t *devEUI, uint16_t devNonce)
+void LDL_OPS_deriveKeys(struct ldl_mac *self)
 {
     LDL_PEDANTIC(self != NULL)
     
     struct ldl_block iv;
+    uint8_t *ptr;
+    uint8_t pos;
     
-    /* iv.value[0] below */
+    ptr = iv.value;
     
-    iv.value[1] = joinNonce;
-    iv.value[2] = joinNonce >> 8;
-    iv.value[3] = joinNonce >> 16;
-    
-    iv.value[4] = joinEUI[7];
-    iv.value[5] = joinEUI[6];
-    iv.value[6] = joinEUI[5];
-    iv.value[7] = joinEUI[4];
-    iv.value[8] = joinEUI[3];
-    iv.value[9] = joinEUI[2];
-    iv.value[10] = joinEUI[1];
-    iv.value[11] = joinEUI[0];
-    
-    iv.value[12] = devNonce;    
-    iv.value[13] = devNonce >> 8;
-    
-    iv.value[14] = 0U;
-    iv.value[15] = 0U;
+    (void)memset(&iv, 0, sizeof(iv));
     
     LDL_SM_beginUpdateSessionKey(self->sm); 
     {
-        iv.value[0] = 1U;
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_FNWKSINT, LDL_SM_KEY_NWK, &iv);    
+        /* ptr[0] below */    
+        pos = 1U;
+        pos += putU24(&ptr[pos], self->joinNonce);
+        pos += putU24(&ptr[pos], self->ctx.netID);
+        (void)putU16(&ptr[pos], self->devNonce);
         
-        iv.value[0] = 2U;
+        ptr[0] = 2U;
         LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_APPS, LDL_SM_KEY_NWK, &iv);
         
-        iv.value[0] = 3U;
+        ptr[0] = 1U;
+        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_FNWKSINT, LDL_SM_KEY_NWK, &iv);    
         LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_SNWKSINT, LDL_SM_KEY_NWK, &iv);
+        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_NWKSENC, LDL_SM_KEY_NWK, &iv);
+    }    
+    LDL_SM_endUpdateSessionKey(self->sm);    
+}
+
+void LDL_OPS_deriveKeys2(struct ldl_mac *self)
+{
+    LDL_PEDANTIC(self != NULL)
+    
+    struct ldl_block iv;
+    uint8_t *ptr;
+    uint8_t pos;
+    
+    ptr = iv.value;
+    
+    (void)memset(&iv, 0, sizeof(iv));
+    
+    LDL_SM_beginUpdateSessionKey(self->sm); 
+    {
+        /* ptr[0] below */ 
+        (void)putEUI(&ptr[1U], self->devEUI);
         
-        iv.value[0] = 4U;
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_NWKSENC, LDL_SM_KEY_NWK, &iv);                
-        
-        iv.value[1] = devEUI[7];
-        iv.value[2] = devEUI[6];
-        iv.value[3] = devEUI[5];            
-        iv.value[4] = devEUI[4];
-        iv.value[5] = devEUI[3];
-        iv.value[6] = devEUI[2];
-        iv.value[7] = devEUI[1];
-        iv.value[8] = devEUI[0];            
-        iv.value[9] = 0U;
-        iv.value[10] = 0U;
-        iv.value[11] = 0U;            
-        iv.value[12] = 0U;    
-        iv.value[13] = 0U;            
-        iv.value[14] = 0U;
-        iv.value[15] = 0U;
-        
-        iv.value[0] = 5U;
+        ptr[0] = 5U;
         LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_JSENC, LDL_SM_KEY_NWK, &iv);                
         
-        iv.value[0] = 6U;
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_JSINT, LDL_SM_KEY_NWK, &iv);                
+        ptr[0] = 6U;
+        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_JSINT, LDL_SM_KEY_NWK, &iv); 
+        
+        /* ptr[0] below */ 
+        pos = 1U;
+        pos += putU24(&ptr[pos], self->joinNonce);
+        pos += putEUI(&ptr[pos], self->joinEUI);
+        (void)putU16(&ptr[pos], self->devNonce);
+           
+        ptr[0] = 1U;
+        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_FNWKSINT, LDL_SM_KEY_NWK, &iv);    
+        
+        ptr[0] = 2U;
+        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_APPS, LDL_SM_KEY_NWK, &iv);
+        
+        ptr[0] = 3U;
+        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_SNWKSINT, LDL_SM_KEY_NWK, &iv);
+        
+        ptr[0] = 4U;
+        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_NWKSENC, LDL_SM_KEY_NWK, &iv);                               
     }    
     LDL_SM_endUpdateSessionKey(self->sm);    
 }
 
 uint8_t LDL_OPS_prepareData(struct ldl_mac *self, const struct ldl_frame_data *f, uint8_t *out, uint8_t max)
 {
-    struct ldl_block iv;
-    struct ldl_frame_data_offset off;
-    uint32_t mic;
-    uint8_t retval = 0U;
+    LDL_PEDANTIC(self != NULL)
     
-    dataIV(&iv, f->devAddr, true, f->counter);
+    struct ldl_frame_data_offset off;
+    uint8_t retval = 0U;
     
     retval = LDL_Frame_putData(f, out, max, &off);
 
-    if(self->ctx.version == 1U){
+    /* encrypt */
+    {
+        struct ldl_block A;
         
-        if(f->optsLen > 0U){
+        initA(&A, f->devAddr, true, f->counter);
+
+        /* encrypt fopt (LoRaWAN 1.1) */
+        if(self->ctx.version == 1U){
             
-            LDL_SM_ctr(self->sm, LDL_SM_KEY_NWKSENC, &iv, &out[off.opts], f->optsLen);    
+            LDL_SM_ctr(self->sm, LDL_SM_KEY_NWKSENC, &A, &out[off.opts], f->optsLen);            
         }
+        
+        /* encrypt data */
+        LDL_SM_ctr(self->sm, (f->port == 0U) ? LDL_SM_KEY_NWKSENC : LDL_SM_KEY_APPS, &A, &out[off.data], f->dataLen);                
+    }
+
+    /* produce MIC*/
+    {
+        struct ldl_block B0;
+        struct ldl_block B1;            
+        uint32_t micS;
+        uint32_t micF;
+        
+        initB(&B0, 0U, 0U, 0U, true, f->devAddr, f->counter, retval - sizeof(micF)); 
+        initB(&B1, 0U, self->tx.rate, self->tx.chIndex, true, f->devAddr, f->counter, retval - sizeof(micS));
+
+        micF = LDL_SM_mic(self->sm, LDL_SM_KEY_FNWKSINT, &B0, sizeof(B0.value), out, retval - sizeof(micF));       
+
+        if(self->ctx.version == 1U){
+        
+            micS = LDL_SM_mic(self->sm, LDL_SM_KEY_SNWKSINT, &B1, sizeof(B1.value), out, retval - sizeof(micS));
+            
+            LDL_Frame_updateMIC(out, retval, ((micF << 16) | (micS & 0xffffUL))); 
+        } 
         else{
-                        
-            LDL_SM_ctr(self->sm, (f->port == 0U) ? LDL_SM_KEY_NWKSENC : LDL_SM_KEY_APPS, &iv, &out[off.data], f->dataLen);                
+            
+            LDL_Frame_updateMIC(out, retval, micF); 
         }
-        
-        mic = micDataUp2(self, 0U, self->tx.rate, self->tx.chIndex, f->devAddr, f->counter, out, retval-sizeof(mic));//do mic
     }
-    else{
-        
-        LDL_SM_ctr(self->sm, (f->port == 0U) ? LDL_SM_KEY_NWKSENC : LDL_SM_KEY_APPS, &iv, &out[off.data], f->dataLen);                        
-        mic = micDataUp(self, f->devAddr, f->counter, out, retval-sizeof(mic));
-    }
-    
-    LDL_Frame_updateMIC(out, retval, mic);        
-    
+     
     return retval;
 }
 
@@ -212,14 +206,13 @@ uint8_t LDL_OPS_prepareJoinRequest(struct ldl_mac *self, const struct ldl_frame_
     return retval;
 }
 
-bool LDL_OPS_receiveFrame(struct ldl_mac *self, struct ldl_frame_down *f, const struct ldl_system_identity *id, uint8_t *in, uint8_t len)
+bool LDL_OPS_receiveFrame(struct ldl_mac *self, struct ldl_frame_down *f, uint8_t *in, uint8_t len)
 {
-    bool retval = false;
-    enum ldl_sm_key key;
+    bool retval;
     uint32_t mic;
-    uint32_t counter;
     enum ldl_frame_type type;
-    struct ldl_block hdr;
+        
+    retval = false;
     
     switch(self->op){
     default:
@@ -231,6 +224,8 @@ bool LDL_OPS_receiveFrame(struct ldl_mac *self, struct ldl_frame_down *f, const 
         if(LDL_Frame_peek(in, len, &type)){
             
             if(type == FRAME_TYPE_JOIN_ACCEPT){
+                
+                enum ldl_sm_key key;
                 
                 key = (self->op == LDL_OP_JOINING) ? LDL_SM_KEY_APP : LDL_SM_KEY_JSENC;
                 
@@ -245,33 +240,25 @@ bool LDL_OPS_receiveFrame(struct ldl_mac *self, struct ldl_frame_down *f, const 
                     
                     if(f->optNeg){
                         
-                        uint8_t joinReqType;
+                        struct ldl_block hdr;
+                        uint8_t pos;
+                        
+                        pos = 0U;
                         
                         switch(self->op){
                         default:
                         case LDL_OP_JOINING:
-                            joinReqType = 0xffU;
-                            break;                    
+                            pos += putU8(&hdr.value[pos], 0xffU);
+                            break;
                         case LDL_OP_REJOINING:                        
-                            joinReqType = 2U;   // todo, this woudl have been set on initiation
+                            pos += putU8(&hdr.value[pos], 2U);
                             break;
                         }
                         
-                        uint8_t _hdr[] = {
-                            joinReqType,
-                            id->joinEUI[7],
-                            id->joinEUI[6],
-                            id->joinEUI[5],
-                            id->joinEUI[4],
-                            id->joinEUI[3],
-                            id->joinEUI[2],
-                            id->joinEUI[1],
-                            id->joinEUI[0],
-                            self->devNonce,
-                            self->devNonce >> 8        
-                        };
+                        pos += putEUI(&hdr.value[pos], self->joinEUI);
+                        pos += putU16(&hdr.value[pos], self->devNonce);
                         
-                        mic = LDL_SM_mic(self->sm, LDL_SM_KEY_JSINT, _hdr, sizeof(_hdr), in, len-sizeof(mic));
+                        mic = LDL_SM_mic(self->sm, LDL_SM_KEY_JSINT, &hdr, pos, in, len-sizeof(mic));
                     }
                     else{
                         
@@ -312,30 +299,35 @@ bool LDL_OPS_receiveFrame(struct ldl_mac *self, struct ldl_frame_down *f, const 
             
                 if(self->ctx.devAddr == f->devAddr){
                     
+                    uint32_t counter;
+                    
                     counter = deriveDownCounter(self, f->port, f->counter);
+
+                    struct ldl_block B;
+                    struct ldl_block A;
 
                     if((self->ctx.version == 1U) && f->ack){
                     
-                        hdrDataDown2(&hdr, (self->ctx.up-1U), f->devAddr, counter, len-sizeof(mic));
+                        initB(&B, (self->ctx.up-1U), 0U, 0U, false, f->devAddr, counter, len-sizeof(mic));
                     }                    
                     else{
                         
-                        hdrDataDown(&hdr, f->devAddr, counter, len-sizeof(mic));
+                        initB(&B, 0U, 0U, 0U, false, f->devAddr, counter, len-sizeof(mic));
                     }
                     
-                    mic = LDL_SM_mic(self->sm, LDL_SM_KEY_SNWKSINT, hdr.value, sizeof(hdr.value), in, len-sizeof(mic));
-        
+                    mic = LDL_SM_mic(self->sm, LDL_SM_KEY_SNWKSINT, &B, sizeof(B.value), in, len-sizeof(mic));
+                    
                     if(mic == f->mic){
                         
-                        dataIV(&hdr, f->devAddr, false, f->counter);
+                        initA(&A, f->devAddr, false, f->counter);
 
-                        /* V1.1 seems to now encrypt the opts field */
-                        if((self->ctx.version == 1U) && (f->optsLen > 0)){
+                        /* V1.1 encrypts the opts */
+                        if(self->ctx.version == 1U){
                             
-                            LDL_SM_ctr(self->sm, LDL_SM_KEY_NWKSENC, &hdr, f->opts, f->optsLen);    
+                            LDL_SM_ctr(self->sm, LDL_SM_KEY_NWKSENC, &A, f->opts, f->optsLen);    
                         }
                         
-                        LDL_SM_ctr(self->sm, (f->port == 0U) ? LDL_SM_KEY_NWKSENC : LDL_SM_KEY_APPS, &hdr, f->data, f->dataLen);
+                        LDL_SM_ctr(self->sm, (f->port == 0U) ? LDL_SM_KEY_NWKSENC : LDL_SM_KEY_APPS, &A, f->data, f->dataLen);
                        
                         retval = true;
                     }
@@ -359,102 +351,37 @@ bool LDL_OPS_receiveFrame(struct ldl_mac *self, struct ldl_frame_down *f, const 
 
 /* static functions ***************************************************/
 
-static void hdrDataDown2(struct ldl_block *iv, uint16_t confirmCounter, uint32_t devAddr, uint32_t downCounter, uint8_t len)
+static void initA(struct ldl_block *a, uint32_t devAddr, bool up, uint32_t counter)
 {
-    hdrDataUp2(iv, confirmCounter, 0U, 0U, devAddr, downCounter, len);
-    iv->value[5] = 1U;
+    uint8_t pos = 0U;
+    uint8_t *ptr = a->value;
+    
+    pos += putU8(&ptr[pos], 1U);
+    pos += putU32(&ptr[pos], 0U);
+    pos += putU8(&ptr[pos], up ? 0U : 1U);
+    pos += putU32(&ptr[pos], devAddr);
+    pos += putU32(&ptr[pos], counter);    
+    (void)putU16(&ptr[pos], 0U);    
 }
 
-static uint32_t micDataUp2(struct ldl_mac *self, uint16_t confirmCounter, uint8_t rate, uint8_t chIndex, uint32_t devAddr, uint32_t upCounter, const void *data, uint8_t len)
-{
-    LDL_PEDANTIC(self != NULL)
-    
-    uint32_t micS;
-    uint32_t micF;
-    struct ldl_block hdr;
-    hdrDataUp2(&hdr, confirmCounter, rate, chIndex, devAddr, upCounter, len);
-    
-    micS = LDL_SM_mic(self->sm, LDL_SM_KEY_SNWKSINT, hdr.value, sizeof(hdr.value), data, len);
-    micF = micDataUp(self, devAddr, upCounter, data, len);
-    
-    /* Hey, this might be wrong.
-     * 
-     * MIC = cmacS[0..1] | cmacF[0..1]
-     * 
-     * I don't know what this means since LoRaWAN has byte order for all
-     * multi-byte fields. Is [0] the first byte on the wire, or the last
-     * byte since LoRaWAN gives it order?
-     * 
-     * - cmacS[0..3] would be micS encoded using LDL_Stream_putU32(), this is confirmed working
-     * with other implementations
-     * - also see how the mic integer is made in LDL_SM_mic()
-     * 
-     * My intepretation of the above is:
-     * 
-     * - two least significant bytes of both integers
-     * - arranged so that micF is the most significant because it comes last
-     * 
-     * FFS
-     * 
-     * */
-    return (micF << 16) | (micS & 0xffffUL);
-}
-
-static void hdrDataUp2(struct ldl_block *iv, uint16_t confirmCounter, uint8_t rate, uint8_t chIndex, uint32_t devAddr, uint32_t upCounter, uint8_t len)
+static void initB(struct ldl_block *b, uint16_t confirmCounter, uint8_t rate, uint8_t chIndex, bool up, uint32_t devAddr, uint32_t upCounter, uint8_t len)
 {    
-    iv->value[0] = 0x49;
-    iv->value[1] = confirmCounter;
-    iv->value[2] = confirmCounter >> 8;
-    iv->value[3] = rate;
-    iv->value[4] = chIndex;
-    iv->value[5] = 0U;          /* direction */
-    iv->value[6] = devAddr;
-    iv->value[7] = devAddr >> 8;
-    iv->value[8] = devAddr >> 16;
-    iv->value[9] = devAddr >> 24;
-    iv->value[10] = upCounter;
-    iv->value[11] = upCounter >> 8;
-    iv->value[12] = upCounter >> 16;
-    iv->value[13] = upCounter >> 24;
-    iv->value[14] = 0U;
-    iv->value[15] = len;    
-}
-
-static void hdrDataUp(struct ldl_block *iv, uint32_t devAddr, uint32_t upCounter, uint8_t len)
-{
-    hdrDataUp2(iv, 0U, 0U, 0U, devAddr, upCounter, len);    
-}
-
-static void hdrDataDown(struct ldl_block *iv, uint32_t devAddr, uint32_t downCounter, uint8_t len)
-{
-    hdrDataUp2(iv, 0U, 0U, 0U, devAddr, downCounter, len);
-    iv->value[5] = 1U;
-}
-
-static void dataIV(struct ldl_block *iv, uint32_t devAddr, bool upstream, uint32_t counter)
-{
-    iv->value[0] = 1U;
-    iv->value[1] = 0U;
-    iv->value[2] = 0U;
-    iv->value[3] = 0U;
-    iv->value[4] = 0U;    
-    iv->value[5] = upstream ? 0U : 1U;
-    iv->value[6] = devAddr;
-    iv->value[7] = devAddr >> 8;
-    iv->value[8] = devAddr >> 16;
-    iv->value[9] = devAddr >> 24;
-    iv->value[10] = counter;
-    iv->value[11] = counter >> 8;
-    iv->value[12] = counter >> 16;
-    iv->value[13] = counter >> 24;
-    iv->value[14] = 0U;
-    iv->value[15] = 0U;
+    uint8_t pos = 0U;
+    uint8_t *ptr = b->value;
+    
+    pos += putU8(&ptr[pos], 0x49U);
+    pos += putU16(&ptr[pos], confirmCounter);
+    pos += putU8(&ptr[pos], rate);
+    pos += putU8(&ptr[pos], chIndex);
+    pos += putU8(&ptr[pos], up ? 0U : 1U);
+    pos += putU32(&ptr[pos], devAddr);
+    pos += putU32(&ptr[pos], upCounter);
+    pos += putU8(&ptr[pos], 0U);
+    (void)putU8(&ptr[pos], len);
 }
 
 static uint32_t deriveDownCounter(struct ldl_mac *self, uint8_t port, uint16_t counter)
 {
-    LDL_PEDANTIC(self != NULL)
-    
     uint32_t mine = ((self->ctx.version > 0U) && (port == 0U)) ? (uint32_t)self->ctx.nwkDown : (uint32_t)self->ctx.appDown;
     
     mine = mine << 16;
@@ -471,12 +398,50 @@ static uint32_t deriveDownCounter(struct ldl_mac *self, uint8_t port, uint16_t c
     return mine;
 }
 
-static uint32_t micDataUp(struct ldl_mac *self, uint32_t devAddr, uint32_t upCounter, const void *data, uint8_t len)
-{    
-    LDL_PEDANTIC(self != NULL)
+static uint8_t putEUI(uint8_t *buf, const uint8_t *value)
+{
+    buf[0] = value[7];
+    buf[1] = value[6];
+    buf[2] = value[5];
+    buf[3] = value[4];
+    buf[4] = value[3];
+    buf[5] = value[2];
+    buf[6] = value[1];
+    buf[7] = value[0];
     
-    struct ldl_block hdr;
-    hdrDataUp(&hdr, devAddr, upCounter, len);
+    return 8U;
+}
+
+static uint8_t putU8(uint8_t *buf, uint8_t value)
+{
+    buf[0] = value;
     
-    return LDL_SM_mic(self->sm, LDL_SM_KEY_FNWKSINT, hdr.value, sizeof(hdr.value), data, len);
+    return 1U;
+}
+
+static uint8_t putU16(uint8_t *buf, uint16_t value)
+{
+    buf[0] = value;
+    buf[1] = value >> 8;
+    
+    return 2U;
+}
+
+static uint8_t putU24(uint8_t *buf, uint32_t value)
+{
+    buf[0] = value;
+    buf[1] = value >> 8;
+    buf[2] = value >> 16;
+    
+    return 3U;    
+}
+
+static uint8_t putU32(uint8_t *buf, uint32_t value)
+{
+    buf[0] = value;
+    buf[1] = value >> 8;
+    buf[2] = value >> 16;
+    buf[3] = value >> 24;
+    
+    return 4U;        
 }

@@ -44,17 +44,12 @@ struct ldl_frame_down;
 struct ldl_frame_join_request;
 struct ldl_system_identity;
 
-struct ldl_block {
-    
-    uint8_t value[16U];
-};
-
 /* derive all session keys and write to ldl_sm */
-void LDL_OPS_deriveKeys(struct ldl_mac *self, uint32_t joinNonce, uint32_t netID, uint16_t devNonce);
-void LDL_OPS_deriveKeys2(struct ldl_mac *self, uint32_t joinNonce, const uint8_t *joinEUI, const uint8_t *devEUI, uint16_t devNonce);
+void LDL_OPS_deriveKeys(struct ldl_mac *self);
+void LDL_OPS_deriveKeys2(struct ldl_mac *self);
 
 /* decode and verify a frame (depends on ldl_mac state but does not modify directly) */
-bool LDL_OPS_receiveFrame(struct ldl_mac *self, struct ldl_frame_down *f, const struct ldl_system_identity *id, uint8_t *in, uint8_t len);
+bool LDL_OPS_receiveFrame(struct ldl_mac *self, struct ldl_frame_down *f, uint8_t *in, uint8_t len);
 
 /* encode a frame  (depends on ldl_mac state but does not modify directly)  */
 uint8_t LDL_OPS_prepareData(struct ldl_mac *self, const struct ldl_frame_data *f, uint8_t *out, uint8_t max);

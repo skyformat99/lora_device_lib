@@ -34,35 +34,45 @@ void LDL_CTR_encrypt(struct ldl_aes_ctx *ctx, const void *iv, const void *in, vo
 {
     LDL_PEDANTIC(ctx != NULL)
     
-    uint8_t a[16];
-    uint8_t s[16];
-    uint8_t pld[16];
-    size_t k = (len / 16U) + (((len % 16U) != 0U) ? 1U : 0U);
-    size_t i;
-    size_t pos = 0U;
-    size_t size;
-    const uint8_t *ptr_in = (uint8_t *)in;
-    uint8_t *ptr_out = (uint8_t *)out;
+    uint8_t a[16U];
+    uint8_t s[16U];
+    uint8_t pld[16U];
+    uint8_t k;
+    uint8_t i;
+    uint8_t pos;
+    uint8_t size;
+    const uint8_t *ptr_in;
+    uint8_t *ptr_out;
+
+    /* number of blocks */
+    k = (len / 16U) + (((len % 16U) != 0U) ? 1U : 0U);
+    
+    pos = 0U;
+
+    ptr_in = (const uint8_t *)in;
+    ptr_out = (uint8_t *)out;
 
     (void)memcpy(a, iv, sizeof(a)); 
 
-    for(i=0; i < k; i++){
+    for(i=0U; i < k; i++){
 
-        size = (i == (k-1U)) ? (len % sizeof(a)) : sizeof(a);
-
-        xor128(pld, pld);
+        size = ((len - pos) >= (uint8_t)sizeof(a)) ? (uint8_t)sizeof(a) : (len - pos);
+        
+        (void)memset(pld, 0, sizeof(pld));
         
         (void)memcpy(pld, &ptr_in[pos], size);
         
-        a[15] = (uint8_t)(i+1U);
+        a[15U] = i + 1U;
 
         (void)memcpy(s, a, sizeof(s));
+        
         LDL_AES_encrypt(ctx, s);
 
         xor128(pld, s);
 
         (void)memcpy(&ptr_out[pos], pld, size);
-        pos += sizeof(a);
+        
+        pos += (uint8_t)sizeof(a);
     }
 }
 

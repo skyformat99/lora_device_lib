@@ -32,12 +32,6 @@ uint32_t LDL_System_eps(void)
     return 0UL;
 }
 
-void LDL_System_getIdentity(void *receiver, struct ldl_system_identity *value)
-{
-    struct mock_system_param *self = (struct mock_system_param *)receiver;    
-    (void)memcpy(value, &self->identity, sizeof(*value));
-}
-
 uint8_t LDL_System_rand(void *app)
 {
     return mock();

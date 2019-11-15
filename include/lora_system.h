@@ -65,23 +65,6 @@ extern "C" {
 #include <stdbool.h>
 #include <stddef.h>
 
-struct lora_mac_session;
-
-/** Identifiers */
-struct ldl_system_identity {
-  
-    uint8_t joinEUI[8U];    /**< join identifier */
-    uint8_t devEUI[8U];     /**< device identifier */
-};
-
-/** This function returns device identifiers
- * 
- * @param[in]   app     from LDL_MAC_init()
- * @param[out]  value   #ldl_system_identity
- * 
- * */
-void LDL_System_getIdentity(void *app, struct ldl_system_identity *value);
-
 /** This function reads a free-running 32 bit counter. The counter
  * is expected to increment at a rate of LDL_System_tps() ticks per second.
  * 

@@ -78,6 +78,7 @@ static void dummyResponseHandler(void *app, enum ldl_mac_response_type type, con
 void LDL_MAC_init(struct ldl_mac *self, enum ldl_region region, const struct ldl_mac_init_arg *arg)
 {
     LDL_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(arg != NULL)
     LDL_PEDANTIC(LDL_System_tps() >= 1000UL)
     
     (void)memset(self, 0, sizeof(*self));
@@ -86,20 +87,29 @@ void LDL_MAC_init(struct ldl_mac *self, enum ldl_region region, const struct ldl
     
     self->region = region;
     
-    if(arg != NULL){
+    self->app = arg->app;    
+    self->handler = arg->handler ? arg->handler : dummyResponseHandler;
+    self->radio = arg->radio;
+    self->sm = arg->sm;        
     
-        self->app = arg->app;    
-        self->handler = arg->handler ? arg->handler : dummyResponseHandler;
-        self->radio = arg->radio;
-        self->sm = arg->sm;        
+    if(arg->devEUI != NULL){
+        
+        (void)memcpy(self->devEUI, arg->devEUI, sizeof(self->devEUI));
     }
     else{
         
-        self->handler = dummyResponseHandler;
-        
-        LDL_INFO(self->app, "arg is undefined")
+        LDL_INFO(self->app, "devEUI is undefined")
     }
+    
+    if(arg->joinEUI != NULL){
         
+        (void)memcpy(self->joinEUI, arg->joinEUI, sizeof(self->joinEUI));
+    }
+    else{
+        
+        LDL_INFO(self->app, "joinEUI is undefined")
+    }
+    
     if(self->radio != NULL){
         
         LDL_Radio_setHandler(self->radio, self, LDL_MAC_radioEvent);
@@ -117,6 +127,7 @@ void LDL_MAC_init(struct ldl_mac *self, enum ldl_region region, const struct ldl
         
         restoreDefaults(self, false);
     }
+        
      
 #ifndef LDL_STARTUP_DELAY
 #   define LDL_STARTUP_DELAY 0UL
@@ -171,7 +182,6 @@ bool LDL_MAC_otaa(struct ldl_mac *self)
     LDL_PEDANTIC(self != NULL)
     
     uint32_t delay;
-    struct ldl_system_identity identity;
     struct ldl_frame_join_request f;
     
     bool retval = false;
@@ -195,10 +205,8 @@ bool LDL_MAC_otaa(struct ldl_mac *self)
         
             if(selectChannel(self, self->tx.rate, self->tx.chIndex, 0UL, &self->tx.chIndex, &self->tx.freq)){
             
-                LDL_System_getIdentity(self->app, &identity);
-                
-                (void)memcpy(f.joinEUI, identity.joinEUI, sizeof(f.joinEUI));
-                (void)memcpy(f.devEUI, identity.devEUI, sizeof(f.devEUI));
+                f.joinEUI = self->joinEUI;
+                f.devEUI = self->devEUI;
                 
                 self->devNonce = rand32(self->app);
                 
@@ -291,7 +299,6 @@ void LDL_MAC_process(struct ldl_mac *self)
     
     uint32_t error;    
     union ldl_mac_response_arg arg;
-    struct ldl_system_identity identity;
 
     (void)timeNow(self);    
     
@@ -661,9 +668,7 @@ void LDL_MAC_process(struct ldl_mac *self)
 #endif  
             self->margin = meta.snr;
                       
-            LDL_System_getIdentity(self->app, &identity);
-            
-            if(LDL_OPS_receiveFrame(self, &frame, &identity, buffer, len)){
+            if(LDL_OPS_receiveFrame(self, &frame, buffer, len)){
                 
                 self->last_valid_downlink = timeNow(self);
                 
@@ -689,33 +694,21 @@ void LDL_MAC_process(struct ldl_mac *self)
                         
                         LDL_Region_processCFList(self->region, self, frame.cfList, frame.cfListLen);                        
                     }
-
-                    if(frame.optNeg){
-                    
-                        LDL_OPS_deriveKeys2(
-                            self, 
-                            frame.joinNonce, 
-                            identity.joinEUI, 
-                            identity.devEUI,
-                            self->devNonce
-                        );
-                        
-                        self->ctx.version = 1U;
-                    }
-                    else{
-                        
-                        LDL_OPS_deriveKeys(
-                            self, 
-                            frame.joinNonce, 
-                            frame.netID, 
-                            self->devNonce
-                        );
-                        
-                        self->ctx.version = 0U;
-                    }                             
                     
                     self->ctx.devAddr = frame.devAddr;    
                     self->ctx.netID = frame.netID;
+                    self->joinNonce = frame.joinNonce;
+                    
+                    if(frame.optNeg){
+                    
+                        self->ctx.version = 1U;
+                        LDL_OPS_deriveKeys2(self);                        
+                    }
+                    else{
+                        
+                        self->ctx.version = 0U;
+                        LDL_OPS_deriveKeys(self);                        
+                    }
                     
 #ifndef LDL_DISABLE_JOIN_COMPLETE_EVENT                    
                     self->handler(self->app, LDL_MAC_JOIN_COMPLETE, NULL);                    
@@ -1431,14 +1424,9 @@ static bool externalDataCommand(struct ldl_mac *self, bool confirmed, uint8_t po
 
                         self->opts.nbTrans = self->opts.nbTrans & 0xfU;
                         
-                        if(len <= (maxPayload - LDL_Frame_dataOverhead() - (opts->check ? 1U : 0))){
-                 
-                            retval = dataCommand(self, confirmed, port, data, len);
-                        }
-                        else{
-                            
-                            self->errno = LDL_ERRNO_SIZE;
-                        }                                        
+                        
+                        retval = dataCommand(self, confirmed, port, data, len);
+                        
                     }
                     else{
                         
@@ -1664,8 +1652,6 @@ static uint32_t transmitTime(enum ldl_signal_bandwidth bw, enum ldl_spreading_fa
     uint32_t denom;
     uint32_t Npayload;
     uint32_t Tpayload;
-    
-    Tpacket = 0UL;
     
     /* optimise this mode according to the datasheet */
     lowDataRateOptimize = ((bw == LDL_BW_125) && ((sf == LDL_SF_11) || (sf == LDL_SF_12))) ? true : false;    
@@ -2037,7 +2023,7 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
         /* this ensures the output stream doesn't contain part of a MAC command */
         if(LDL_Stream_error(&s_out)){
             
-            LDL_Stream_seekSet(&s_out, pos);
+            (void)LDL_Stream_seekSet(&s_out, pos);
         }        
     }
     

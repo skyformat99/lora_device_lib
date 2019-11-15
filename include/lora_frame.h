@@ -80,15 +80,15 @@ struct ldl_frame_rejoin_request {
     
     enum ldl_frame_rejoin_type type;
     uint32_t netID;
-    uint8_t devEUI[8U];
+    const uint8_t *devEUI;
     uint16_t rjCount;    
     uint32_t mic;
 };
 
 struct ldl_frame_join_request {
     
-    uint8_t joinEUI[8U];
-    uint8_t devEUI[8U];
+    const uint8_t *joinEUI;
+    const uint8_t *devEUI;
     uint16_t devNonce;    
     uint32_t mic;
 };

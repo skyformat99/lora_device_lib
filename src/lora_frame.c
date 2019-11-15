@@ -33,6 +33,8 @@ static bool getFrameType(uint8_t tag, enum ldl_frame_type *type);
 
 void LDL_Frame_updateMIC(void *msg, uint8_t len, uint32_t mic)
 {
+    LDL_PEDANTIC(msg != NULL)
+    
     struct ldl_stream s;    
     
     if(len > sizeof(mic)){
@@ -47,6 +49,8 @@ void LDL_Frame_updateMIC(void *msg, uint8_t len, uint32_t mic)
 
 uint8_t LDL_Frame_putData(const struct ldl_frame_data *f, void *out, uint8_t max, struct ldl_frame_data_offset *off)
 {
+    LDL_PEDANTIC(f != NULL)
+    
     struct ldl_stream s;    
     
     LDL_Stream_init(&s, out, max);
@@ -73,6 +77,10 @@ uint8_t LDL_Frame_putData(const struct ldl_frame_data *f, void *out, uint8_t max
 
 uint8_t LDL_Frame_putJoinRequest(const struct ldl_frame_join_request *f, void *out, uint8_t max)
 {
+    LDL_PEDANTIC(f != NULL)
+    LDL_PEDANTIC(f->joinEUI != NULL)
+    LDL_PEDANTIC(f->devEUI != NULL)
+    
     struct ldl_stream s;    
     
     LDL_Stream_init(&s, out, max);
@@ -88,6 +96,9 @@ uint8_t LDL_Frame_putJoinRequest(const struct ldl_frame_join_request *f, void *o
 
 uint8_t LDL_Frame_putRejoinRequest(const struct ldl_frame_rejoin_request *f, void *out, uint8_t max)
 {
+    LDL_PEDANTIC(f != NULL)
+    LDL_PEDANTIC(f->devEUI != NULL)
+    
     struct ldl_stream s;    
     
     LDL_Stream_init(&s, out, max);
@@ -104,6 +115,9 @@ uint8_t LDL_Frame_putRejoinRequest(const struct ldl_frame_rejoin_request *f, voi
 
 bool LDL_Frame_peek(const void *in, uint8_t len, enum ldl_frame_type *type)
 {
+    LDL_PEDANTIC((in != NULL) && (len > 0U))
+    LDL_PEDANTIC(type != NULL)
+    
     bool retval = false;
     
     if(len > 0){
@@ -121,6 +135,9 @@ uint8_t LDL_Frame_sizeofJoinAccept(bool withCFList)
 
 bool LDL_Frame_decode(struct ldl_frame_down *f, void *in, uint8_t len)
 {
+    LDL_PEDANTIC(f != NULL)
+    LDL_PEDANTIC((in != NULL) && (len > 0U))
+    
     uint8_t *ptr = (uint8_t *)in;
     bool retval = false;    
     uint8_t fhdr = 0U;
@@ -190,7 +207,7 @@ bool LDL_Frame_decode(struct ldl_frame_down *f, void *in, uint8_t len)
                 f->pending =    ((fhdr & 0x10U) > 0U) ? true : false;
                 f->optsLen =    fhdr & 0xfU;
                 
-                LDL_Stream_getU16(&s, &f->counter);
+                (void)LDL_Stream_getU16(&s, &f->counter);
                 
                 f->opts = (f->optsLen > 0U) ? &ptr[LDL_Stream_tell(&s)] : NULL; 
                 (void)LDL_Stream_seekCur(&s, f->optsLen);

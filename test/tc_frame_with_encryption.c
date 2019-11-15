@@ -64,12 +64,18 @@ static void encode_join_request(void **user)
     const uint8_t key[] = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
     const uint8_t expected[] = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x71\x84\x9D\xAA";
     
+    uint8_t appEUI[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    uint8_t devEUI[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    
     struct ldl_mac mac;
     init_mac(&mac, key, LDL_OP_JOINING);
     
     struct ldl_frame_join_request f;
     
     (void)memset(&f, 0, sizeof(f));
+    
+    f.joinEUI = appEUI;
+    f.devEUI = devEUI;
     
     retval = LDL_OPS_prepareJoinRequest(&mac, &f, buffer, sizeof(buffer));
     
@@ -122,8 +128,8 @@ static void encode_random_internet_join_request_example(void **user)
     
     (void)memset(&f, 0, sizeof(f));
     
-    (void)memcpy(f.joinEUI, appEUI, sizeof(appEUI));
-    (void)memcpy(f.devEUI, devEUI, sizeof(devEUI));
+    f.joinEUI = appEUI;
+    f.devEUI = devEUI;
     f.devNonce = 0xCC85;
     
     retval = LDL_OPS_prepareJoinRequest(&mac, &f, buffer, sizeof(buffer));
@@ -142,9 +148,8 @@ static void decode_join_accept(void **user)
     init_mac(&mac, key, LDL_OP_JOINING);
     
     struct ldl_frame_down f;
-    struct ldl_system_identity id;
     
-    retval = LDL_OPS_receiveFrame(&mac, &f, &id, input, sizeof(input)-1U);
+    retval = LDL_OPS_receiveFrame(&mac, &f, input, sizeof(input)-1U);
     
     assert_true(retval);  
     
@@ -161,9 +166,8 @@ static void decode_join_accept_with_cf_list(void **user)
     init_mac(&mac, key, LDL_OP_JOINING);
     
     struct ldl_frame_down f;
-    struct ldl_system_identity id;
-    
-    retval = LDL_OPS_receiveFrame(&mac, &f, &id, input, sizeof(input)-1U);
+
+    retval = LDL_OPS_receiveFrame(&mac, &f, input, sizeof(input)-1U);
     
     assert_true(retval);    
     
@@ -183,9 +187,8 @@ static void decode_unconfirmed_down(void **user)
     mac.ctx.devAddr = 0x2601219BUL;
     
     struct ldl_frame_down f;
-    struct ldl_system_identity id;
     
-    retval = LDL_OPS_receiveFrame(&mac, &f, &id, input, sizeof(input));
+    retval = LDL_OPS_receiveFrame(&mac, &f, input, sizeof(input));
     
     assert_true(retval);    
     

@@ -29,7 +29,7 @@
  * 
  * # LDL Interface Documentation
  * 
- * Interface documentation for [LoRa Device Library](https://github.com/cjhdev/lora_device_lib).
+ * Interface documentation for [LDL](https://github.com/cjhdev/lora_device_lib).
  * 
  * - @ref ldl_mac MAC layer interface
  * - @ref ldl_radio radio driver interface
@@ -45,9 +45,8 @@
  * 
  * What isn't shown:
  * 
- * - complete implementation of @ref ldl_radio_connector
- * - implementation of @ref ldl_system
  * - implementation of functions marked as "extern"
+ * - sensible values for @ref ldl_radio_connector and @ref ldl_system implementation
  * 
  * This example would need the following @ref ldl_build_options to be defined:
  * 
@@ -59,9 +58,9 @@
  * ## Examples
  * 
  *  - Arduino (AVR)
- *      - [arduino_ldl.cpp](https://github.com/cjhdev/lora_device_lib/tree/master/bindings/arduino/output/arduino_ldl/arduino_ldl.cpp)
- *      - [arduino_ldl.h](https://github.com/cjhdev/lora_device_lib/tree/master/bindings/arduino/output/arduino_ldl/arduino_ldl.h)
- *      - [platform.h](https://github.com/cjhdev/lora_device_lib/tree/master/bindings/arduino/output/arduino_ldl/platform.h)
+ *      - [arduino_ldl.cpp](https://github.com/cjhdev/lora_device_lib/tree/master/wrappers/arduino/output/arduino_ldl/arduino_ldl.cpp)
+ *      - [arduino_ldl.h](https://github.com/cjhdev/lora_device_lib/tree/master/wrappers/arduino/output/arduino_ldl/arduino_ldl.h)
+ *      - [platform.h](https://github.com/cjhdev/lora_device_lib/tree/master/wrappers/arduino/output/arduino_ldl/platform.h)
  * 
  * */
 
@@ -452,6 +451,9 @@ struct ldl_mac {
     enum ldl_mac_operation op;
     enum ldl_mac_errno errno;
     
+    uint8_t joinEUI[8U];
+    uint8_t devEUI[8U];
+    
 #ifdef LDL_ENABLE_STATIC_RX_BUFFER
     uint8_t rx_buffer[LDL_MAX_PACKET];
 #endif    
@@ -464,6 +466,7 @@ struct ldl_mac {
     uint32_t polled_band_ticks;
     
     uint16_t devNonce;
+    uint32_t joinNonce;
     
     int16_t margin;
 
@@ -535,6 +538,9 @@ struct ldl_mac_init_arg {
     
     /** #ldl_mac_session to load (NULL if not available) */
     const struct ldl_mac_session *session;    
+    
+    const void *joinEUI;
+    const void *devEUI;
 };
 
 

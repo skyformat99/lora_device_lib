@@ -1,9 +1,11 @@
 /** @file */
 
 #include <stdlib.h>
-#include "ldl_radio.h"
-#include "ldl_mac.h"
-#include "ldl_sm.h"
+#include <string.h>
+#include "lora_radio.h"
+#include "lora_mac.h"
+#include "lora_sm.h"
+#include "lora_system.h"
 
 struct ldl_radio radio;
 struct ldl_mac mac;
@@ -24,24 +26,6 @@ extern void sleep(void);
 /* somehow enable interrupts */
 extern void enable_interrupts(void);
 
-/* somehow connect DIOx interrupt lines back to the radio driver */
-void handle_radio_interrupt_dio0(void)
-{
-    LDL_MAC_interrupt(&mac, 0);
-}
-void handle_radio_interrupt_dio1(void)
-{
-    LDL_MAC_interrupt(&mac, 1);
-}
-void handle_radio_interrupt_dio2(void)
-{
-    LDL_MAC_interrupt(&mac, 2);
-}
-void handle_radio_interrupt_dio3(void)
-{
-    LDL_MAC_interrupt(&mac, 3);
-}
-
 /* Called from within LDL_MAC_process() to pass events back to the application */
 void app_handler(void *app, enum ldl_mac_response_type type, const union ldl_mac_response_arg *arg);
 
@@ -60,17 +44,16 @@ int main(void)
      * */
     LDL_Radio_setPA(&radio, LDL_RADIO_PA_RFO);
     
+    /* clearing the arg struct is recommended */
+    struct ldl_mac_init_arg arg = {0};
     
-    
-    struct ldl_mac_init_arg arg = {
+    arg.radio = &radio;
+    arg.app = app_pointer;
+    arg.handler = app_handler;    
+    arg.sm = &sm;
+    arg.session = NULL; /* this would be where you restore an cached session */
         
-        .radio = &radio,
-        .handler = app_handler,
-        .app = NULL, 
-        .sm = &sm
-    };
-
-    LDL_MAC_init(&mac, EU_863_870, &arg);
+    LDL_MAC_init(&mac, LDL_EU_863_870, &arg);
 
     /* Ensure a maximum aggregated duty cycle of ~1%
      * 
@@ -119,19 +102,24 @@ void app_handler(void *app, enum ldl_mac_response_type type, const union ldl_mac
         
     /* LoRaWAN needs a little bit of random for correct operation. 
      * 
-     * Targets that have no better source of entropy will use this
+     * Applications that have no better source of entropy will use this
      * event to seed the stdlib random generator.
      * 
      * */
-    case LDL_MAC_STARTUP:
-    
+    case LDL_MAC_STARTUP:    
         srand(arg->startup.entropy);
         break;
     
-    
-    /* this is downstream data */
+    /* this is data from confirmed/unconfirmed down frames */
     case LDL_MAC_RX:    
-        /* do something */
+        (void)arg->rx.port;
+        (void)arg->rx.data;
+        (void)arg->rx.size;
+        break;
+    
+    /* an opportunity for application to cache session */
+    case LDL_MAC_SESSION_UPDATED:
+        (void)arg->session_updated.session;
         break;
         
     case LDL_MAC_CHIP_ERROR:
@@ -149,4 +137,56 @@ void app_handler(void *app, enum ldl_mac_response_type type, const union ldl_mac
     default:
         break;    
     }
+}
+
+uint32_t LDL_System_ticks(void *app)
+{
+    /* this must read from 32bit ticker */
+    return 0UL;
+}
+
+uint32_t LDL_System_eps(void)
+{
+    /* what is the +/- uncertainty in ticks? */
+    return 0UL;
+}
+
+uint32_t LDL_System_tps(void)
+{
+    /* this must be the frequency of the ticker returned by LDL_System_ticks() */
+    return 0UL;
+}
+
+/* somehow connect DIOx interrupt lines back to the radio driver */
+void handle_radio_interrupt_dio0(void)
+{
+    LDL_Radio_interrupt(&radio, 0);
+}
+void handle_radio_interrupt_dio1(void)
+{
+    LDL_Radio_interrupt(&radio, 1);
+}
+void handle_radio_interrupt_dio2(void)
+{
+    LDL_Radio_interrupt(&radio, 2);
+}
+void handle_radio_interrupt_dio3(void)
+{
+    LDL_Radio_interrupt(&radio, 3);
+}
+
+
+/* these must connect to SPI and GPIO */
+void LDL_Chip_select(void *self, bool state)
+{
+}
+void LDL_Chip_reset(void *self, bool state)
+{
+}
+void LDL_Chip_write(void *self, uint8_t data)
+{
+}
+uint8_t LDL_Chip_read(void *self)
+{
+    return 0UL;
 }

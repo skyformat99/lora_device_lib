@@ -7,14 +7,19 @@
 #include "lora_sm.h"
 #include "lora_system.h"
 
+/* LDL state */
 struct ldl_radio radio;
 struct ldl_mac mac;
 struct ldl_sm sm;
 
+/* pointers to your 16B root keys */
+extern const void *app_key_ptr;
+extern const void *nwk_key_ptr;
+
 /* a pointer to be passed back to the application (anything you like) */
 void *app_pointer;
 
-/* a pointer to be passed to the SPI module (anything you like) */
+/* a pointer to be passed to the radio connector (anything you like) */
 void *radio_connector_pointer;
 
 /* somehow set a timer event that will ensure a wakeup so many ticks in future */
@@ -31,6 +36,9 @@ void app_handler(void *app, enum ldl_mac_response_type type, const union ldl_mac
 
 int main(void)
 {
+    /* initialise the default security module */
+    LDL_SM_init(&sm, app_key_ptr, nwk_key_ptr);
+    
     LDL_Radio_init(&radio, LDL_RADIO_SX1272, radio_connector_pointer);
     
     /* This radio has two power amplifiers. The amplifier in use
@@ -86,12 +94,15 @@ int main(void)
         
         LDL_MAC_process(&mac);        
         
-        uint32_t ticks_until_next_event = LDL_MAC_ticksUntilNextEvent(&mac);
-        
-        if(ticks_until_next_event > 0UL){
+        /* a demonstration of how you might use sleep modes with LDL */
+        {
+            uint32_t ticks_until_next_event = LDL_MAC_ticksUntilNextEvent(&mac);
             
-            wakeup_after(ticks_until_next_event);
-            sleep();
+            if(ticks_until_next_event > 0UL){
+                
+                wakeup_after(ticks_until_next_event);
+                sleep();
+            }
         }
     }
 }
@@ -100,7 +111,7 @@ void app_handler(void *app, enum ldl_mac_response_type type, const union ldl_mac
 {
     switch(type){
         
-    /* LoRaWAN needs a little bit of random for correct operation. 
+    /* Some random is required for dithering channels and scheduling
      * 
      * Applications that have no better source of entropy will use this
      * event to seed the stdlib random generator.

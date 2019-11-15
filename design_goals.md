@@ -16,7 +16,7 @@ It should be possible to run LDL with the hardware layer replaced by software.
 LDL should be able to share a single thread of execution with other tasks. It should:
 
 - not block
-- indicate when it requires prioritisation (critical timing window)
+- indicate when it requires prioritisation
 - indicate time until the next event
 - calculate how late it is to handling an event
 - compensate for timing jitter

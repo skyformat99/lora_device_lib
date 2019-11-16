@@ -56,6 +56,21 @@ Porting Guide
 
 ## Advanced Topics
 
+### Managing Device Nonce (devNonce)
+
+LoRaWAN 1.1 redefined devNonce to be a 16 bit counter from zero, where previously it had been
+a random number. The counter increments after each successful OTAA. A LoRaWAN 1.1 server
+will not accept an old devNonce. LoRaWAN 1.1 implementations must therefore maintain this 
+counter over the lifetime of the device there is an expectation to enter join mode
+again before the root keys and/or joinEUI are refreshed.
+
+LDL does not keep this counter with session state since it is longer lived than sessions state.
+
+In order to ensure the counter is maintained between LDL initialisations, the application must cache the next value when it
+is passed as the join_complete.nextDevNonce argument to the LDL_MAC_JOIN_COMPLETE event.
+
+The counter is restored by passing it as an argument to LDL_MAC_init().
+
 ### Modifying the Security Module
 
 The default cryptographic implementations can be replaced with hardened implementations.
@@ -77,19 +92,14 @@ module (i.e. HSM) is required.
 
 ### Persistent Sessions
 
-LDL notifies the application of changes to session state
-via the LDL_MAC_SESSION_UPDATED event. A pointer to the new session
-state is passed with this event.
+To implement persisten sessions the application must:
 
-LDL can be initialised with a cached session state by passing a pointer
-to it as member of the LDL_MAC_init() arg struct.
-
-To implement persistent sessions the application must:
-
-- cache session state when it is updated
-- restore cached session state during initialisation
-- ensure cached session state is not corrupted 
-- ensure cached session state is discarded if LDL is updated via firmware update
+- be able to cache session state passed with the LDL_MAC_SESSION_UPDATED event
+- be able to cache session keys updated as part of the LDL_MAC_JOIN_COMPLETE event
+- be able to restore session state prior to calling LDL_MAC_init()
+- be able to restore session keys prior to calling LDL_MAC_init()
+- ensure the integrity of state and keys
+    - this also means ensuring that session keys actually belong to session state
 
 Note that:
 
@@ -137,3 +147,8 @@ Automatic RAM usage can be reduced by:
 
 - shifting the frame receive buffer from stack to bss by defining LDL_ENABLE_STATIC_RX_BUFFER
     - this will reduce stack usage during LDL_MAC_process()
+
+### Compensating For Antenna Gain
+
+Gain can be compensated by setting the antennaGain member in struct ldl_mac_init_arg prior to calling LDL_MAC_init().
+This value will be added to the dBm setting requested from the Radio at transmit time.

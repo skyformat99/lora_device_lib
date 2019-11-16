@@ -272,7 +272,7 @@ union ldl_mac_response_arg {
         uint32_t freq;                      /**< frequency */    
         enum ldl_spreading_factor sf;      /**< spreading factor */
         enum ldl_signal_bandwidth bw;      /**< bandwidth */
-        uint8_t power;                      /**< power setting @warning this is not dBm */
+        uint8_t power;                      /**< LoRaWAN power setting @warning this is not dBm */
         uint8_t size;                       /**< message size */
         
     } tx_begin;
@@ -539,6 +539,10 @@ struct ldl_mac {
   
     /* options and overrides applicable to current data service */
     struct ldl_mac_data_opts opts;
+    
+    /* added to the power setting given to radio to compensate 
+     * for gains/losses */
+    int16_t antennaGain;
 };
 
 /** passed as an argument to LDL_MAC_init() 
@@ -581,6 +585,14 @@ struct ldl_mac_init_arg {
      * 
      * */
     uint16_t devNonce;
+    
+    /** dBm to add to the power setting given to the 
+     * radio to compensate for gains/losses
+     * 
+     * If in doubt set to 0
+     * 
+     * */
+    int16_t antennaGain;
 };
 
 

@@ -384,7 +384,7 @@ void LDL_MAC_process(struct ldl_mac *self)
             
             LDL_Region_convertRate(self->region, self->tx.rate, &radio_setting.sf, &radio_setting.bw, &mtu);
             
-            radio_setting.dbm = LDL_Region_getTXPower(self->region, self->tx.power);
+            radio_setting.dbm = LDL_Region_getTXPower(self->region, self->tx.power) + self->antennaGain;
             
             radio_setting.freq = self->tx.freq;
             

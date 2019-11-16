@@ -61,21 +61,6 @@ enum ldl_sm_key {
     LDL_SM_KEY_NWK         /**< network root key */        
 };
 
-/** Called from LDL_MAC_init() to either initiate restore or 
- * confirm that previous session keys are available.
- * 
- * @param[in] self
- * 
- * @retval true     keys have been restored
- * @retval false    keys have not been restored
- * 
- * The following weak implementation is provided:
- * 
- * @snippet src/lora_sm.c LDL_SM_restore
- * 
- * */
-bool LDL_SM_restore(struct ldl_sm *self);
-
 /** Update a session key and save the result in the key store
  * 
  * LoRaWAN session keys are derived from clear text encrypted with a 

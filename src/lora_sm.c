@@ -29,7 +29,6 @@
 #include <string.h>
 
 void LDL_SM_init(struct ldl_sm *self, const void *appKey, const void *nwkKey) __attribute__((weak));
-bool LDL_SM_restore(struct ldl_sm *self) __attribute__((weak));
 void LDL_SM_beginUpdateSessionKey(struct ldl_sm *self) __attribute__((weak));
 void LDL_SM_endUpdateSessionKey(struct ldl_sm *self) __attribute__((weak));
 void LDL_SM_updateSessionKey(struct ldl_sm *self, enum ldl_sm_key keyDesc, enum ldl_sm_key rootDesc, const void *iv) __attribute__((weak));
@@ -47,13 +46,6 @@ void LDL_SM_init(struct ldl_sm *self, const void *appKey, const void *nwkKey)
     (void)memcpy(self->keys[LDL_SM_KEY_APP].value, appKey, sizeof(self->keys[LDL_SM_KEY_APP].value)); 
     (void)memcpy(self->keys[LDL_SM_KEY_NWK].value, nwkKey, sizeof(self->keys[LDL_SM_KEY_NWK].value)); 
 }
-
-/**! [LDL_SM_restore] */
-bool LDL_SM_restore(struct ldl_sm *self)
-{
-    return false;
-}
-/**! [LDL_SM_restore] */
 
 /**! [LDL_SM_beginUpdateSessionKey] */
 void LDL_SM_beginUpdateSessionKey(struct ldl_sm *self)

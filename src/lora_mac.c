@@ -108,7 +108,7 @@ void LDL_MAC_init(struct ldl_mac *self, enum ldl_region region, const struct ldl
         LDL_INFO(self->app, "radio is undefined")
     }
     
-    if(LDL_SM_restore(self->sm) && (arg->session != NULL)){
+    if(arg->session != NULL){
         
         (void)memcpy(&self->ctx, arg->session, sizeof(self->ctx));
     }

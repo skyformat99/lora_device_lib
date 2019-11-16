@@ -81,6 +81,9 @@ void LDL_MAC_init(struct ldl_mac *self, enum ldl_region region, const struct ldl
     LDL_PEDANTIC(arg != NULL)
     LDL_PEDANTIC(LDL_System_tps() >= 1000UL)
     
+    LDL_ASSERT(arg->joinEUI != NULL)
+    LDL_ASSERT(arg->devEUI != NULL)
+    
     (void)memset(self, 0, sizeof(*self));
     
     self->tx.chIndex = UINT8_MAX;
@@ -90,25 +93,11 @@ void LDL_MAC_init(struct ldl_mac *self, enum ldl_region region, const struct ldl
     self->app = arg->app;    
     self->handler = arg->handler ? arg->handler : dummyResponseHandler;
     self->radio = arg->radio;
-    self->sm = arg->sm;        
+    self->sm = arg->sm;      
+    self->devNonce = arg->devNonce;  
     
-    if(arg->devEUI != NULL){
-        
-        (void)memcpy(self->devEUI, arg->devEUI, sizeof(self->devEUI));
-    }
-    else{
-        
-        LDL_INFO(self->app, "devEUI is undefined")
-    }
-    
-    if(arg->joinEUI != NULL){
-        
-        (void)memcpy(self->joinEUI, arg->joinEUI, sizeof(self->joinEUI));
-    }
-    else{
-        
-        LDL_INFO(self->app, "joinEUI is undefined")
-    }
+    (void)memcpy(self->devEUI, arg->devEUI, sizeof(self->devEUI));
+    (void)memcpy(self->joinEUI, arg->joinEUI, sizeof(self->joinEUI));
     
     if(self->radio != NULL){
         
@@ -208,8 +197,9 @@ bool LDL_MAC_otaa(struct ldl_mac *self)
                 f.joinEUI = self->joinEUI;
                 f.devEUI = self->devEUI;
                 
+#ifdef LDL_ENABLE_RANDOM_DEV_NONCE                
                 self->devNonce = rand32(self->app);
-                
+#endif                                
                 f.devNonce = self->devNonce;
 
                 self->bufferLen = LDL_OPS_prepareJoinRequest(self, &f, self->buffer, sizeof(self->buffer));
@@ -710,7 +700,10 @@ void LDL_MAC_process(struct ldl_mac *self)
                         LDL_OPS_deriveKeys(self);                        
                     }
                     
+                    self->devNonce++;
+                    
 #ifndef LDL_DISABLE_JOIN_COMPLETE_EVENT                    
+                    arg.join_complete.nextDevNonce = self->devNonce;
                     self->handler(self->app, LDL_MAC_JOIN_COMPLETE, NULL);                    
 #endif                                      
                     self->state = LDL_STATE_IDLE;           

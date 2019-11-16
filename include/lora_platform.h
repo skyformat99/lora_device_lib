@@ -267,6 +267,20 @@
     #define LDL_DISABLE_SESSION_UPDATE
     #undef LDL_DISABLE_SESSION_UPDATE
 
+    /**
+     * Define to make use of PROGMEM if using avr-libc
+     * 
+     * */
+    #define LDL_ENABLE_AVR
+    #undef  LDL_ENABLE_AVR
+
+    /**
+     * Define to have LDL generate devNonce from random
+     * 
+     * */
+     #define LDL_ENABLE_RANDOM_DEV_NONCE
+     #undef LDL_ENABLE_RANDOM_DEV_NONCE
+
 #endif
 
 #ifdef LDL_TARGET_INCLUDE

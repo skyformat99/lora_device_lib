@@ -302,6 +302,7 @@ union ldl_mac_response_arg {
     /** #LDL_MAC_JOIN_COMPLETE argument */
     struct {
         
+        /** the next devNonce to be used during OTAA */
         uint16_t nextDevNonce;
         
     } join_complete;
@@ -310,7 +311,7 @@ union ldl_mac_response_arg {
 /** LDL calls this function pointer to notify application of events
  * 
  * @param[in] app   app from LDL_MAC_init()
- * @param[in] type  event type (#ldl_mac_response_type)  
+ * @param[in] type  #ldl_mac_response_type
  * @param[in] arg   **OPTIONAL** depending on #ldl_mac_response_type
  * 
  * */
@@ -557,7 +558,15 @@ struct ldl_mac_init_arg {
     /** application callback #ldl_mac_response_fn */
     ldl_mac_response_fn handler;
     
-    /** optional pointer to restored #ldl_mac_session */
+    /** optional pointer to restored #ldl_mac_session
+     * 
+     * If this pointer is NULL, LDL will initialise session to default
+     * values.
+     * 
+     * If session keys could not be recovered, the application must
+     * set this pointer to NULL.
+     * 
+     *  */
     const struct ldl_mac_session *session;    
     
     /** pointer to 8 byte identifier */

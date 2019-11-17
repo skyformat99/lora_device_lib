@@ -113,21 +113,6 @@ uint8_t LDL_Frame_putRejoinRequest(const struct ldl_frame_rejoin_request *f, voi
     return LDL_Stream_error(&s) ? 0U : LDL_Stream_tell(&s);
 }
 
-bool LDL_Frame_peek(const void *in, uint8_t len, enum ldl_frame_type *type)
-{
-    LDL_PEDANTIC((in != NULL) && (len > 0U))
-    LDL_PEDANTIC(type != NULL)
-    
-    bool retval = false;
-    
-    if(len > 0){
-        
-        retval = getFrameType(*(uint8_t *)in, type);        
-    }
-    
-    return retval;
-}
-
 uint8_t LDL_Frame_sizeofJoinAccept(bool withCFList)
 {
     return 17U + (withCFList ? 16U : 0U);

@@ -198,20 +198,18 @@ bool LDL_OPS_receiveFrame(struct ldl_mac *self, struct ldl_frame_down *f, uint8_
 {
     bool retval;
     uint32_t mic;
-    enum ldl_frame_type type;
         
     retval = false;
     
-    switch(self->op){
-    default:
-        break;
+    if(LDL_Frame_decode(f, in, len)){
         
-    case LDL_OP_JOINING:
-    case LDL_OP_REJOINING:
-    
-        if(LDL_Frame_peek(in, len, &type)){
-            
-            if(type == FRAME_TYPE_JOIN_ACCEPT){
+        switch(f->type){
+        default:
+            break;
+        
+        case FRAME_TYPE_JOIN_ACCEPT:
+        
+            if((self->op == LDL_OP_JOINING) || (self->op == LDL_OP_REJOINING)){
                 
                 enum ldl_sm_key key;
                 
@@ -228,62 +226,73 @@ bool LDL_OPS_receiveFrame(struct ldl_mac *self, struct ldl_frame_down *f, uint8_
                     
                     if(f->optNeg){
                         
-                        struct ldl_block hdr;
-                        uint8_t pos;
+                        if(f->joinNonce > self->joinNonce){
                         
-                        pos = 0U;
-                        
-                        switch(self->op){
-                        default:
-                        case LDL_OP_JOINING:
-                            pos += putU8(&hdr.value[pos], 0xffU);
-                            break;
-                        case LDL_OP_REJOINING:                        
-                            pos += putU8(&hdr.value[pos], 2U);
-                            break;
+                            struct ldl_block hdr;
+                            uint8_t pos;
+                            
+                            pos = 0U;
+                            
+                            switch(self->op){
+                            default:
+                            case LDL_OP_JOINING:
+                                pos += putU8(&hdr.value[pos], 0xffU);
+                                break;
+                            case LDL_OP_REJOINING:                        
+                                pos += putU8(&hdr.value[pos], 2U);
+                                break;
+                            }
+                            
+                            pos += putEUI(&hdr.value[pos], self->joinEUI);
+                            pos += putU16(&hdr.value[pos], self->devNonce);
+                            
+                            mic = LDL_SM_mic(self->sm, LDL_SM_KEY_JSINT, &hdr, pos, in, len-sizeof(mic));
+                            
+                            if(f->mic == mic){
+                            
+                                retval = true;                    
+                            }
+                            else{
+                                
+                                LDL_DEBUG(self->app, "joinAccept MIC failed")
+                            }                           
                         }
-                        
-                        pos += putEUI(&hdr.value[pos], self->joinEUI);
-                        pos += putU16(&hdr.value[pos], self->devNonce);
-                        
-                        mic = LDL_SM_mic(self->sm, LDL_SM_KEY_JSINT, &hdr, pos, in, len-sizeof(mic));
+                        else{
+                            
+                            LDL_DEBUG(self->app, "invalid joinNonce")
+                        }
                     }
                     else{
                         
                         mic = LDL_SM_mic(self->sm, LDL_SM_KEY_NWK, NULL, 0U, in, len-sizeof(mic));                        
-                    } 
-                    
-                    if(f->mic == mic){
                         
-                        retval = true;                    
-                    }
-                    else{
+                        if(f->mic == mic){
                         
-                        LDL_DEBUG(self->app, "joinAccept MIC failed")
-                    }                
-                }
+                            retval = true;                    
+                        }
+                        else{
+                            
+                            LDL_DEBUG(self->app, "joinAccept MIC failed")
+                        }   
+                    }                     
+                }                                
             }
             else{
                 
                 LDL_DEBUG(self->app, "unexpected frame type")
             }
-        }
-        break;
+            break;
         
-    case LDL_OP_DATA_UNCONFIRMED:
-    case LDL_OP_DATA_CONFIRMED:
+        case FRAME_TYPE_DATA_UNCONFIRMED_DOWN:
+        case FRAME_TYPE_DATA_CONFIRMED_DOWN:
         
-        if(LDL_Frame_decode(f, in, len)){
-        
-            switch(f->type){
-            default:
-            case FRAME_TYPE_JOIN_ACCEPT:
-            
-                LDL_DEBUG(self->app, "unexpected frame type")
-                break;
-                
-            case FRAME_TYPE_DATA_UNCONFIRMED_DOWN:
-            case FRAME_TYPE_DATA_CONFIRMED_DOWN:
+            if(
+                ((self->ctx.version > 0) && (self->op == LDL_OP_REJOINING))
+                ||
+                (self->op  == LDL_OP_DATA_UNCONFIRMED)
+                ||
+                (self->op == LDL_OP_DATA_CONFIRMED)
+            ){
             
                 if(self->ctx.devAddr == f->devAddr){
                     
@@ -327,11 +336,19 @@ bool LDL_OPS_receiveFrame(struct ldl_mac *self, struct ldl_frame_down *f, uint8_
                 else{
                     
                     LDL_DEBUG(self->app, "devaddr mismatch")        
-                }                                         
-                break;    
+                }                                                         
             }
-        } 
-        break;               
+            else{
+                
+                LDL_DEBUG(self->app, "unexpected frame type")
+            }
+        
+            break;
+        }    
+    }
+    else{
+        
+        LDL_DEBUG(self->app, "invalid frame")
     }
     
     return retval;

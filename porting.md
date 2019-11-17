@@ -60,16 +60,30 @@ Porting Guide
 
 LoRaWAN 1.1 redefined devNonce to be a 16 bit counter from zero where previously it had been
 a random number. The counter increments after each successful OTAA. A LoRaWAN 1.1 server
-will not accept an old devNonce. LoRaWAN 1.1 implementations must therefore maintain this 
-counter over the lifetime of the device there is an expectation to enter join mode
+will not accept a devNonce less than one it has seen before. LoRaWAN 1.1 implementations must therefore maintain this 
+counter over the lifetime of the device if there is an expectation to enter join mode
 again before the root keys and/or joinEUI are refreshed.
+
+LDL will push nextDevNonce to the application as an argument to the LDL_MAC_JOIN_COMPLETE event. A cached
+value can be restored by passing it as an argument to LDL_MAC_init().
 
 LDL does not keep this counter with session state since it is longer lived than session state.
 
-In order to ensure the counter is maintained between LDL initialisations, the application must cache the next value when it
-is passed as the join_complete.nextDevNonce argument to the LDL_MAC_JOIN_COMPLETE event.
+### Managing Join Nonce (joinNonce)
 
-The counter is restored by passing it as the arg.devNonce argument to LDL_MAC_init().
+LoRaWAN 1.1 renamed appNonce to joinNonce and declared it to be a counter of the number of successful joins maintained
+by the server.
+
+When the joinAccept indicates that LoRaWAN 1.1 is in use, LDL will only accept the joinAccept if joinNonce is
+greater than the last cached joinNonce. 
+
+LDL will push the updated value to the application as an argument to the LDL_MAC_JOIN_COMPLETE event. A cached
+value can be restored by passing it as an argument to LDL_MAC_init().
+
+LDL does not keep this counter with session state since it is longer lived than session state.
+
+Caching/restoring this value is optional since resetting it to zero at LDL_MAC_init() will not
+stop joinAccept from being accepted, but it will leave LDL open to replay attacks during OTAA.
 
 ### Modifying the Security Module
 

@@ -59,7 +59,10 @@ int main(void)
     arg.app = app_pointer;
     arg.handler = app_handler;    
     arg.sm = &sm;
-    arg.session = NULL; /* this would be where you restore an cached session */
+    arg.session = NULL; /* restore cached session state (or not, in this case) */
+    arg.devNonce = 0U;  /* restore devNonce */
+    arg.joinNonce = 0U; /* restore joinNonce */
+    arg.gain = 0;      /* +/- dBm gain correction  */
         
     LDL_MAC_init(&mac, LDL_EU_863_870, &arg);
 
@@ -133,9 +136,18 @@ void app_handler(void *app, enum ldl_mac_response_type type, const union ldl_mac
         (void)arg->session_updated.session;
         break;
         
-    case LDL_MAC_CHIP_ERROR:
-    case LDL_MAC_RESET:
+    /* an opportunity for the application to:
+     * 
+     * - cache the next devNonce 
+     * - cache session keys
+     * 
+     * */
     case LDL_MAC_JOIN_COMPLETE:
+        (void)arg->join_complete.nextDevNonce;
+        break;
+        
+    case LDL_MAC_CHIP_ERROR:
+    case LDL_MAC_RESET:    
     case LDL_MAC_JOIN_TIMEOUT:
     case LDL_MAC_DATA_COMPLETE:
     case LDL_MAC_DATA_TIMEOUT:

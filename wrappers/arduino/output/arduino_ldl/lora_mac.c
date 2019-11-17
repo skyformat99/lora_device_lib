@@ -95,6 +95,7 @@ void LDL_MAC_init(struct ldl_mac *self, enum ldl_region region, const struct ldl
     self->radio = arg->radio;
     self->sm = arg->sm;      
     self->devNonce = arg->devNonce;  
+    self->joinNonce = arg->joinNonce;  
     self->gain = arg->gain;
     
     (void)memcpy(self->devEUI, arg->devEUI, sizeof(self->devEUI));
@@ -698,7 +699,10 @@ void LDL_MAC_process(struct ldl_mac *self)
                     self->devNonce++;
                     
 #ifndef LDL_DISABLE_JOIN_COMPLETE_EVENT                    
+                    arg.join_complete.joinNonce = self->joinNonce;
                     arg.join_complete.nextDevNonce = self->devNonce;
+                    arg.join_complete.netID = self->ctx.netID;
+                    arg.join_complete.devAddr = self->ctx.devAddr;
                     self->handler(self->app, LDL_MAC_JOIN_COMPLETE, NULL);                    
 #endif                                      
                     self->state = LDL_STATE_IDLE;           

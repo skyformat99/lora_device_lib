@@ -302,8 +302,14 @@ union ldl_mac_response_arg {
     /** #LDL_MAC_JOIN_COMPLETE argument */
     struct {
         
-        /** the next devNonce to be used during OTAA */
+        /** the most up to date joinNonce */
+        uint32_t joinNonce;
+        /** the next devNonce to use in OTAA */
         uint16_t nextDevNonce;
+        /** netID */
+        uint32_t netID;
+        /** devAddr */
+        uint32_t devAddr;
         
     } join_complete;
 };
@@ -579,12 +585,19 @@ struct ldl_mac_init_arg {
     /** pointer to 8 byte identifier */
     const void *devEUI;
     
-    /** the next devNonce for to use in OTAA 
+    /** the next devNonce to use in OTAA 
      * 
      * @see #LDL_MAC_JOIN_COMPLETE
      * 
      * */
     uint16_t devNonce;
+    
+    /** the most up to date joinNonce
+     * 
+     * @see #LDL_MAC_JOIN_COMPLETE
+     * 
+     * */
+    uint32_t joinNonce;
     
     /** dBm to add to the power setting given to the 
      * radio to compensate for gains/losses
@@ -613,6 +626,7 @@ struct ldl_mac_init_arg {
  * - ldl_mac_init_arg.joinEUI   pointer to 16 byte identifier
  * - ldl_mac_init_arg.devEUI    pointer to 16 byte identifier
  * - ldl_mac_init_arg.devNonce  the next devNonce to use in OTAA
+ * - ldl_mac_init_arg.joinNonce the next joinNonce to use in OTAA
  * - ldl_mac_init_arg.session   optional pointer to restored session state
  * - ldl_mac_init_arg.gain      gain compensation
  * 

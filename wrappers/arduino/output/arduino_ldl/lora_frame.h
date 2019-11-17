@@ -135,7 +135,6 @@ void LDL_Frame_updateMIC(void *msg, uint8_t len, uint32_t mic);
 uint8_t LDL_Frame_putData(const struct ldl_frame_data *f, void *out, uint8_t max, struct ldl_frame_data_offset *off);
 uint8_t LDL_Frame_putJoinRequest(const struct ldl_frame_join_request *f, void *out, uint8_t max);
 uint8_t LDL_Frame_putRejoinRequest(const struct ldl_frame_rejoin_request *f, void *out, uint8_t max);
-bool LDL_Frame_peek(const void *in, uint8_t len, enum ldl_frame_type *type);
 bool LDL_Frame_decode(struct ldl_frame_down *f, void *in, uint8_t len);
 
 uint8_t LDL_Frame_sizeofJoinAccept(bool withCFList);

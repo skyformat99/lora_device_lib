@@ -47,6 +47,16 @@ void LDL_SM_init(struct ldl_sm *self, const void *appKey, const void *nwkKey)
     (void)memcpy(self->keys[LDL_SM_KEY_NWK].value, nwkKey, sizeof(self->keys[LDL_SM_KEY_NWK].value)); 
 }
 
+void LDL_SM_setSession(struct ldl_sm *self, const struct ldl_sm_keys *keys)
+{
+    (void)memcpy(self->keys, keys, sizeof(*keys));
+}
+
+void LDL_SM_getSession(struct ldl_sm *self, struct ldl_sm_keys *keys)
+{
+    (void)memcpy(keys, self->keys, sizeof(*keys));
+}
+
 /**! [LDL_SM_beginUpdateSessionKey] */
 void LDL_SM_beginUpdateSessionKey(struct ldl_sm *self)
 {

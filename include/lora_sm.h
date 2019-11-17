@@ -43,7 +43,39 @@ struct ldl_sm {
     struct ldl_key keys[8U];    
 };
 
+/** session key structure */
+struct ldl_sm_keys {
+    
+    struct ldl_key keys[6U];    
+};
+
+/**
+ * Initialise Default Security Module with root keys
+ * 
+ * @param[in] self      #ldl_sm
+ * @param[in] appKey    pointer to 16 byte field
+ * @param[in] nwkKey    pointer to 16 byte field
+ * 
+ * */
 void LDL_SM_init(struct ldl_sm *self, const void *appKey, const void *nwkKey);
+
+/**
+ * Set/restore session keys
+ * 
+ * @param[in]   self  #ldl_sm
+ * @param[in]   keys  
+ * 
+ * */
+void LDL_SM_setSession(struct ldl_sm *self, const struct ldl_sm_keys *keys);
+
+/**
+ * Get/save session keys
+ * 
+ * @param[in]   self #ldl_sm
+ * @param[out]  keys
+ * 
+ * */
+void LDL_SM_getSession(struct ldl_sm *self, struct ldl_sm_keys *keys);
 
 #ifdef __cplusplus
 }

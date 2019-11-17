@@ -41,8 +41,6 @@
 /* static function prototypes *****************************************/
 
 static bool upRateRange(enum ldl_region region, uint8_t chIndex, uint8_t *minRate, uint8_t *maxRate);
-static uint8_t unpackCFListMask(const uint8_t *cfList, uint16_t *mask);
-static uint8_t unpackCFListFreq(const uint8_t *cfList, uint32_t *freq);
 
 /* functions **********************************************************/
 
@@ -433,7 +431,31 @@ void LDL_Region_getDefaultChannels(enum ldl_region region, struct ldl_mac *mac)
     }
 }
 
+#if defined(LDL_ENABLE_EU_863_870) || defined(LDL_ENABLE_EU_433)         
+static uint8_t unpackCFListFreq(const uint8_t *cfList, uint32_t *freq)
+{
+    *freq = cfList[2];
+    *freq <<= 8;
+    *freq |= cfList[1];
+    *freq <<= 8;
+    *freq |= cfList[0];
+    
+    *freq *= 100UL;
+    
+    return 3U;
+}
+#endif
 
+#if defined(LDL_ENABLE_US_902_928) || defined(LDL_ENABLE_AU_915_928)
+static uint8_t unpackCFListMask(const uint8_t *cfList, uint16_t *mask)
+{
+    *mask = cfList[1];
+    *mask <<= 8;
+    *mask |= cfList[0];
+    
+    return 2U;    
+}
+#endif
 
 void LDL_Region_processCFList(enum ldl_region region, struct ldl_mac *mac, const uint8_t *cfList, uint8_t cfListLen)
 {
@@ -985,27 +1007,7 @@ static bool upRateRange(enum ldl_region region, uint8_t chIndex, uint8_t *minRat
     return retval;
 }
 
-static uint8_t unpackCFListFreq(const uint8_t *cfList, uint32_t *freq)
-{
-    *freq = cfList[2];
-    *freq <<= 8;
-    *freq |= cfList[1];
-    *freq <<= 8;
-    *freq |= cfList[0];
-    
-    *freq *= 100UL;
-    
-    return 3U;
-}
 
-static uint8_t unpackCFListMask(const uint8_t *cfList, uint16_t *mask)
-{
-    *mask = cfList[1];
-    *mask <<= 8;
-    *mask |= cfList[0];
-    
-    return 2U;    
-}
 
 #ifndef LDL_ENABLE_AVR
     #undef memcpy_P

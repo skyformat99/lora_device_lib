@@ -279,7 +279,7 @@
      * 
      * */
      #define LDL_ENABLE_RANDOM_DEV_NONCE
-     #undef LDL_ENABLE_RANDOM_DEV_NONCE
+     #undef  LDL_ENABLE_RANDOM_DEV_NONCE
 
 #endif
 

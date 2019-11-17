@@ -95,6 +95,7 @@ void LDL_MAC_init(struct ldl_mac *self, enum ldl_region region, const struct ldl
     self->radio = arg->radio;
     self->sm = arg->sm;      
     self->devNonce = arg->devNonce;  
+    self->gain = arg->gain;
     
     (void)memcpy(self->devEUI, arg->devEUI, sizeof(self->devEUI));
     (void)memcpy(self->joinEUI, arg->joinEUI, sizeof(self->joinEUI));
@@ -197,7 +198,8 @@ bool LDL_MAC_otaa(struct ldl_mac *self)
                 f.joinEUI = self->joinEUI;
                 f.devEUI = self->devEUI;
                 
-#ifdef LDL_ENABLE_RANDOM_DEV_NONCE                
+#ifdef LDL_ENABLE_RANDOM_DEV_NONCE
+                /* LoRAWAN 1.0 uses random nonce */
                 self->devNonce = rand32(self->app);
 #endif                                
                 f.devNonce = self->devNonce;
@@ -384,7 +386,7 @@ void LDL_MAC_process(struct ldl_mac *self)
             
             LDL_Region_convertRate(self->region, self->tx.rate, &radio_setting.sf, &radio_setting.bw, &mtu);
             
-            radio_setting.dbm = LDL_Region_getTXPower(self->region, self->tx.power) + self->antennaGain;
+            radio_setting.dbm = LDL_Region_getTXPower(self->region, self->tx.power) + self->gain;
             
             radio_setting.freq = self->tx.freq;
             
@@ -689,16 +691,9 @@ void LDL_MAC_process(struct ldl_mac *self)
                     self->ctx.netID = frame.netID;
                     self->joinNonce = frame.joinNonce;
                     
-                    if(frame.optNeg){
+                    self->ctx.version = (frame.optNeg) ? 1U : 0U;
                     
-                        self->ctx.version = 1U;
-                        LDL_OPS_deriveKeys2(self);                        
-                    }
-                    else{
-                        
-                        self->ctx.version = 0U;
-                        LDL_OPS_deriveKeys(self);                        
-                    }
+                    LDL_OPS_deriveKeys(self);
                     
                     self->devNonce++;
                     

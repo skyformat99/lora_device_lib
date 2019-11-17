@@ -156,7 +156,19 @@ enum ldl_mac_response_type {
      * */
     LDL_MAC_STARTUP,
     
-    /** join request was answered and MAC is now joined */
+    /** Join request was answered and MAC is now joined 
+     * 
+     * Receipt of this event also means:
+     * 
+     * - Fresh sessions keys have been derived. The application
+     *   should ensure that these are cached if you are implementing
+     *   persistent sessions.
+     * 
+     * - devNonce has been updated. The next devNonce
+     *   is pushed with this event and should be cached so that
+     *   it can be restored the next time LDL_MAC_init() is called.
+     * 
+     * */
     LDL_MAC_JOIN_COMPLETE,
     
     /** join request was not answered (MAC will try again) */
@@ -260,7 +272,7 @@ union ldl_mac_response_arg {
         uint32_t freq;                      /**< frequency */    
         enum ldl_spreading_factor sf;      /**< spreading factor */
         enum ldl_signal_bandwidth bw;      /**< bandwidth */
-        uint8_t power;                      /**< power setting @warning this is not dBm */
+        uint8_t power;                      /**< LoRaWAN power setting @warning this is not dBm */
         uint8_t size;                       /**< message size */
         
     } tx_begin;
@@ -286,12 +298,20 @@ union ldl_mac_response_arg {
         uint8_t fractions;
         
     } device_time;
+    
+    /** #LDL_MAC_JOIN_COMPLETE argument */
+    struct {
+        
+        /** the next devNonce to be used during OTAA */
+        uint16_t nextDevNonce;
+        
+    } join_complete;
 };
 
 /** LDL calls this function pointer to notify application of events
  * 
  * @param[in] app   app from LDL_MAC_init()
- * @param[in] type  event type (#ldl_mac_response_type)  
+ * @param[in] type  #ldl_mac_response_type
  * @param[in] arg   **OPTIONAL** depending on #ldl_mac_response_type
  * 
  * */
@@ -519,38 +539,101 @@ struct ldl_mac {
   
     /* options and overrides applicable to current data service */
     struct ldl_mac_data_opts opts;
+    
+    /* added to the power setting given to radio to compensate 
+     * for gains/losses */
+    int16_t gain;
 };
 
-/** passed as an argument to LDL_MAC_init() */
+/** passed as an argument to LDL_MAC_init() 
+ * 
+ * */
 struct ldl_mac_init_arg {
     
     /** pointer passed to #ldl_mac_response_fn and @ref ldl_system functions */
     void *app;      
     
-    /** initialised radio object */
+    /** pointer to initialised Radio */
     struct ldl_radio *radio;
     
-    /** security module object */
+    /** pointer to initialised Security Module */
     struct ldl_sm *sm;
     
     /** application callback #ldl_mac_response_fn */
     ldl_mac_response_fn handler;
     
-    /** #ldl_mac_session to load (NULL if not available) */
+    /** optional pointer to restored #ldl_mac_session
+     * 
+     * If this pointer is NULL, LDL will initialise session to default
+     * values.
+     * 
+     * If session keys could not be recovered, the application must
+     * set this pointer to NULL.
+     * 
+     *  */
     const struct ldl_mac_session *session;    
     
+    /** pointer to 8 byte identifier */
     const void *joinEUI;
+    
+    /** pointer to 8 byte identifier */
     const void *devEUI;
+    
+    /** the next devNonce for to use in OTAA 
+     * 
+     * @see #LDL_MAC_JOIN_COMPLETE
+     * 
+     * */
+    uint16_t devNonce;
+    
+    /** dBm to add to the power setting given to the 
+     * radio to compensate for gains/losses
+     * 
+     * If in doubt set to 0
+     * 
+     * */
+    int16_t gain;
 };
 
 
 /** Initialise #ldl_mac 
  * 
  * @param[in] self      #ldl_mac
- * @param[in] region    lorawan region id #ldl_region
+ * @param[in] region    #ldl_region
  * @param[in] arg       #ldl_mac_init_arg
  * 
- * @see LDL_Radio_init()
+ * Many important parameters and references are injected
+ * into #ldl_mac via arg. These are immutable
+ * for the lifetime of #ldl_mac:
+ * 
+ * - ldl_mac_init_arg.radio     pointer to initialised Radio
+ * - ldl_mac_init_arg.handler   application callback/handler
+ * - ldl_mac_init_arg.app       application specific pointer
+ * - ldl_mac_init_arg.sm        pointer to initialised Security Module
+ * - ldl_mac_init_arg.joinEUI   pointer to 16 byte identifier
+ * - ldl_mac_init_arg.devEUI    pointer to 16 byte identifier
+ * - ldl_mac_init_arg.devNonce  the next devNonce to use in OTAA
+ * - ldl_mac_init_arg.session   optional pointer to restored session state
+ * - ldl_mac_init_arg.gain      gain compensation
+ * 
+ * More members may be added in future releases and so it is 
+ * recommended to clear #ldl_mac_init_arg before using. This will ensure
+ * not-null assertions in LDL_MAC_init() fail.
+ * 
+ * For example:
+ * 
+ * @code{.c}
+ * struct ldl_mac_init_arg arg = {0};
+ * 
+ * arg.radio = &radio;
+ * arg.handler = my_handler;
+ * arg.app = NULL;
+ * arg.sm = &sm;
+ * arg.joinEUI = joinEUI;
+ * arg.devEUI = devEUI;
+ * 
+ * LDL_MAC_init(&mac, LDL_EU_863_870, &arg);
+ * @endcode
  * 
  * */
 void LDL_MAC_init(struct ldl_mac *self, enum ldl_region region, const struct ldl_mac_init_arg *arg);

@@ -79,63 +79,51 @@ void LDL_OPS_deriveKeys(struct ldl_mac *self)
     
     LDL_SM_beginUpdateSessionKey(self->sm); 
     {
-        /* ptr[0] below */    
-        pos = 1U;
-        pos += putU24(&ptr[pos], self->joinNonce);
-        pos += putU24(&ptr[pos], self->ctx.netID);
-        (void)putU16(&ptr[pos], self->devNonce);
-        
-        ptr[0] = 2U;
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_APPS, LDL_SM_KEY_NWK, &iv);
-        
-        ptr[0] = 1U;
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_FNWKSINT, LDL_SM_KEY_NWK, &iv);    
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_SNWKSINT, LDL_SM_KEY_NWK, &iv);
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_NWKSENC, LDL_SM_KEY_NWK, &iv);
-    }    
-    LDL_SM_endUpdateSessionKey(self->sm);    
-}
-
-void LDL_OPS_deriveKeys2(struct ldl_mac *self)
-{
-    LDL_PEDANTIC(self != NULL)
-    
-    struct ldl_block iv;
-    uint8_t *ptr;
-    uint8_t pos;
-    
-    ptr = iv.value;
-    
-    (void)memset(&iv, 0, sizeof(iv));
-    
-    LDL_SM_beginUpdateSessionKey(self->sm); 
-    {
-        /* ptr[0] below */ 
-        (void)putEUI(&ptr[1U], self->devEUI);
-        
-        ptr[0] = 5U;
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_JSENC, LDL_SM_KEY_NWK, &iv);                
-        
-        ptr[0] = 6U;
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_JSINT, LDL_SM_KEY_NWK, &iv); 
-        
-        /* ptr[0] below */ 
-        pos = 1U;
-        pos += putU24(&ptr[pos], self->joinNonce);
-        pos += putEUI(&ptr[pos], self->joinEUI);
-        (void)putU16(&ptr[pos], self->devNonce);
-           
-        ptr[0] = 1U;
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_FNWKSINT, LDL_SM_KEY_NWK, &iv);    
-        
-        ptr[0] = 2U;
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_APPS, LDL_SM_KEY_NWK, &iv);
-        
-        ptr[0] = 3U;
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_SNWKSINT, LDL_SM_KEY_NWK, &iv);
-        
-        ptr[0] = 4U;
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_NWKSENC, LDL_SM_KEY_NWK, &iv);                               
+        if(self->ctx.version == 0U){
+            
+            /* ptr[0] below */    
+            pos = 1U;
+            pos += putU24(&ptr[pos], self->joinNonce);
+            pos += putU24(&ptr[pos], self->ctx.netID);
+            (void)putU16(&ptr[pos], self->devNonce);
+            
+            ptr[0] = 2U;
+            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_APPS, LDL_SM_KEY_NWK, &iv);
+            
+            ptr[0] = 1U;
+            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_FNWKSINT, LDL_SM_KEY_NWK, &iv);    
+            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_SNWKSINT, LDL_SM_KEY_NWK, &iv);
+            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_NWKSENC, LDL_SM_KEY_NWK, &iv);
+        }
+        else{
+            
+            /* ptr[0] below */ 
+            (void)putEUI(&ptr[1U], self->devEUI);
+            
+            ptr[0] = 5U;
+            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_JSENC, LDL_SM_KEY_NWK, &iv);                
+            
+            ptr[0] = 6U;
+            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_JSINT, LDL_SM_KEY_NWK, &iv); 
+            
+            /* ptr[0] below */ 
+            pos = 1U;
+            pos += putU24(&ptr[pos], self->joinNonce);
+            pos += putEUI(&ptr[pos], self->joinEUI);
+            (void)putU16(&ptr[pos], self->devNonce);
+               
+            ptr[0] = 1U;
+            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_FNWKSINT, LDL_SM_KEY_NWK, &iv);    
+            
+            ptr[0] = 2U;
+            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_APPS, LDL_SM_KEY_NWK, &iv);
+            
+            ptr[0] = 3U;
+            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_SNWKSINT, LDL_SM_KEY_NWK, &iv);
+            
+            ptr[0] = 4U;
+            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_NWKSENC, LDL_SM_KEY_NWK, &iv);                               
+        }        
     }    
     LDL_SM_endUpdateSessionKey(self->sm);    
 }

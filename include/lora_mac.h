@@ -542,7 +542,7 @@ struct ldl_mac {
     
     /* added to the power setting given to radio to compensate 
      * for gains/losses */
-    int16_t antennaGain;
+    int16_t gain;
 };
 
 /** passed as an argument to LDL_MAC_init() 
@@ -592,7 +592,7 @@ struct ldl_mac_init_arg {
      * If in doubt set to 0
      * 
      * */
-    int16_t antennaGain;
+    int16_t gain;
 };
 
 
@@ -614,6 +614,7 @@ struct ldl_mac_init_arg {
  * - ldl_mac_init_arg.devEUI    pointer to 16 byte identifier
  * - ldl_mac_init_arg.devNonce  the next devNonce to use in OTAA
  * - ldl_mac_init_arg.session   optional pointer to restored session state
+ * - ldl_mac_init_arg.gain      gain compensation
  * 
  * More members may be added in future releases and so it is 
  * recommended to clear #ldl_mac_init_arg before using. This will ensure

@@ -38,46 +38,7 @@
  * @{
  * */
 
-#ifndef LDL_MAX_PACKET
-    /** Redefine this to reduce the stack and data memory footprint.
-     * 
-     * The maximum allowable size is UINT8_MAX bytes
-     * 
-     * */
-    #define LDL_MAX_PACKET UINT8_MAX    
-#endif
- 
-#ifndef LDL_DEFAULT_RATE
-    /** Redefine to limit maximum rate to this setting
-     * 
-     * Useful if you want to avoid a large spreading factor if your
-     * hardware doesn't support it.
-     * 
-     * */
-    #define LDL_DEFAULT_RATE 1U
 
-#endif
-
-#ifndef LDL_REDUNDANCY_MAX
-    /** Redefine to limit the maximum redundancy setting 
-     * 
-     * (i.e. LinkADRReq.redundancy.NbTrans)
-     * 
-     * The implementation and that standard limit this value to 15. Since
-     * the network can set this value, if you feel it is way too high to 
-     * ever consider using, you can use this macro to further limit it.
-     * 
-     * e.g.
-     * 
-     * @code{.c}
-     * #define LDL_REDUNDANCY_MAX 3
-     * @endcode
-     * 
-     * would ensure there will never be more than 3 redundant frames.
-     * 
-     * */
-    #define LDL_REDUNDANCY_MAX 0xfU
-#endif
 
 #ifdef DOXYGEN
 
@@ -285,6 +246,8 @@
     /**
      * Define to have LDL generate devNonce from random
      * 
+     * This should not be used with LoRaWAN 1.1 servers
+     * 
      * */
      #define LDL_ENABLE_RANDOM_DEV_NONCE
      #undef  LDL_ENABLE_RANDOM_DEV_NONCE
@@ -295,6 +258,46 @@
     #include LDL_TARGET_INCLUDE    
 #endif
 
+#ifndef LDL_MAX_PACKET
+    /** Redefine this to reduce the stack and data memory footprint.
+     * 
+     * The maximum allowable size is UINT8_MAX bytes
+     * 
+     * */
+    #define LDL_MAX_PACKET UINT8_MAX    
+#endif
+ 
+#ifndef LDL_DEFAULT_RATE
+    /** Redefine to limit maximum rate to this setting
+     * 
+     * Useful if you want to avoid a large spreading factor if your
+     * hardware doesn't support it.
+     * 
+     * */
+    #define LDL_DEFAULT_RATE 1U
+
+#endif
+
+#ifndef LDL_REDUNDANCY_MAX
+    /** Redefine to limit the maximum redundancy setting 
+     * 
+     * (i.e. LinkADRReq.redundancy.NbTrans)
+     * 
+     * The implementation and that standard limit this value to 15. Since
+     * the network can set this value, if you feel it is way too high to 
+     * ever consider using, you can use this macro to further limit it.
+     * 
+     * e.g.
+     * 
+     * @code{.c}
+     * #define LDL_REDUNDANCY_MAX 3
+     * @endcode
+     * 
+     * would ensure there will never be more than 3 redundant frames.
+     * 
+     * */
+    #define LDL_REDUNDANCY_MAX 0xfU
+#endif
 
 /** @} */
 #endif

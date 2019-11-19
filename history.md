@@ -1,10 +1,11 @@
-# Release History
+Release History
+===============
 
-## 0.2.0
+# 0.2.0
 
 Warning: this update has a significant number of interface name changes. 
 
-### features
+## features
 
 - LoRaWAN 1.1 support
 - encryption and key management is now the domain of the Security Module (SM)
@@ -26,8 +27,9 @@ Warning: this update has a significant number of interface name changes.
 - antenna gain/loss can now be compensated for at LDL_MAC_init()
 - improved doxygen interface documentation
 
-### changes
+## changes
 
+- changed all source files to use 'ldl' prefix instead of 'lora'
 - added   'LDL' and 'ldl' prefixes to all enums that were not yet prefixed
 - changed all 'LORA' and 'lora' prefixes to 'LDL' and 'ldl' for consistency
 - added   LDL_Radio_interrupt() to take over from LDL_MAC_interrupt()
@@ -60,9 +62,9 @@ Warning: this update has a significant number of interface name changes.
 - changed LORA_ERROR() to accept argument (app pointer)
 - changed how off-time is accounted for
 
-### bugs
+## bugs
 
-## 0.1.6
+# 0.1.6
 
 - arduino wrapper improvements
     - debug messages now included/excluded by code in the the event callback handler

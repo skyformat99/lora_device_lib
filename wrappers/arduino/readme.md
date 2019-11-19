@@ -9,4 +9,4 @@ Arduino specific stuff in src and the core implementation in the root
 of the repository. 
 
 You can also use it to build the examples if you have arduino-builder
-installed. Built examples appear in the built folder.
+installed. Built examples appear in the build folder.

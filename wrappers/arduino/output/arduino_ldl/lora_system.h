@@ -34,7 +34,6 @@
  * 
  * The following *MUST* be implemented:
  * 
- * - LDL_System_getIdentity()
  * - LDL_System_ticks()
  * - LDL_System_tps()
  * - LDL_System_eps()
@@ -46,7 +45,7 @@
  * - LDL_System_getBatteryLevel()
  * - LDL_System_rand()
  * 
- * The following macros *MUST* be defined if LDL_MAC_interrupt() or LDL_MAC_ticksUntilNextEvent() are called from an interrupt:
+ * The following macros *MUST* be defined if LDL_Radio_interrupt() or LDL_MAC_ticksUntilNextEvent() are called from an interrupt:
  * 
  * - LDL_SYSTEM_ENTER_CRITICAL() 
  * - LDL_SYSTEM_LEAVE_CRITICAL()

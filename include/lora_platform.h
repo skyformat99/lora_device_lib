@@ -199,6 +199,14 @@
     #define LDL_DISABLE_DATA_TIMEOUT_EVENT
     #undef LDL_DISABLE_DATA_TIMEOUT_EVENT
     
+    
+    /**
+     * Define to remove data NAK event
+     * 
+     * */
+    #define LDL_DISABLE_DATA_NAK_EVENT
+    #undef LDL_DISABLE_DATA_NAK_EVENT
+    
     /**
      * Define to remove join complete event
      * 

@@ -138,12 +138,17 @@ void app_handler(void *app, enum ldl_mac_response_type type, const union ldl_mac
         
     /* an opportunity for the application to:
      * 
+     * - cache the joinNonce 
      * - cache the next devNonce 
      * - cache session keys
+     * - view join parameters (which are stored as part of session state)
      * 
      * */
     case LDL_MAC_JOIN_COMPLETE:
         (void)arg->join_complete.nextDevNonce;
+        (void)arg->join_complete.joinNonce;
+        (void)arg->join_complete.netID;
+        (void)arg->join_complete.devAddr;
         break;
         
     case LDL_MAC_CHIP_ERROR:

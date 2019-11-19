@@ -30,7 +30,11 @@
  * 
  * # Security Module Interface
  * 
- * The Security Module manages keys and performs cryptographic operations.
+ * LDL depends on the interfaces in this group for performing cryptographic operations.
+ * 
+ * A default implementation is provided in lora_sm.c. 
+ * If an application has specific requirements (e.g. a hardware security module is required) these
+ * functions must be re-implemented.
  * 
  * @{
  * 

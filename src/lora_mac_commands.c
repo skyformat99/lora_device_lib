@@ -86,9 +86,9 @@ uint8_t LDL_MAC_sizeofCommandUp(enum ldl_mac_cmd_type type)
         retval = 2U;
         break;        
     case LDL_CMD_DEV_STATUS:
+    case LDL_CMD_FORCE_REJOIN:
         retval = 3U;
         break;    
-    case LDL_CMD_FORCE_REJOIN:
     default:      
         break;
     }
@@ -137,7 +137,7 @@ void LDL_MAC_putNewChannelAns(struct ldl_stream *s, const struct ldl_new_channel
 {
     uint8_t buf;
     
-    buf = (value->dataRateRangeOK ? 2U : 0U) | (value->channelFrequencyOK ? 1U : 0U);
+    buf = (value->dataRateRangeOK ? 2U : 0U) | (value->channelFreqOK ? 1U : 0U);
     
     (void)LDL_Stream_putU8(s, typeToTag(LDL_CMD_NEW_CHANNEL));
     (void)LDL_Stream_putU8(s, buf);           
@@ -148,7 +148,7 @@ void LDL_MAC_putDLChannelAns(struct ldl_stream *s, const struct ldl_dl_channel_a
 {
     uint8_t buf;
     
-    buf = (value->uplinkFreqOK ? 2U : 0U) | (value->channelFrequencyOK ? 1U : 0U);
+    buf = (value->uplinkFreqOK ? 2U : 0U) | (value->channelFreqOK ? 1U : 0U);
     
     (void)LDL_Stream_putU8(s, typeToTag(LDL_CMD_DL_CHANNEL));
     (void)LDL_Stream_putU8(s, buf);    

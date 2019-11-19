@@ -108,7 +108,7 @@ struct ldl_new_channel_req {
 struct ldl_new_channel_ans {
     
     bool dataRateRangeOK;
-    bool channelFrequencyOK;
+    bool channelFreqOK;
 };
 
 struct ldl_dl_channel_req {
@@ -120,7 +120,7 @@ struct ldl_dl_channel_req {
 struct ldl_dl_channel_ans {
     
     bool uplinkFreqOK;
-    bool channelFrequencyOK;
+    bool channelFreqOK;
 };
 
 struct ldl_rx_timing_setup_req {

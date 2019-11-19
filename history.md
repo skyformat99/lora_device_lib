@@ -6,30 +6,30 @@ Warning: this update has a significant number of interface name changes.
 
 ### features
 
-- partial LoRaWAN 1.1 support
-    - key derivation
-    - optNeg branching in join
+- LoRaWAN 1.1 support
 - encryption and key management is now the domain of the Security Module (SM)
     - keys are referenced by descriptors
     - cipher/plain text is sent to SM for processing
     - generic cryptographic operations decoupled from LoRaWAN concerns
     - implementation is simple to modify or replace completely
 - redundant unconfirmed data frames now defer off-time until all frames (i.e. nbTrans) have been sent
-    - off-time will never exceed one hour
+    - off-time will never exceed LDL_Region_getMaxDCycleOffLimit()
     - off-time calculated from band limits as well as maxDCycle (as per usual)
 - confirmed and unconfirmed data interfaces now accept an invocation option structure
     - can be set to NULL to use defaults
     - can request piggy-backed LinkCheckReq
+    - can request piggy-backed DeviceTimeReq
     - can specify nbTrans
     - can specify schedule dither
 - confirmed data services now use the same retry/backoff strategy as otaa
-- standard retry/backoff strategy now adds up to 30 seconds of dither to each retransmission attempt
+- standard retry/backoff strategy now guarantees up to 30 seconds of dither to each retransmission attempt
+- antenna gain/loss can now be compensated for at LDL_MAC_init()
 - improved doxygen interface documentation
 
 ### changes
 
-- added   LDL and ldl prefixes to all enums that were not yet prefixed
-- changed all LORA and lora prefixes to LDL and ldl for consistency
+- added   'LDL' and 'ldl' prefixes to all enums that were not yet prefixed
+- changed all 'LORA' and 'lora' prefixes to 'LDL' and 'ldl' for consistency
 - added   LDL_Radio_interrupt() to take over from LDL_MAC_interrupt()
 - changed LDL_MAC_interrupt() to LDL_MAC_radioEvent() which gets called by LDL_Radio_interrupt()
 - changed lora_frame.c and lora_mac_commands.c to use the same pack/unpack code

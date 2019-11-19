@@ -1,7 +1,7 @@
-lora_device_lib
-===============
+LDL
+===
 
-A LoRaWAN implementation for nodes/devices.
+LDL is a LoRaWAN implementation for nodes/devices.
 
 See [history file](history.md) for releases.
 
@@ -9,7 +9,7 @@ See [history file](history.md) for releases.
 
 ## Features
 
-- LoRaWAN 1.1 support 
+- LoRaWAN 1.1
 - Class A
 - OTAA
 - Confirmed and Unconfirmed Data
@@ -29,6 +29,9 @@ See [history file](history.md) for releases.
     - RXTimingSetupReq/Ans
     - RXParamSetupReq/Ans
     - DlChannelReq/Ans
+    - DeviceTimeReq/Ans
+    - ADRParamSetupReq/Ans
+    - RekeyInd/Conf
 - Supported regions (run-time option)
     - EU_868_870
     - EU_433
@@ -37,22 +40,25 @@ See [history file](history.md) for releases.
 - Supported radios (run-time option)
     - SX1272
     - SX1276
-- Build time [options](https://cjhdev.github.io/lora_device_lib_api/group__ldl__build__options.html)
+- Build [options](https://cjhdev.github.io/lora_device_lib_api/group__ldl__build__options.html)
 - [API documentation](https://cjhdev.github.io/lora_device_lib_api/)
 - Examples
-    - [Arduino wrapper](bindings/arduino/output/arduino_ldl)
+    - [Arduino wrapper](wrappers/arduino/output/arduino_ldl)
+    - [bare metal](examples/doxygen/example.c)
     
 ## Limitations
 
 - Class B and C not supported
 - GFSK modulation not supported
 - ABP not supported
-- rejoin not supported
+- rejoin not supported yet
 - experimental
 
 ## Getting Started
 
 - [porting guide](porting.md)
+- [API documentation](https://cjhdev.github.io/lora_device_lib_api/)
+- [design goals](design_goals.md)
 
 ## License
 

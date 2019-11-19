@@ -20,13 +20,18 @@ See [arduino_ldl.h](arduino_ldl.h).
 Reset, select, and dio pins can be moved to suit your hardware. All
 of these connections are required for correct operation.
 
-## Examples
+## Flash/RAM Usage
+
+[examples/mbed_sx1272_small_code](examples/mbed_sx1272_small_code) requires ~24KB of flash and ~900B of RAM.
+
+
+## Example
 
 In this example a node will:
 
 - attempt to join
 - once joined, send an empty data message to port 1 as often as the TTN fair access policy allows
-- manage data rate using ADR
+- manage data rate and power using ADR
 
 ~~~ C++
 #include <arduino_ldl.h>

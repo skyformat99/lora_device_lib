@@ -29,8 +29,6 @@
  * 
  * # LDL Interface Documentation
  * 
- * Interface documentation for [LDL](https://github.com/cjhdev/lora_device_lib).
- * 
  * - @ref ldl_mac MAC layer interface
  * - @ref ldl_radio radio driver interface
  * - @ref ldl_system portable system interface
@@ -531,6 +529,7 @@ struct ldl_mac {
     bool rxParamSetupAns_pending;    
     bool dlChannelAns_pending;
     bool rxtimingSetupAns_pending;
+    bool rekeyConf_pending;
     
     uint8_t adrAckCounter;
     bool adrAckReq;

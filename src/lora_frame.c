@@ -55,6 +55,8 @@ uint8_t LDL_Frame_putData(const struct ldl_frame_data *f, void *out, uint8_t max
     
     LDL_Stream_init(&s, out, max);
     
+    (void)memset(off, 0, sizeof(*off));
+    
     (void)LDL_Stream_putU8(&s, ((uint8_t)f->type) << 5);
     (void)LDL_Stream_putU32(&s, f->devAddr);
     (void)LDL_Stream_putU8(&s, (f->adr ? 0x80U : 0U) | (f->adrAckReq ? 0x40U : 0U) | (f->ack ? 0x20U : 0U) | (f->pending ? 0x10U : 0U) | (f->optsLen & 0xfU));

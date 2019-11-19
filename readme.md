@@ -42,7 +42,7 @@ Be sure to use tagged releases.
 - Supported radios (run-time option)
     - SX1272
     - SX1276
-- Build [options](https://cjhdev.github.io/lora_device_lib_api/group__ldl__build__options.html)
+- [Build options](https://cjhdev.github.io/lora_device_lib_api/group__ldl__build__options.html)
 - [Interface documentation](https://cjhdev.github.io/lora_device_lib_api/)
 - Examples
     - [Arduino wrapper](wrappers/arduino/output/arduino_ldl)

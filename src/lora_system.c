@@ -31,6 +31,7 @@ uint32_t LDL_System_advance(void) __attribute__((weak));
 /**! [LDL_System_rand] */
 uint8_t LDL_System_rand(void *app)
 {
+    (void)app;
     return (uint8_t)rand();
 }
 /**! [LDL_System_rand] */
@@ -38,6 +39,7 @@ uint8_t LDL_System_rand(void *app)
 /**! [LDL_System_getBatteryLevel] */
 uint8_t LDL_System_getBatteryLevel(void *app)
 {
+    (void)app;
     return 255U;    /* not available */
 }
 /**! [LDL_System_getBatteryLevel] */

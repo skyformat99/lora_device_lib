@@ -1152,7 +1152,7 @@ uint8_t LDL_MAC_mtu(const struct ldl_mac *self)
         overhead += LDL_MAC_sizeofCommandUp(LDL_CMD_LINK_CHECK);
     }
     
-    return (overhead > max) ? 0U : (max - overhead);    
+    return (overhead > max) ? 0 : (max - overhead);    
 }
 
 uint32_t LDL_MAC_timeSinceValidDownlink(struct ldl_mac *self)
@@ -1398,8 +1398,10 @@ bool LDL_MAC_priority(const struct ldl_mac *self, uint8_t interval)
     LDL_PEDANTIC(self != NULL)
     
     bool retval;
-    
     uint32_t error;
+    
+    /* todo */
+    (void)interval; 
     
     LDL_MAC_timerTicksUntil(self, LDL_TIMER_WAITA, &error);
     
@@ -2590,6 +2592,8 @@ static void downlinkMissingHandler(struct ldl_mac *self)
     uint32_t tx_time;
     uint8_t mtu;
     
+    (void)arg;
+    
     if(self->opts.nbTrans > 0U){
         
         nbTrans = self->opts.nbTrans;
@@ -2738,4 +2742,7 @@ static void pushSessionUpdate(struct ldl_mac *self)
 
 static void dummyResponseHandler(void *app, enum ldl_mac_response_type type, const union ldl_mac_response_arg *arg)
 {
+    (void)app;
+    (void)type;
+    (void)arg;
 }

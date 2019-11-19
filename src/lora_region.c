@@ -320,6 +320,11 @@ bool LDL_Region_getChannel(enum ldl_region region, uint8_t chIndex, uint32_t *fr
 {
     bool retval = false;
     
+    (void)chIndex;
+    (void)freq;
+    (void)minRate;
+    (void)maxRate;
+    
     switch(region){
     default:
         break;    
@@ -586,6 +591,10 @@ bool LDL_Region_validateRate(enum ldl_region region, uint8_t chIndex, uint8_t mi
 
 bool LDL_Region_validateFreq(enum ldl_region region, uint8_t chIndex, uint32_t freq)
 {
+    (void)region;
+    (void)chIndex;
+    (void)freq;
+    
     return true;
 }
 
@@ -678,6 +687,8 @@ void LDL_Region_getRX1DataRate(enum ldl_region region, uint8_t tx_rate, uint8_t 
 
 void LDL_Region_getRX1Freq(enum ldl_region region, uint32_t txFreq, uint8_t chIndex, uint32_t *freq)
 {
+    (void)chIndex;
+    
     switch(region){
     default:
         *freq = txFreq;
@@ -698,16 +709,22 @@ void LDL_Region_getRX1Freq(enum ldl_region region, uint32_t txFreq, uint8_t chIn
 
 uint8_t LDL_Region_getRX1Delay(enum ldl_region region)
 {
+    (void)region;
+    
     return 1U;    
 }
 
 uint8_t LDL_Region_getJA1Delay(enum ldl_region region)
 {
+    (void)region;
+    
     return 5U;        
 }
 
 uint8_t LDL_Region_getRX1Offset(enum ldl_region region)
 {
+    (void)region;
+    
     return 0U;        
 }
 
@@ -925,6 +942,8 @@ uint8_t LDL_Region_getJoinRate(enum ldl_region region, uint32_t trial)
 
 uint32_t LDL_Region_getMaxDCycleOffLimit(enum ldl_region region)
 {
+    (void)region;
+    
     /* I've only checked this for ETSI:
      * 
      * duty-cycle is evaluated over one hour therefore we can effectively

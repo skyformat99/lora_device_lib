@@ -86,7 +86,7 @@ build/%: staging/%
 	@ echo building $@:
 	rm -rf $@
 	mkdir -p $@
-	$(ARDUINO) $(TOOLS) $(FQBN) -build-path $(abspath $@) $(HARDWARE) $</$(notdir $@).ino
+	$(ARDUINO) $(TOOLS) $(FQBN) -build-path $(abspath $@) -warnings all $(HARDWARE) $</$(notdir $@).ino
 	@ echo
 
 clean:

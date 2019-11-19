@@ -19,12 +19,13 @@ CFLAGS += -DLDL_ENABLE_SX1276
 CFLAGS += -DLDL_ENABLE_EU_863_870
 
 example: $(addprefix $(DIR_BUILD)/, $(OBJ))
-	$(CC) $(CFLAGS) $^ -o $@
+#	$(CC) $(CFLAGS) $^ -o $@
 
 $(DIR_BUILD)/%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-
 clean:
 	@ echo cleaning up objects
 	@ rm -f $(DIR_BUILD)/*
+
+.PHONY: example

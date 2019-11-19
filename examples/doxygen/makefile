@@ -18,6 +18,8 @@ CFLAGS += -DLDL_ENABLE_SX1272
 CFLAGS += -DLDL_ENABLE_SX1276
 CFLAGS += -DLDL_ENABLE_EU_863_870
 
+CLFAGS += -Wall
+
 example: $(addprefix $(DIR_BUILD)/, $(OBJ))
 #	$(CC) $(CFLAGS) $^ -o $@
 

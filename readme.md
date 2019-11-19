@@ -1,14 +1,15 @@
 LDL
 ===
 
-LDL is a LoRaWAN implementation for nodes/devices.
+LDL is a LoRaWAN implementation for devices.
 
-See [history file](history.md) for releases.
+Be sure to use tagged releases.
 
 [![Build Status](https://travis-ci.org/cjhdev/lora_device_lib.svg?branch=master)](https://travis-ci.org/cjhdev/lora_device_lib)
 
 ## Features
 
+- Compact and portable
 - LoRaWAN 1.1
 - Class A
 - OTAA
@@ -16,8 +17,9 @@ See [history file](history.md) for releases.
     - per invocation options (overriding global settings)
         - redundancy (nbTrans)
         - piggy-back LinkCheckReq
+        - piggy-back DeviceTimeReq
         - transmit start time dither
-    - deferred duty cycle limit for redundant transmissions
+    - deferred duty cycle limit for redundant unconfirmed data
 - ADR
 - Supported MAC commands
     - LinkCheckReq/Ans
@@ -41,24 +43,44 @@ See [history file](history.md) for releases.
     - SX1272
     - SX1276
 - Build [options](https://cjhdev.github.io/lora_device_lib_api/group__ldl__build__options.html)
-- [API documentation](https://cjhdev.github.io/lora_device_lib_api/)
+- [Interface documentation](https://cjhdev.github.io/lora_device_lib_api/)
 - Examples
     - [Arduino wrapper](wrappers/arduino/output/arduino_ldl)
-    - [bare metal](examples/doxygen/example.c)
+    - [documentation example](examples/doxygen/example.c)
     
 ## Limitations
 
 - Class B and C not supported
-- GFSK modulation not supported
+- FSK modulation not supported
 - ABP not supported
-- rejoin not supported yet
-- experimental
+- Rejoin not supported yet
+- **Experimental**
 
-## Getting Started
+## Documentation
 
 - [porting guide](porting.md)
-- [API documentation](https://cjhdev.github.io/lora_device_lib_api/)
+- [interface documentation](https://cjhdev.github.io/lora_device_lib_api/)
+- [history](history.md)
 - [design goals](design_goals.md)
+- [todo list](todo.md)
+
+## Building Interface Documentation
+
+- have doxygen and make installed
+- `cd doxygen && make`
+- open doxygen/output/index.html
+
+Alternatively just read the [header files](include).
+
+## Commercial Support
+
+Commercial support is available from the author.
+
+contact@stackmechanic.com
+
+## See Also
+
+- [LoRaMAC-Node](https://github.com/Lora-net/LoRaMac-node): Semtech reference implementation
 
 ## License
 

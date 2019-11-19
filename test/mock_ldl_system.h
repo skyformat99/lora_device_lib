@@ -1,8 +1,8 @@
 #ifndef MOCK_LORA_SYSTEM_H
 #define MOCK_LORA_SYSTEM_H
 
-#include "lora_system.h"
-#include "lora_mac.h"
+#include "ldl_system.h"
+#include "ldl_mac.h"
 
 struct mock_system_param {
 

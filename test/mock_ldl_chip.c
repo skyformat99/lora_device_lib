@@ -5,9 +5,9 @@
 #include <stdbool.h>
 
 #include "cmocka.h"
-#include "lora_radio.h"
-#include "mock_lora_chip.h"
-#include "lora_chip.h"
+#include "ldl_radio.h"
+#include "mock_ldl_chip.h"
+#include "ldl_chip.h"
 
 void LDL_Chip_select(void *self, bool state)
 {

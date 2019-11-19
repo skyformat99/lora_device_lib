@@ -30,7 +30,7 @@
  * @{
  * */
 
-#include "lora_platform.h"
+#include "ldl_platform.h"
 
 #ifndef LDL_ERROR
     /** A printf-like function that captures run-time error level messages 

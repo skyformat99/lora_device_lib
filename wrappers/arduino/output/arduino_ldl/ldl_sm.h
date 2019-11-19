@@ -19,36 +19,63 @@
  *
  * */
 
-#ifndef LDL_CTR_H
-#define LDL_CTR_H
+#ifndef LDL_SM_H
+#define LDL_SM_H
 
 /** @file */
-
-/**
- * @addtogroup ldl_crypto
- * 
- * @{
- * */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "stdint.h"
-#include "lora_aes.h"
+#include "ldl_sm_internal.h"
 
-struct ldl_aes_ctx;
+#include <stdint.h>
 
-/** Counter mode encryption
+struct ldl_key {
+    
+    uint8_t value[16U];
+};
+
+/** default in-memory security module state */
+struct ldl_sm {
+    
+    struct ldl_key keys[8U];    
+};
+
+/** session key structure */
+struct ldl_sm_keys {
+    
+    struct ldl_key keys[6U];    
+};
+
+/**
+ * Initialise Default Security Module with root keys
  * 
- * @param[in] ctx   #ldl_aes_ctx
- * @param[in] iv    16 byte initial value
- * @param[in] in    input buffer to encrypt
- * @param[out] out  output buffer (can be same as in)
- * @param[in] len   size of input
+ * @param[in] self      #ldl_sm
+ * @param[in] appKey    pointer to 16 byte field
+ * @param[in] nwkKey    pointer to 16 byte field
  * 
  * */
-void LDL_CTR_encrypt(struct ldl_aes_ctx *ctx, const void *iv, const void *in, void *out, uint8_t len);
+void LDL_SM_init(struct ldl_sm *self, const void *appKey, const void *nwkKey);
+
+/**
+ * Set/restore session keys
+ * 
+ * @param[in]   self  #ldl_sm
+ * @param[in]   keys  
+ * 
+ * */
+void LDL_SM_setSession(struct ldl_sm *self, const struct ldl_sm_keys *keys);
+
+/**
+ * Get/save session keys
+ * 
+ * @param[in]   self #ldl_sm
+ * @param[out]  keys
+ * 
+ * */
+void LDL_SM_getSession(struct ldl_sm *self, struct ldl_sm_keys *keys);
 
 #ifdef __cplusplus
 }

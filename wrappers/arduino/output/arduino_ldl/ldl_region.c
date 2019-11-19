@@ -19,9 +19,9 @@
  *
  * */
 
-#include "lora_region.h"
-#include "lora_debug.h"
-#include "lora_mac.h"
+#include "ldl_region.h"
+#include "ldl_debug.h"
+#include "ldl_mac.h"
 
 #ifdef LDL_ENABLE_AVR
 
@@ -36,7 +36,7 @@
     
 #endif
 
-#include "stddef.h"
+#include <stddef.h>
     
 /* static function prototypes *****************************************/
 

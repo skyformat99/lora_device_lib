@@ -21,9 +21,9 @@
 
 /* includes ***********************************************************/
 
-#include "lora_aes.h"
-#include "lora_cmac.h"
-#include "lora_debug.h"
+#include "ldl_aes.h"
+#include "ldl_cmac.h"
+#include "ldl_debug.h"
 
 #include <string.h>
 #include <stdio.h>

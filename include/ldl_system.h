@@ -59,7 +59,7 @@
 extern "C" {
 #endif
 
-#include "lora_platform.h"
+#include "ldl_platform.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -112,7 +112,7 @@ uint32_t LDL_System_eps(void);
  * 
  * 
  * LDL includes the following weak implementation:
- * @snippet src/lora_system.c LDL_System_rand
+ * @snippet src/ldl_system.c LDL_System_rand
  * 
  * */
 uint8_t LDL_System_rand(void *app);
@@ -127,7 +127,7 @@ uint8_t LDL_System_rand(void *app);
  * 
  *  
  * LDL includes the following weak implementation:
- * @snippet src/lora_system.c LDL_System_getBatteryLevel
+ * @snippet src/ldl_system.c LDL_System_getBatteryLevel
  * 
  * */
 uint8_t LDL_System_getBatteryLevel(void *app);
@@ -139,7 +139,7 @@ uint8_t LDL_System_getBatteryLevel(void *app);
  * 
  * 
  * LDL includes the following weak implementation:
- * @snippet src/lora_system.c LDL_System_advance
+ * @snippet src/ldl_system.c LDL_System_advance
  * 
  * */
 uint32_t LDL_System_advance(void);

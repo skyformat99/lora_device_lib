@@ -4,7 +4,7 @@
 
 #include "cmocka.h"
 
-#include "lora_aes.h"
+#include "ldl_aes.h"
 
 #include <string.h>
 

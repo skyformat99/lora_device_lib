@@ -3,8 +3,8 @@
 #include <setjmp.h>
 
 #include "cmocka.h"
-#include "lora_mac_commands.h"
-#include "lora_stream.h"
+#include "ldl_mac_commands.h"
+#include "ldl_stream.h"
 
 static void test_putLinkCheckReq(void **user)
 {

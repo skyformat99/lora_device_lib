@@ -19,34 +19,41 @@
  *
  * */
 
-#include "lora_system.h"
+#ifndef LDL_CTR_H
+#define LDL_CTR_H
 
-#include <stdlib.h>
-#include <string.h>
+/** @file */
 
-uint8_t LDL_System_rand(void *app) __attribute__((weak));
-uint8_t LDL_System_getBatteryLevel(void *app) __attribute__((weak));
-uint32_t LDL_System_advance(void) __attribute__((weak));
+/**
+ * @addtogroup ldl_crypto
+ * 
+ * @{
+ * */
 
-/**! [LDL_System_rand] */
-uint8_t LDL_System_rand(void *app)
-{
-    (void)app;
-    return (uint8_t)rand();
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "stdint.h"
+#include "ldl_aes.h"
+
+struct ldl_aes_ctx;
+
+/** Counter mode encryption
+ * 
+ * @param[in] ctx   #ldl_aes_ctx
+ * @param[in] iv    16 byte initial value
+ * @param[in] in    input buffer to encrypt
+ * @param[out] out  output buffer (can be same as in)
+ * @param[in] len   size of input
+ * 
+ * */
+void LDL_CTR_encrypt(struct ldl_aes_ctx *ctx, const void *iv, const void *in, void *out, uint8_t len);
+
+#ifdef __cplusplus
 }
-/**! [LDL_System_rand] */
+#endif
 
-/**! [LDL_System_getBatteryLevel] */
-uint8_t LDL_System_getBatteryLevel(void *app)
-{
-    (void)app;
-    return 255U;    /* not available */
-}
-/**! [LDL_System_getBatteryLevel] */
+/** @} */
 
-/**! [LDL_System_advance] */
-uint32_t LDL_System_advance(void)
-{
-    return 0UL;
-}
-/**! [LDL_System_advance] */
+#endif

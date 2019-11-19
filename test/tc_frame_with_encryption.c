@@ -4,11 +4,11 @@
 
 #include "cmocka.h"
 
-#include "lora_frame.h"
-#include "lora_mac.h"
-#include "lora_sm.h"
-#include "lora_ops.h"
-#include "lora_system.h"
+#include "ldl_frame.h"
+#include "ldl_mac.h"
+#include "ldl_sm.h"
+#include "ldl_ops.h"
+#include "ldl_system.h"
 
 #include <string.h>
 #include <stdio.h>

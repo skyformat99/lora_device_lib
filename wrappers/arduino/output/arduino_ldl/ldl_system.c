@@ -19,68 +19,34 @@
  *
  * */
 
-#ifndef LDL_SM_H
-#define LDL_SM_H
+#include "ldl_system.h"
 
-/** @file */
+#include <stdlib.h>
+#include <string.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+uint8_t LDL_System_rand(void *app) __attribute__((weak));
+uint8_t LDL_System_getBatteryLevel(void *app) __attribute__((weak));
+uint32_t LDL_System_advance(void) __attribute__((weak));
 
-#include "lora_sm_internal.h"
-
-#include <stdint.h>
-
-struct ldl_key {
-    
-    uint8_t value[16U];
-};
-
-/** default in-memory security module state */
-struct ldl_sm {
-    
-    struct ldl_key keys[8U];    
-};
-
-/** session key structure */
-struct ldl_sm_keys {
-    
-    struct ldl_key keys[6U];    
-};
-
-/**
- * Initialise Default Security Module with root keys
- * 
- * @param[in] self      #ldl_sm
- * @param[in] appKey    pointer to 16 byte field
- * @param[in] nwkKey    pointer to 16 byte field
- * 
- * */
-void LDL_SM_init(struct ldl_sm *self, const void *appKey, const void *nwkKey);
-
-/**
- * Set/restore session keys
- * 
- * @param[in]   self  #ldl_sm
- * @param[in]   keys  
- * 
- * */
-void LDL_SM_setSession(struct ldl_sm *self, const struct ldl_sm_keys *keys);
-
-/**
- * Get/save session keys
- * 
- * @param[in]   self #ldl_sm
- * @param[out]  keys
- * 
- * */
-void LDL_SM_getSession(struct ldl_sm *self, struct ldl_sm_keys *keys);
-
-#ifdef __cplusplus
+/**! [LDL_System_rand] */
+uint8_t LDL_System_rand(void *app)
+{
+    (void)app;
+    return (uint8_t)rand();
 }
-#endif
+/**! [LDL_System_rand] */
 
-/** @} */
+/**! [LDL_System_getBatteryLevel] */
+uint8_t LDL_System_getBatteryLevel(void *app)
+{
+    (void)app;
+    return 255U;    /* not available */
+}
+/**! [LDL_System_getBatteryLevel] */
 
-#endif
+/**! [LDL_System_advance] */
+uint32_t LDL_System_advance(void)
+{
+    return 0UL;
+}
+/**! [LDL_System_advance] */

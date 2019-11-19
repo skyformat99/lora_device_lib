@@ -120,9 +120,9 @@
 extern "C" {
 #endif
 
-#include "lora_platform.h"
-#include "lora_region.h"
-#include "lora_radio.h"
+#include "ldl_platform.h"
+#include "ldl_region.h"
+#include "ldl_radio.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -346,6 +346,7 @@ enum ldl_mac_state {
     LDL_STATE_RX2_LOCKOUT, /**< used to ensure an out of range RX2 window is not clobbered */
     
     LDL_STATE_WAIT_RETRY,  /**< wait to retransmit / retry */
+    LDL_STATE_WAIT_SEND
     
 };
 

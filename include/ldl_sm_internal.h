@@ -32,7 +32,7 @@
  * 
  * LDL depends on the interfaces in this group for performing cryptographic operations.
  * 
- * A default implementation is provided in lora_sm.c. 
+ * A default implementation is provided in ldl_sm.c. 
  * If an application has specific requirements (e.g. a hardware security module is required) these
  * functions must be re-implemented.
  * 
@@ -77,7 +77,7 @@ enum ldl_sm_key {
  * 
  * The following weak implementation is provided:
  * 
- * @snippet src/lora_sm.c LDL_SM_updateSessionKey
+ * @snippet src/ldl_sm.c LDL_SM_updateSessionKey
  * 
  * */
 void LDL_SM_updateSessionKey(struct ldl_sm *self, enum ldl_sm_key keyDesc, enum ldl_sm_key rootDesc, const void *iv);
@@ -93,7 +93,7 @@ void LDL_SM_updateSessionKey(struct ldl_sm *self, enum ldl_sm_key keyDesc, enum 
  * 
  * The following weak implementation is provided:
  * 
- * @snippet src/lora_sm.c LDL_SM_beginUpdateSessionKey
+ * @snippet src/ldl_sm.c LDL_SM_beginUpdateSessionKey
  * 
  * */
 void LDL_SM_beginUpdateSessionKey(struct ldl_sm *self);
@@ -111,7 +111,7 @@ void LDL_SM_beginUpdateSessionKey(struct ldl_sm *self);
  * 
  * The following weak implementation is provided:
  * 
- * @snippet src/lora_sm.c LDL_SM_endUpdateSessionKey
+ * @snippet src/ldl_sm.c LDL_SM_endUpdateSessionKey
  * 
  * */
 void LDL_SM_endUpdateSessionKey(struct ldl_sm *self);
@@ -134,7 +134,7 @@ void LDL_SM_endUpdateSessionKey(struct ldl_sm *self);
  * 
  * The following weak implementation is provided:
  * 
- * @snippet src/lora_sm.c LDL_SM_mic
+ * @snippet src/ldl_sm.c LDL_SM_mic
  * 
  * */
 uint32_t LDL_SM_mic(struct ldl_sm *self, enum ldl_sm_key desc, const void *hdr, uint8_t hdrLen, const void *data, uint8_t dataLen);
@@ -147,7 +147,7 @@ uint32_t LDL_SM_mic(struct ldl_sm *self, enum ldl_sm_key desc, const void *hdr, 
  * 
  * The following weak implementation is provided:
  * 
- * @snippet src/lora_sm.c LDL_SM_ecb
+ * @snippet src/ldl_sm.c LDL_SM_ecb
  * 
  * */
 void LDL_SM_ecb(struct ldl_sm *self, enum ldl_sm_key desc, void *b);
@@ -162,7 +162,7 @@ void LDL_SM_ecb(struct ldl_sm *self, enum ldl_sm_key desc, void *b);
  * 
  * The following weak implementation is provided:
  * 
- * @snippet src/lora_sm.c LDL_SM_ctr
+ * @snippet src/ldl_sm.c LDL_SM_ctr
  * 
  * */
 void LDL_SM_ctr(struct ldl_sm *self, enum ldl_sm_key desc, const void *iv, void *data, uint8_t len);

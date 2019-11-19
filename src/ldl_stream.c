@@ -19,8 +19,8 @@
  *
  * */
 
-#include "lora_stream.h"
-#include "lora_debug.h"
+#include "ldl_stream.h"
+#include "ldl_debug.h"
 
 #include <string.h>
 

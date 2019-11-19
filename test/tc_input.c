@@ -4,7 +4,7 @@
 
 #include "cmocka.h"
 
-#include "lora_mac.h"
+#include "ldl_mac.h"
 
 #include <string.h>
 #include <stdlib.h>

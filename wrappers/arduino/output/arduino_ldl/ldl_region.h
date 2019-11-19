@@ -28,8 +28,8 @@
 extern "C" {
 #endif
 
-#include "lora_platform.h"
-#include "lora_radio_defs.h"
+#include "ldl_platform.h"
+#include "ldl_radio_defs.h"
 #include <stdint.h>
 #include <stdbool.h>
     

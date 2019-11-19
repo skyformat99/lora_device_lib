@@ -19,8 +19,8 @@
  *
  * */
 
-#include "lora_ctr.h"
-#include "lora_debug.h"
+#include "ldl_ctr.h"
+#include "ldl_debug.h"
 
 #include <string.h>
 

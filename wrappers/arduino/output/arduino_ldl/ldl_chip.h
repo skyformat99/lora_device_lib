@@ -90,7 +90,7 @@
  * - DIOx interrupt example:
  * 
  * @code{.c}
- * extern lora_mac mac;
+ * extern ldl_mac mac;
  * 
  * void dio0_rising_edge_isr(void)
  * {
@@ -118,7 +118,7 @@
 extern "C" {
 #endif
 
-#include "lora_platform.h"
+#include "ldl_platform.h"
 #include <stdint.h>
 #include <stdbool.h>
 

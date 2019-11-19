@@ -4,8 +4,8 @@
 
 #include "cmocka.h"
 
-#include "lora_aes.h"
-#include "lora_cmac.h"
+#include "ldl_aes.h"
+#include "ldl_cmac.h"
 
 #include <string.h>
 

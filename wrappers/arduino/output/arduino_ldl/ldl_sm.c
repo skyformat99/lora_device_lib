@@ -19,12 +19,12 @@
  *
  * */
 
-#include "lora_sm.h"
-#include "lora_ops.h"
-#include "lora_aes.h"
-#include "lora_cmac.h"
-#include "lora_ctr.h"
-#include "lora_debug.h"
+#include "ldl_sm.h"
+#include "ldl_ops.h"
+#include "ldl_aes.h"
+#include "ldl_cmac.h"
+#include "ldl_ctr.h"
+#include "ldl_debug.h"
 
 #include <string.h>
 

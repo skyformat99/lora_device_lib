@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-#include "lora_sm_internal.h"
+#include "ldl_sm_internal.h"
 
 #include <stdint.h>
 

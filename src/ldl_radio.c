@@ -21,10 +21,10 @@
 
 #include <string.h>
 
-#include "lora_debug.h"
-#include "lora_radio.h"
-#include "lora_chip.h"
-#include "lora_platform.h"
+#include "ldl_debug.h"
+#include "ldl_radio.h"
+#include "ldl_chip.h"
+#include "ldl_platform.h"
 
 #if defined(LDL_ENABLE_SX1272) || defined(LDL_ENABLE_SX1276)
 

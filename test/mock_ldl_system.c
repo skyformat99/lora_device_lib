@@ -5,8 +5,8 @@
 
 #include "cmocka.h"
 
-#include "lora_system.h"
-#include "mock_lora_system.h"
+#include "ldl_system.h"
+#include "mock_ldl_system.h"
 
 #include <string.h>
 

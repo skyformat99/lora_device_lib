@@ -106,6 +106,7 @@ More [examples](examples).
 - ArduinoLDL has ADR enabled by default (use ArduinoLDL.disableADR() to disable)
 - ArduinoLDL limits to approximately the TTN fair access policy by default (use ArduinoLDL.setAggregatedDutyCycleLimit() to change)
 - LoRaWAN 1.1 changed the name of the appKey to nwkKey, and then created a new appKey (if in doubt and using LoRaWAN 1.1 server, set both keys to the same value)
+- If OTAA is timing out when it should be succeeding it might be a repeat devNonce (try resetting the Arduino)
 
 ## License
 

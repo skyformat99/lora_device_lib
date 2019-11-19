@@ -19,12 +19,12 @@
  *
  * */
 
-#include "lora_ops.h"
-#include "lora_sm_internal.h"
-#include "lora_mac.h"
-#include "lora_system.h"
-#include "lora_frame.h"
-#include "lora_debug.h"
+#include "ldl_ops.h"
+#include "ldl_sm_internal.h"
+#include "ldl_mac.h"
+#include "ldl_system.h"
+#include "ldl_frame.h"
+#include "ldl_debug.h"
 #include <string.h>
 
 struct ldl_block {

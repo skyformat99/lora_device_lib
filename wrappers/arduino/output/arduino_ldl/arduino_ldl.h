@@ -26,11 +26,11 @@
 #include <Arduino.h>
 #include <SPI.h>
 
-#include "lora_radio.h"
-#include "lora_mac.h"
-#include "lora_system.h"
-#include "lora_chip.h"
-#include "lora_sm.h"
+#include "ldl_radio.h"
+#include "ldl_mac.h"
+#include "ldl_system.h"
+#include "ldl_chip.h"
+#include "ldl_sm.h"
 
 struct arduino_ldl_id {
     

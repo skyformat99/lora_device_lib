@@ -19,15 +19,15 @@
  *
  * */
 
-#include "lora_mac.h"
-#include "lora_radio.h"
-#include "lora_frame.h"
-#include "lora_debug.h"
-#include "lora_system.h"
-#include "lora_mac_commands.h"
-#include "lora_stream.h"
-#include "lora_sm_internal.h"
-#include "lora_ops.h"
+#include "ldl_mac.h"
+#include "ldl_radio.h"
+#include "ldl_frame.h"
+#include "ldl_debug.h"
+#include "ldl_system.h"
+#include "ldl_mac_commands.h"
+#include "ldl_stream.h"
+#include "ldl_sm_internal.h"
+#include "ldl_ops.h"
 #include <string.h>
 
 enum {
@@ -819,7 +819,7 @@ void LDL_MAC_process(struct ldl_mac *self)
                             self->ctx.up++;
                             
                             self->op = LDL_OP_DATA_UNCONFIRMED;
-                            self->state = LDL_STATE_WAIT_RETRY;
+                            self->state = LDL_STATE_WAIT_SEND;
                             self->band[LDL_BAND_RETRY] = ms_until_next;                        
                         }
                         else{
@@ -912,6 +912,7 @@ void LDL_MAC_process(struct ldl_mac *self)
         break;
     
     case LDL_STATE_WAIT_RETRY:
+    case LDL_STATE_WAIT_SEND:
         
         if(self->band[LDL_BAND_RETRY] == 0U){
             
@@ -921,7 +922,7 @@ void LDL_MAC_process(struct ldl_mac *self)
             
                     if(selectChannel(self, self->tx.rate, self->tx.chIndex, 0UL, &self->tx.chIndex, &self->tx.freq)){
                                 
-                        uint32_t delay = rand32(self->app) % (LDL_System_tps()*30UL);
+                        uint32_t delay = (self->state == LDL_STATE_WAIT_SEND) ? 0UL : (rand32(self->app) % (LDL_System_tps()*30UL));
                                 
                         LDL_DEBUG(self->app, "dither retry by %"PRIu32" ticks", delay)
                                 

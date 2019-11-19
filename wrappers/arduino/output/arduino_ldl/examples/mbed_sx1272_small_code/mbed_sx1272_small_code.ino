@@ -54,7 +54,6 @@ LDL::MAC& get_ldl()
 
 void setup() 
 {
-    LDL::MAC& ldl = get_ldl();
 }
 
 void loop() 

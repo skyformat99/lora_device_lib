@@ -50,6 +50,8 @@
  *  */
 #define LDL_STARTUP_DELAY 0UL
 
+#define LDL_ENABLE_RANDOM_DEV_NONCE
+
 /* optionally disable these event callbacks */
 #define LDL_DISABLE_SESSION_UPDATE
 #define LDL_DISABLE_MAC_RESET_EVENT

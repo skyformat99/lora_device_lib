@@ -61,6 +61,10 @@ DHT dht(
 static void on_rx(uint16_t counter, uint8_t port, const uint8_t *data, uint8_t size)
 {
     // do something with this information
+    (void)counter;
+    (void)port;
+    (void)data;
+    (void)size;
 }
 
 void setup() 

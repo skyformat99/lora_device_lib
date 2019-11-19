@@ -1,7 +1,7 @@
 arduino_ldl
 ===========
 
-An Arduino library that wraps [LoraDeviceLib](https://github.com/cjhdev/lora_device_lib).
+An Arduino library that wraps [LDL](https://github.com/cjhdev/lora_device_lib).
 
 ## Supported Targets
 
@@ -22,7 +22,7 @@ of these connections are required for correct operation.
 
 ## Flash/RAM Usage
 
-[examples/mbed_sx1272_small_code](examples/mbed_sx1272_small_code) requires ~24KB of flash and ~900B of RAM.
+[examples/mbed_sx1272_small_code](examples/mbed_sx1272_small_code) requires ~25KB of flash and ~900B of RAM.
 
 
 ## Example
@@ -93,6 +93,10 @@ void loop()
 
 More [examples](examples).
 
+## Limitations
+
+- still using a randomised devNonce which won't work well on LoRaWAN 1.1 servers (stick to 1.0)
+
 ## Hints
 
 - debug information is only printed if you configure your sketch to do it via the ArduinoLDL.onEvent() callback (see "*_debug_node" examples for how)
@@ -101,6 +105,7 @@ More [examples](examples).
 - ArduinoLDL.eventDebug() uses less codespace than ArduinoLDL.eventDebugVerbose()
 - ArduinoLDL has ADR enabled by default (use ArduinoLDL.disableADR() to disable)
 - ArduinoLDL limits to approximately the TTN fair access policy by default (use ArduinoLDL.setAggregatedDutyCycleLimit() to change)
+- LoRaWAN 1.1 changed the name of the appKey to nwkKey, and then created a new appKey (if in doubt and using LoRaWAN 1.1 server, set both keys to the same value)
 
 ## License
 

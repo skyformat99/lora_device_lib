@@ -19,11 +19,7 @@
  *
  * */
 
-#include "platform.h"
-
 #include "arduino_ldl.h"
-
-
 
 #include <SPI.h>
 #include <stdlib.h>
@@ -41,6 +37,7 @@ static const SPISettings spi_settings(4000000UL, MSBFIRST, SPI_MODE0);
 
 uint32_t LDL_System_ticks(void *app)
 {
+    (void)app;
     return micros();
 }
 
@@ -61,21 +58,25 @@ uint32_t LDL_System_eps(void)
 
 void LDL_Chip_select(void *self, bool state)
 {
+    (void)self;
     Radio::radioSelect(self, state);               
 }
 
 void LDL_Chip_reset(void *self, bool state)
 {    
+    (void)self;
     Radio::radioReset(self, state);
 }
 
 void LDL_Chip_write(void *self, uint8_t data)
 {
+    (void)self;
     SPI.transfer(data);
 }
 
 uint8_t LDL_Chip_read(void *self)
 {
+    (void)self;
     return SPI.transfer(0U);
 }
 
@@ -91,7 +92,7 @@ ISR(PCINT2_vect, ISR_ALIASOF(PCINT0_vect));
 /* constructors *******************************************************/
 
 Radio::Radio(enum ldl_radio_type type, enum ldl_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1) : 
-    dio0(dio0, 0, radio), dio1(dio1, 1, radio), nreset(nreset), nselect(nselect)
+    nreset(nreset), nselect(nselect), dio0(dio0, 0, radio), dio1(dio1, 1, radio)
 {
     pinMode(nreset, INPUT);
     pinMode(nselect, OUTPUT);
@@ -129,18 +130,22 @@ MAC::MAC(Radio& radio, enum ldl_region region, get_identity_fn get_id) :
 {
     handle_rx = NULL;
     
-    struct ldl_mac_init_arg arg = {0};
+    struct ldl_mac_init_arg arg;
     
-    const struct arduino_ldl_id *id = get_id();
+    (void)memset(&arg, 0, sizeof(arg));
     
-    LDL_SM_init(&sm, id->appKey, id->nwkKey);
+    struct arduino_ldl_id id;
+    
+    get_id(&id);
+    
+    LDL_SM_init(&sm, id.appKey, id.nwkKey);
     
     arg.app = this;
     arg.radio = &radio.radio;
     arg.handler = adapter;
     arg.sm = &sm;
-    arg.devEUI = id->devEUI;
-    arg.joinEUI = id->joinEUI;
+    arg.devEUI = id.devEUI;
+    arg.joinEUI = id.joinEUI;
     
     LDL_MAC_init(&mac, region, &arg);
     
@@ -176,7 +181,7 @@ void Radio::radioSelect(void *self, bool state)
     } 
 }
 
-static void Radio::radioReset(void *self, bool state)
+void Radio::radioReset(void *self, bool state)
 {
      pinMode(to_obj(self)->nreset, state ? OUTPUT : INPUT);
 }
@@ -290,9 +295,9 @@ void Radio::interrupt()
     }
 }
 
-const struct arduino_ldl_id * MAC::getIdentity(void *ptr)
+void MAC::getIdentity(void *ptr, struct arduino_ldl_id *id)
 {
-    return to_obj(ptr)->get_id();    
+    to_obj(ptr)->get_id(id);    
 }
 
 void MAC::enableADR()
@@ -307,7 +312,7 @@ void MAC::disableADR()
 
 bool MAC::adr()
 {
-    LDL_MAC_adr(&mac);
+    return LDL_MAC_adr(&mac);
 }
 
 void MAC::onRX(handle_rx_fn handler)
@@ -440,16 +445,8 @@ void MAC::adapter(void *receiver, enum ldl_mac_response_type type, const union l
 
 void MAC::eventDebug(enum ldl_mac_response_type type, const union ldl_mac_response_arg *arg)
 {
-    const char *bw125 PROGMEM = "125";
-    const char *bw250 PROGMEM = "250";
-    const char *bw500 PROGMEM = "500";
+    (void)arg;
     
-    const char *bw[] PROGMEM = {
-        bw125,
-        bw250,
-        bw500
-    };
-
     Serial.print('[');
     Serial.print(ticks());
     Serial.print(']');

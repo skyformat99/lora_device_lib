@@ -496,7 +496,7 @@ static void setPower(struct ldl_radio *self, int16_t dbm)
      * 
      * */
      
-     dbm /= 100L;
+     dbm /= 100;
 
     switch(self->type){
 #ifdef LDL_ENABLE_SX1272        
@@ -513,7 +513,7 @@ static void setPower(struct ldl_radio *self, int16_t dbm)
         
             /* -1 to 14dbm */
             paConfig &= ~(0x80U);
-            paConfig |= (dbm > 14) ? 0xfU : (uint8_t)( (dbm < -1) ? 0U : (dbm + 1) );
+            paConfig |= (dbm > 14) ? 0xf : (uint8_t)( (dbm < -1) ? 0 : (dbm + 1) );
             
             writeReg(self, RegPaConfig, paConfig);            
             break;
@@ -535,7 +535,7 @@ static void setPower(struct ldl_radio *self, int16_t dbm)
             else{
                 
                 paDac |= 4U;
-                paConfig |= (dbm > 17) ? 0xfU : ( (dbm < 2) ? 0U : (dbm - 2) ); 
+                paConfig |= (dbm > 17) ? 0xf : ( (dbm < 2) ? 0 : (dbm - 2) ); 
             }
             
             writeReg(self, RegPaDac, paDac);
@@ -583,7 +583,7 @@ static void setPower(struct ldl_radio *self, int16_t dbm)
             else{
                 
                 paDac |= 4U;
-                paConfig |= (dbm > 17) ? 0xfU : ( (dbm < 2) ? 0U : (dbm - 2) ); 
+                paConfig |= (dbm > 17) ? 0xf : ( (dbm < 2) ? 0 : (dbm - 2) ); 
             }
             
             /* regpadac address == 0x4d */
@@ -648,6 +648,9 @@ static uint8_t bwSetting(const struct ldl_radio *self, enum ldl_signal_bandwidth
 static uint8_t sfSetting(const struct ldl_radio *self, enum ldl_spreading_factor sf)
 {
     uint8_t retval = 0U;
+    
+    (void)self;
+    
     switch(sf){
     default:
     case LDL_SF_7:
@@ -675,6 +678,8 @@ static uint8_t sfSetting(const struct ldl_radio *self, enum ldl_spreading_factor
 static uint8_t crSetting(const struct ldl_radio *self, enum ldl_coding_rate cr)
 {
     uint8_t retval = 0U;
+    
+    (void)cr;
     
     switch(self->type){
     default:

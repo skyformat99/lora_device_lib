@@ -137,43 +137,46 @@ uint8_t LDL_OPS_prepareData(struct ldl_mac *self, const struct ldl_frame_data *f
     
     retval = LDL_Frame_putData(f, out, max, &off);
 
-    /* encrypt */
-    {
-        struct ldl_block A;
-        
-        initA(&A, f->devAddr, true, f->counter);
+    if(retval > 0U){
 
-        /* encrypt fopt (LoRaWAN 1.1) */
-        if(self->ctx.version == 1U){
+        /* encrypt */
+        {
+            struct ldl_block A;
             
-            LDL_SM_ctr(self->sm, LDL_SM_KEY_NWKSENC, &A, &out[off.opts], f->optsLen);            
+            initA(&A, f->devAddr, true, f->counter);
+
+            /* encrypt fopt (LoRaWAN 1.1) */
+            if(self->ctx.version == 1U){
+                
+                LDL_SM_ctr(self->sm, LDL_SM_KEY_NWKSENC, &A, &out[off.opts], f->optsLen);            
+            }
+            
+            /* encrypt data */
+            LDL_SM_ctr(self->sm, (f->port == 0U) ? LDL_SM_KEY_NWKSENC : LDL_SM_KEY_APPS, &A, &out[off.data], f->dataLen);                
         }
-        
-        /* encrypt data */
-        LDL_SM_ctr(self->sm, (f->port == 0U) ? LDL_SM_KEY_NWKSENC : LDL_SM_KEY_APPS, &A, &out[off.data], f->dataLen);                
-    }
 
-    /* produce MIC*/
-    {
-        struct ldl_block B0;
-        struct ldl_block B1;            
-        uint32_t micS;
-        uint32_t micF;
-        
-        initB(&B0, 0U, 0U, 0U, true, f->devAddr, f->counter, retval - sizeof(micF)); 
-        initB(&B1, 0U, self->tx.rate, self->tx.chIndex, true, f->devAddr, f->counter, retval - sizeof(micS));
-
-        micF = LDL_SM_mic(self->sm, LDL_SM_KEY_FNWKSINT, &B0, sizeof(B0.value), out, retval - sizeof(micF));       
-
-        if(self->ctx.version == 1U){
-        
-            micS = LDL_SM_mic(self->sm, LDL_SM_KEY_SNWKSINT, &B1, sizeof(B1.value), out, retval - sizeof(micS));
+        /* produce MIC*/
+        {
+            struct ldl_block B0;
+            struct ldl_block B1;            
+            uint32_t micS;
+            uint32_t micF;
             
-            LDL_Frame_updateMIC(out, retval, ((micF << 16) | (micS & 0xffffUL))); 
-        } 
-        else{
+            initB(&B0, 0U, 0U, 0U, true, f->devAddr, f->counter, retval - sizeof(micF)); 
+            initB(&B1, 0U, self->tx.rate, self->tx.chIndex, true, f->devAddr, f->counter, retval - sizeof(micS));
+
+            micF = LDL_SM_mic(self->sm, LDL_SM_KEY_FNWKSINT, &B0, sizeof(B0.value), out, retval - sizeof(micF));       
+
+            if(self->ctx.version == 1U){
             
-            LDL_Frame_updateMIC(out, retval, micF); 
+                micS = LDL_SM_mic(self->sm, LDL_SM_KEY_SNWKSINT, &B1, sizeof(B1.value), out, retval - sizeof(micS));
+                
+                LDL_Frame_updateMIC(out, retval, ((micF << 16) | (micS & 0xffffUL))); 
+            } 
+            else{
+                
+                LDL_Frame_updateMIC(out, retval, micF); 
+            }
         }
     }
      

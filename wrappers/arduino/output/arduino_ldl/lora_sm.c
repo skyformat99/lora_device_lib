@@ -60,12 +60,14 @@ void LDL_SM_getSession(struct ldl_sm *self, struct ldl_sm_keys *keys)
 /**! [LDL_SM_beginUpdateSessionKey] */
 void LDL_SM_beginUpdateSessionKey(struct ldl_sm *self)
 {
+    (void)self;
 }
 /**! [LDL_SM_beginUpdateSessionKey] */
 
 /**! [LDL_SM_endUpdateSessionKey] */
 void LDL_SM_endUpdateSessionKey(struct ldl_sm *self)
 {
+    (void)self;
 }
 /**! [LDL_SM_endUpdateSessionKey] */
 

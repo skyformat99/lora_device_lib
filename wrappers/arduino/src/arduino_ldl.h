@@ -42,7 +42,7 @@ struct arduino_ldl_id {
 
 typedef void (*handle_rx_fn)(uint16_t counter, uint8_t port, const uint8_t *msg, uint8_t size);
 typedef void (*handle_event_fn)(enum ldl_mac_response_type type, const union ldl_mac_response_arg *arg);
-typedef const struct arduino_ldl_id * (*get_identity_fn)(void);
+typedef void (*get_identity_fn)(struct arduino_ldl_id *id);
 
 namespace LDL {
 
@@ -53,10 +53,10 @@ namespace LDL {
         
             struct DioInput {
 
-                struct ldl_radio &radio;
                 const uint8_t pin;
                 const uint8_t signal;
-                volatile bool state;
+                struct ldl_radio &radio;
+                volatile bool state;                
                 struct DioInput *next;                
                 
                 DioInput(uint8_t pin, uint8_t signal, struct ldl_radio &radio) : 
@@ -66,11 +66,11 @@ namespace LDL {
             
             static struct DioInput *dio_inputs; 
         
-            struct DioInput dio0;
-            struct DioInput dio1;
-            
             const uint8_t nreset;
             const uint8_t nselect;
+            
+            struct DioInput dio0;
+            struct DioInput dio1;
             
             void arm_dio(struct DioInput *dio);
             void unmask_pcint(uint8_t pin);        
@@ -88,7 +88,7 @@ namespace LDL {
             static void radioSelect(void *self, bool state);
             static void radioReset(void *self, bool state);
             
-            Radio::Radio(enum ldl_radio_type type, enum ldl_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1);                        
+            Radio(enum ldl_radio_type type, enum ldl_radio_pa pa, uint8_t nreset, uint8_t nselect, uint8_t dio0, uint8_t dio1);                        
     };
     
     class SX1272 : public Radio {
@@ -145,7 +145,7 @@ namespace LDL {
             void operator=(const MAC&) = delete;
             
             
-            static const struct arduino_ldl_id *getIdentity(void *ptr);
+            static void getIdentity(void *ptr, struct arduino_ldl_id *id);
             static uint32_t ticks();        
             
             /* create an instance of MAC

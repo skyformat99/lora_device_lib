@@ -1,12 +1,16 @@
 LDL: A LoRaWAN Device Library
 =============================
 
+[![Build Status](https://travis-ci.org/cjhdev/lora_device_lib.svg?branch=master)](https://travis-ci.org/cjhdev/lora_device_lib)
+
 LDL is a [LoRaWAN](https://en.wikipedia.org/wiki/LoRa#LoRaWAN) implementation for nodes/devices.
 It aims to be simple to use and require as few resources as possible.
 
-Below is an abridged example showing LDL interfaces used to 
-initialise the library, join a network, and send
-an empty data frame periodically:
+Below is an abridged example showing LDL interfaces used to:
+
+- initialise the library
+- join a network
+- send an empty data frame periodically
 
 ~~~ C
 extern const void *app_key_ptr;
@@ -37,7 +41,7 @@ void main(void)
     
     __enable_irq();
     
-    while(;;){
+    for(;;){
     
         if(LDL_MAC_ready(&mac)){
            
@@ -64,8 +68,6 @@ If you would like to see a full example have a look at the [Arduino wrapper](wra
 
 It is important to keep in mind that LDL is still experimental. This means that things may not work properly and that
 interfaces may change. Use one of the [tagged](https://github.com/cjhdev/lora_device_lib/releases) commits for best results.
-
-[![Build Status](https://travis-ci.org/cjhdev/lora_device_lib.svg?branch=master)](https://travis-ci.org/cjhdev/lora_device_lib)
 
 ## Features
 

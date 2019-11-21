@@ -5,7 +5,7 @@ LDL: A LoRaWAN Device Library
 
 LDL is an easy to use [LoRaWAN](https://en.wikipedia.org/wiki/LoRa#LoRaWAN) implementation for nodes/devices 
 
-Below is an abridged example showing how LDL interfaces are used to:
+Below is an abridged example showing how to:
 
 - initialise the library
 - join a network
@@ -60,7 +60,8 @@ void main(void)
 ~~~
 
 Behind the scenes you will need to implement the [radio connector](https://cjhdev.github.io/lora_device_lib_api/group__ldl__radio__connector.html), 
-find somewhere to keep your root keys, and implement `your_app_handler()`.
+find somewhere to keep your root keys, and implement `your_app_handler()`. 
+More information can be found in the [porting guide](porting.md).
 
 It is important to keep in mind that LDL is still experimental. This means that things may not work properly and that
 interfaces may change. Use one of the [tagged](https://github.com/cjhdev/lora_device_lib/releases) commits for best results.
@@ -126,7 +127,7 @@ interfaces may change. Use one of the [tagged](https://github.com/cjhdev/lora_de
 
 - have doxygen and make installed
 - `cd doxygen && make`
-- open doxygen/output/index.html
+- open doxygen/html/index.html
 
 Alternatively just read the [header files](include).
 

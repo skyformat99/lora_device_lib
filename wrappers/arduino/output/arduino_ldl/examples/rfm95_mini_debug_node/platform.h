@@ -27,7 +27,7 @@
 /* optimisations ******************************************************/
 
 /* the atmega328p is short on RAM, you probably shouldn't increase this */
-#define LDL_MAX_PACKET 45U
+#define LDL_MAX_PACKET 64U
 
 /* optionally constrain to one radio */
 //#define LDL_ENABLE_SX1272
@@ -50,20 +50,7 @@
  *  */
 #define LDL_STARTUP_DELAY 0UL
 
-/* we don't cache the session so remove all the code for this event */
-#define LDL_DISABLE_SESSION_UPDATE
-
-/* this only works properly with LoRaWAN 1.0 servers but
- * it saves us from having to cache the devNonce */
-#define LDL_ENABLE_RANDOM_DEV_NONCE
-
-/* suspect we are running out of stack, this will at least make things 
- * slightly more predictable */
-#define LDL_ENABLE_STATIC_RX_BUFFER
-
 /* optionally disable these event callbacks */
-#define LDL_DISABLE_CHECK
-#define LDL_DISABLE_DEVICE_TIME
 //#define LDL_DISABLE_MAC_RESET_EVENT
 //#define LDL_DISABLE_CHIP_ERROR_EVENT
 //#define LDL_DISABLE_DOWNSTREAM_EVENT
@@ -77,13 +64,15 @@
 //#define LDL_DISABLE_DATA_CONFIRMED_EVENT
 //#define LDL_DISABLE_RX_EVENT
 
-/* limit number of configurable channels to 8 instead of 16 */
-#define LDL_DISABLE_FULL_CHANNEL_CONFIG
-
-/* remove support for this MAC command */
-#define LDL_DISABLE_CMD_DL_CHANNEL
-
 /* do not change ******************************************************/
+
+#define LDL_DISABLE_SESSION_UPDATE
+#define LDL_ENABLE_RANDOM_DEV_NONCE
+#define LDL_ENABLE_STATIC_RX_BUFFER
+#define LDL_DISABLE_CHECK
+#define LDL_DISABLE_DEVICE_TIME
+#define LDL_DISABLE_FULL_CHANNEL_CONFIG
+#define LDL_DISABLE_CMD_DL_CHANNEL
 
 #define LDL_ENABLE_AVR
 #define LDL_SYSTEM_ENTER_CRITICAL(APP) ATOMIC_BLOCK(ATOMIC_RESTORESTATE){

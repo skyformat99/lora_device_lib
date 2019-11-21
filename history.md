@@ -1,6 +1,22 @@
 Release History
 ===============
 
+# 0.2.1
+
+## features
+
+none
+
+## changes
+
+- reduced stack usage during MAC command processing
+- Arduino wrapper now uses LDL_ENABLE_STATIC_RX_BUFFER
+
+## bugs
+
+- Arduino wrapper on ATMEGA328P was running out of stack at the point where it had to
+  process a MAC command
+
 # 0.2.0
 
 Warning: this update has a significant number of interface name changes. 

@@ -42,7 +42,7 @@ enum {
 static uint8_t extraSymbols(uint32_t xtal_error, uint32_t symbol_period);
 static bool externalDataCommand(struct ldl_mac *self, bool confirmed, uint8_t port, const void *data, uint8_t len, const struct ldl_mac_data_opts *opts);
 static bool dataCommand(struct ldl_mac *self, bool confirmed, uint8_t port, const void *data, uint8_t len);
-static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t len, bool inFopts, uint8_t *out, uint8_t max);
+static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t len, uint8_t *out, uint8_t max);
 static bool selectChannel(const struct ldl_mac *self, uint8_t rate, uint8_t prevChIndex, uint32_t limit, uint8_t *chIndex, uint32_t *freq);
 static void registerTime(struct ldl_mac *self, uint32_t freq, uint32_t airTime);
 static bool getChannel(const struct ldl_mac_channel *self, enum ldl_region region, uint8_t chIndex, uint32_t *freq, uint8_t *minRate, uint8_t *maxRate);
@@ -644,6 +644,9 @@ void LDL_MAC_process(struct ldl_mac *self)
             struct ldl_radio_packet_metadata meta;            
             uint8_t cmd_len = 0U;
             
+            const uint8_t *fopts;
+            uint8_t foptsLen;
+            
             LDL_MAC_timerClear(self, LDL_TIMER_WAITA);
             LDL_MAC_timerClear(self, LDL_TIMER_WAITB);
             
@@ -722,30 +725,30 @@ void LDL_MAC_process(struct ldl_mac *self)
                     self->rxtimingSetupAns_pending = false;
                     self->adrAckReq = false;
                                         
-                    if(frame.data != NULL){
-            
-                        if(frame.port > 0U){
-
-                            cmd_len = processCommands(self, frame.opts, frame.optsLen, true, buffer, LDL_MAX_PACKET);      
-#ifndef LDL_DISABLE_RX_EVENT                                            
-                            arg.rx.counter = frame.counter;
-                            arg.rx.port = frame.port;
-                            arg.rx.data = frame.data;
-                            arg.rx.size = frame.dataLen;                                            
-                            
-                            self->handler(self->app, LDL_MAC_RX, &arg);                                        
-#endif                                                                                        
-                        }
-                        else{
-                        
-                            cmd_len = processCommands(self, frame.data, frame.dataLen, false, buffer, LDL_MAX_PACKET);                                              
-                        }
+                    if((frame.data != NULL) && (frame.port == 0U)){
+                    
+                        fopts = frame.data;
+                        foptsLen = frame.dataLen;                        
                     }
                     else{
                         
-                        cmd_len = processCommands(self, frame.opts, frame.optsLen, true, buffer, LDL_MAX_PACKET);      
+                        fopts = frame.opts;
+                        foptsLen = frame.optsLen;
                     }
-
+                    
+                    cmd_len = processCommands(self, fopts, foptsLen, buffer, LDL_MAX_PACKET);      
+                    
+                    if((frame.data != NULL) && (frame.port > 0U)){            
+#ifndef LDL_DISABLE_RX_EVENT                                            
+                        arg.rx.counter = frame.counter;
+                        arg.rx.port = frame.port;
+                        arg.rx.data = frame.data;
+                        arg.rx.size = frame.dataLen;                                            
+                        
+                        self->handler(self->app, LDL_MAC_RX, &arg);                                        
+#endif                                                                                        
+                    }
+                    
                     switch(self->op){
                     default:
                     case LDL_OP_DATA_UNCONFIRMED:
@@ -1727,7 +1730,7 @@ static uint8_t extraSymbols(uint32_t xtal_error, uint32_t symbol_period)
     return (xtal_error / symbol_period) + (((xtal_error % symbol_period) > 0U) ? 1U : 0U);        
 }
 
-static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t len, bool inFopts, uint8_t *out, uint8_t max)
+static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t len, uint8_t *out, uint8_t max)
 {
     uint8_t pos = 0U;
     
@@ -1781,7 +1784,6 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
             union ldl_mac_response_arg arg;
             const struct ldl_link_check_ans *ans = &cmd.fields.linkCheck;
             
-            arg.link_status.inFOpt = inFopts;
             arg.link_status.margin = ans->margin;
             arg.link_status.gwCount = ans->gwCount;            
             

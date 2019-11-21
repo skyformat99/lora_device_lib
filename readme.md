@@ -1,18 +1,78 @@
-LDL
-===
+LDL: A LoRaWAN Device Library
+=============================
 
-LDL is a LoRaWAN implementation for devices.
+LDL is a [LoRaWAN](https://en.wikipedia.org/wiki/LoRa#LoRaWAN) implementation for nodes/devices.
+It aims to be simple to use and require as few resources as possible.
 
-Be sure to use tagged releases.
+Below is an abridged example showing LDL interfaces used to 
+initialise the library, join a network, and send
+an empty data frame periodically:
+
+~~~ C
+extern const void *app_key_ptr;
+extern const void *nwk_key_ptr;
+
+extern void your_app_handler(void *app, enum ldl_mac_response_type type, const union ldl_mac_response_arg *arg);
+
+struct ldl_sm sm;
+struct ldl_radio radio;
+struct ldl_mac mac;
+
+void main(void)
+{
+    LDL_SM_init(&sm, app_key_ptr, nwk_key_ptr);
+    
+    LDL_Radio_init(&radio, LDL_RADIO_SX1272, NULL);
+    LDL_Radio_setPA(&radio, LDL_RADIO_PA_RFO);
+    
+    struct ldl_mac_init_arg arg = {0};
+    
+    arg.radio = &radio;
+    arg.handler = your_app_handler;    
+    arg.sm = &sm;
+    
+    LDL_MAC_init(&mac, LDL_EU_863_870, &arg);
+    
+    LDL_MAC_setMaxDCycle(&mac, 12U);
+    
+    __enable_irq();
+    
+    while(;;){
+    
+        if(LDL_MAC_ready(&mac)){
+           
+            if(LDL_MAC_joined(&mac)){
+                
+                LDL_MAC_unconfirmedData(&mac, 1U, NULL, 0U, NULL);
+            }
+            else{
+                
+                LDL_MAC_otaa(&mac);
+            }            
+        }
+        
+        LDL_MAC_process(&mac);            
+    }    
+}
+~~~
+
+Behind the scenes you will need to implement the [radio connector](https://cjhdev.github.io/lora_device_lib_api/group__ldl__radio__connector.html), 
+find somewhere to keep your root keys, and implement `your_app_handler()`.
+
+A similar abridged example with slightly more detail can be found [here](examples/doxygen/example.c).
+If you would like to see a full example have a look at the [Arduino wrapper](wrappers/arduino/out).
+
+It is important to keep in mind that LDL is still experimental. This means that things may not work properly and that
+interfaces may change. Use one of the [tagged](https://github.com/cjhdev/lora_device_lib/releases) commits for best results.
 
 [![Build Status](https://travis-ci.org/cjhdev/lora_device_lib.svg?branch=master)](https://travis-ci.org/cjhdev/lora_device_lib)
 
 ## Features
 
-- Compact and portable
 - LoRaWAN 1.1
 - Class A
 - OTAA
+    - frequency and mask CFLists
 - Confirmed and Unconfirmed Data
     - per invocation options (overriding global settings)
         - redundancy (nbTrans)
@@ -53,7 +113,7 @@ Be sure to use tagged releases.
 - Class B and C not supported
 - FSK modulation not supported
 - ABP not supported
-- Rejoin not supported yet
+- Rejoin not supported
 - **Experimental**
 
 ## Documentation

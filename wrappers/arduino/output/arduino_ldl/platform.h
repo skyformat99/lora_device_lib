@@ -67,8 +67,16 @@
  *  */
 #define LDL_STARTUP_DELAY 0UL
 
+/* we don't cache the session so remove all the code for this event */
 #define LDL_DISABLE_SESSION_UPDATE
+
+/* this only works properly with LoRaWAN 1.0 servers but
+ * it saves us from having to cache the devNonce */
 #define LDL_ENABLE_RANDOM_DEV_NONCE
+
+/* suspect we are running out of stack, this will at least make things 
+ * slightly more predictable */
+#define LDL_ENABLE_STATIC_RX_BUFFER
 
 /* optionally disable these event callbacks */
 //#define LDL_DISABLE_MAC_RESET_EVENT

@@ -246,7 +246,6 @@ union ldl_mac_response_arg {
     /** #LDL_MAC_LINK_STATUS argument */
     struct {
         
-        bool inFOpt;        /**< link status was transported in Fopt field */
         int8_t margin;      /**< SNR margin */                     
         uint8_t gwCount;    /**< number of gateways in range */
         

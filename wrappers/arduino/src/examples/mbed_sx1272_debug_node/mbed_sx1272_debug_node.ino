@@ -60,6 +60,8 @@ void setup()
 
     /* print debug information */
     ldl.onEvent(ldl.eventDebugVerbose);    
+    
+    ldl.setMaxDCycle(8);
 }
 
 void loop() 

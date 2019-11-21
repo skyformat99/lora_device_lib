@@ -79,6 +79,8 @@
 #define LDL_ENABLE_STATIC_RX_BUFFER
 
 /* optionally disable these event callbacks */
+#define LDL_DISABLE_CHECK
+#define LDL_DISABLE_DEVICE_TIME
 //#define LDL_DISABLE_MAC_RESET_EVENT
 //#define LDL_DISABLE_CHIP_ERROR_EVENT
 //#define LDL_DISABLE_DOWNSTREAM_EVENT
@@ -92,8 +94,11 @@
 //#define LDL_DISABLE_DATA_CONFIRMED_EVENT
 //#define LDL_DISABLE_RX_EVENT
 
-/* optionally disable link check */
-//#define LDL_DISABLE_CHECK
+/* limit number of configurable channels to 8 instead of 16 */
+#define LDL_DISABLE_FULL_CHANNEL_CONFIG
+
+/* remove support for this MAC command */
+#define LDL_DISABLE_CMD_DL_CHANNEL
 
 /* do not change ******************************************************/
 

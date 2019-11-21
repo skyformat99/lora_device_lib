@@ -3,7 +3,7 @@ LDL: A LoRaWAN Device Library
 
 [![Build Status](https://travis-ci.org/cjhdev/lora_device_lib.svg?branch=master)](https://travis-ci.org/cjhdev/lora_device_lib)
 
-LDL is a simple to use [LoRaWAN](https://en.wikipedia.org/wiki/LoRa#LoRaWAN) implementation for nodes/devices 
+LDL is an easy to use [LoRaWAN](https://en.wikipedia.org/wiki/LoRa#LoRaWAN) implementation for nodes/devices 
 
 Below is an abridged example showing how LDL interfaces are used to:
 

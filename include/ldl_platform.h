@@ -251,6 +251,13 @@
      * */
      #define LDL_ENABLE_RANDOM_DEV_NONCE
      #undef  LDL_ENABLE_RANDOM_DEV_NONCE
+     
+     /**
+      * Define to remove deviceTime MAC command handling
+      * 
+      * */
+     #define LDL_DISABLE_DEVICE_TIME
+     #undef LDL_DISABLE_DEVICE_TIME
 
 #endif
 

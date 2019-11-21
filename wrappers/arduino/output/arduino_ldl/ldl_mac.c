@@ -1535,15 +1535,19 @@ static bool dataCommand(struct ldl_mac *self, bool confirmed, uint8_t port, cons
         LDL_MAC_putRXParamSetupAns(&s, &ans);                                    
     }
     
+#ifndef LDL_DISABLE_CHECK    
     if(self->opts.check){
 
         LDL_MAC_putLinkCheckReq(&s);
     }                   
+#endif    
     
+#ifndef LDL_DISABLE_DEVICE_TIME    
     if(self->opts.getTime){
         
         LDL_MAC_putDeviceTimeReq(&s);
     }             
+#endif    
     
     LDL_Region_convertRate(self->region, self->tx.rate, &sf, &bw, &maxPayload);
     
@@ -1730,9 +1734,13 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
     struct ldl_stream s_in;
     struct ldl_stream s_out;
     
+    uint8_t chMask[72U / 8U];
+    uint8_t nbTrans;
+    uint8_t power;
+    uint8_t rate;
+    
     struct ldl_downstream_cmd cmd;
-    struct ldl_mac_session shadow;
-    union ldl_mac_response_arg arg;
+    
     struct ldl_link_adr_ans adr_ans;
     enum ldl_mac_cmd_type next_cmd;
     
@@ -1745,8 +1753,13 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
     } adr_state = _NO_ADR;
     
     (void)memset(&adr_ans, 0, sizeof(adr_ans));
-    (void)memcpy(&shadow, &self->ctx, sizeof(shadow));
-
+    
+    /* these things can be rolled back */
+    nbTrans = self->ctx.nbTrans;
+    power = self->ctx.power;
+    rate = self->ctx.rate;
+    (void)memcpy(&chMask, self->ctx.chMask, sizeof(chMask));
+    
     LDL_Stream_initReadOnly(&s_in, in, len);
     LDL_Stream_init(&s_out, out, max);
     
@@ -1760,11 +1773,12 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
         
         switch(cmd.type){
         default:
-            LDL_DEBUG(self->app, "could not parse")
+            LDL_DEBUG(self->app, "not handling")
             break;     
 #ifndef LDL_DISABLE_CHECK                                   
         case LDL_CMD_LINK_CHECK:    
         {                
+            union ldl_mac_response_arg arg;
             const struct ldl_link_check_ans *ans = &cmd.fields.linkCheck;
             
             arg.link_status.inFOpt = inFopts;
@@ -1800,18 +1814,18 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
                         
                         if((req->channelMask & (1U << i)) > 0U){
                             
-                            (void)unmaskChannel(shadow.chMask, self->region, i);
+                            (void)unmaskChannel(self->ctx.chMask, self->region, i);
                         }
                         else{
                             
-                            (void)maskChannel(shadow.chMask, self->region, i);
+                            (void)maskChannel(self->ctx.chMask, self->region, i);
                         }
                     }
                     break;            
                     
                 case 6U:
                 
-                    unmaskAllChannels(shadow.chMask, self->region);
+                    unmaskAllChannels(self->ctx.chMask, self->region);
                     break;           
                      
                 default:
@@ -1832,11 +1846,11 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
                         
                         if(req->channelMaskControl == 6U){
                             
-                            (void)unmaskChannel(shadow.chMask, self->region, i);
+                            (void)unmaskChannel(self->ctx.chMask, self->region, i);
                         }
                         else{
                             
-                            (void)maskChannel(shadow.chMask, self->region, i);
+                            (void)maskChannel(self->ctx.chMask, self->region, i);
                         }            
                     }                                  
                     break;
@@ -1847,11 +1861,11 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
                         
                         if((req->channelMask & (1U << i)) > 0U){
                             
-                            (void)unmaskChannel(shadow.chMask, self->region, (req->channelMaskControl * 16U) + i);
+                            (void)unmaskChannel(self->ctx.chMask, self->region, (req->channelMaskControl * 16U) + i);
                         }
                         else{
                             
-                            (void)maskChannel(shadow.chMask, self->region, (req->channelMaskControl * 16U) + i);
+                            (void)maskChannel(self->ctx.chMask, self->region, (req->channelMaskControl * 16U) + i);
                         }
                     }
                     break;
@@ -1866,11 +1880,11 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
                 /* nbTrans setting 0 means keep existing */
                 if(req->nbTrans > 0U){
                 
-                    shadow.nbTrans = req->nbTrans & 0xfU;
+                    self->ctx.nbTrans = req->nbTrans & 0xfU;
                     
-                    if(shadow.nbTrans > LDL_REDUNDANCY_MAX){
+                    if(self->ctx.nbTrans > LDL_REDUNDANCY_MAX){
                         
-                        shadow.nbTrans = LDL_REDUNDANCY_MAX;
+                        self->ctx.nbTrans = LDL_REDUNDANCY_MAX;
                     }
                 }
                 
@@ -1880,7 +1894,7 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
                     // todo: need to pin out of range to maximum
                     if(rateSettingIsValid(self->region, req->dataRate)){
                     
-                        shadow.rate = req->dataRate;            
+                        self->ctx.rate = req->dataRate;            
                     }
                     else{
                                         
@@ -1893,7 +1907,7 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
                     
                     if(LDL_Region_validateTXPower(self->region, req->txPower)){
                     
-                        shadow.power = req->txPower;        
+                        self->ctx.power = req->txPower;        
                     }
                     else{
                      
@@ -1931,7 +1945,7 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
         
             LDL_DEBUG(self->app, "duty_cycle_ans")
             
-            shadow.maxDutyCycle = req->maxDutyCycle;                        
+            self->ctx.maxDutyCycle = req->maxDutyCycle;                        
             LDL_MAC_putDutyCycleAns(&s_out);
         }
             break;
@@ -1949,9 +1963,9 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
             
             // todo: validation
             
-            shadow.rx1DROffset = req->rx1DROffset;
-            shadow.rx2DataRate = req->rx2DataRate;
-            shadow.rx2Freq = req->freq;
+            self->ctx.rx1DROffset = req->rx1DROffset;
+            self->ctx.rx2DataRate = req->rx2DataRate;
+            self->ctx.rx2Freq = req->freq;
             
             ans.rx1DROffsetOK = true;
             ans.rx2DataRateOK = true;
@@ -2002,7 +2016,7 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
                 
                 if(ans.dataRateRangeOK && ans.channelFreqOK){
                     
-                    (void)setChannel(shadow.chConfig, self->region, cmd.fields.newChannel.chIndex, cmd.fields.newChannel.freq, cmd.fields.newChannel.minDR, cmd.fields.newChannel.maxDR);                        
+                    (void)setChannel(self->ctx.chConfig, self->region, cmd.fields.newChannel.chIndex, cmd.fields.newChannel.freq, cmd.fields.newChannel.minDR, cmd.fields.newChannel.maxDR);                        
                 }            
              
                 LDL_DEBUG(self->app, "new_channel_ans: dataRateRangeOK=%s channelFreqOK=%s", 
@@ -2051,7 +2065,7 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
                 cmd.fields.rxTimingSetup.delay
             )
             
-            shadow.rx1Delay = cmd.fields.rxTimingSetup.delay;
+            self->ctx.rx1Delay = cmd.fields.rxTimingSetup.delay;
             
             LDL_DEBUG(self->app, "rx_timing_setup_ans")
             
@@ -2076,9 +2090,12 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
                 LDL_DEBUG(self->app, "tx_param_setup_req not processed in this region")
             }
             break;
-            
+         
+#ifndef LDL_DISABLE_DEVICE_TIME
         case LDL_CMD_DEVICE_TIME:
-        
+        {
+            union ldl_mac_response_arg arg;
+            
             arg.device_time.seconds = cmd.fields.deviceTime.seconds;
             arg.device_time.fractions = cmd.fields.deviceTime.fractions;
             
@@ -2088,8 +2105,9 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
             )
             
             self->handler(self->app, LDL_MAC_DEVICE_TIME, &arg);                                                                                     
+        }
             break;
-            
+#endif            
         case LDL_CMD_ADR_PARAM_SETUP:
         
             LDL_DEBUG(self->app, "adr_param_setup: limit_exp=%u delay_exp=%u", 
@@ -2097,8 +2115,8 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
                 cmd.fields.adrParamSetup.delay_exp        
             )
             
-            shadow.adr_ack_limit = (1U << cmd.fields.adrParamSetup.limit_exp);
-            shadow.adr_ack_delay = (1U << cmd.fields.adrParamSetup.delay_exp);
+            self->ctx.adr_ack_limit = (1U << cmd.fields.adrParamSetup.limit_exp);
+            self->ctx.adr_ack_delay = (1U << cmd.fields.adrParamSetup.delay_exp);
             
             LDL_DEBUG(self->app, "adr_param_ans")
             
@@ -2163,16 +2181,13 @@ static uint8_t processCommands(struct ldl_mac *self, const uint8_t *in, uint8_t 
         
         LDL_DEBUG(self->app, "bad ADR setting; rollback")
         
-        (void)memcpy(shadow.chMask, self->ctx.chMask, sizeof(shadow.chMask));
+        (void)memcpy(self->ctx.chMask, chMask, sizeof(self->ctx.chMask));
         
-        shadow.rate = self->ctx.rate;
-        shadow.power = self->ctx.power;
-        shadow.nbTrans = self->ctx.nbTrans;
+        self->ctx.rate = rate;
+        self->ctx.power = power;
+        self->ctx.nbTrans = nbTrans;
     }
 
-    /* otherwise apply changes */
-    (void)memcpy(&self->ctx, &shadow, sizeof(self->ctx));  
-    
     /* return the length of data written to the output buffer */
     return LDL_Stream_tell(&s_out);  
 }
@@ -2593,7 +2608,7 @@ static void downlinkMissingHandler(struct ldl_mac *self)
     uint32_t tx_time;
     uint8_t mtu;
     
-    (void)arg;
+    (void)memset(&arg, 0, sizeof(arg));
     
     if(self->opts.nbTrans > 0U){
         

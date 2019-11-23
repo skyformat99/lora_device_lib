@@ -10,7 +10,7 @@ This wrapper is intended for use with the ATMEGA328P.
 A number of features have been removed from LDL to make it fit comfortably
 on the 328P.
 
-- Security Module has been reimplemented to only work with LoRaWAN 1.0 servers
+- Will not work with LoRaWAN 1.1 servers
 - Some MAC commands have been removed
     - LinkCheckReq/Ans
     - DeviceTimeReq/Ans

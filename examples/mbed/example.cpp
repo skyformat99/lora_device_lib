@@ -11,11 +11,16 @@ const uint8_t nwk_key[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};
 const uint8_t dev_eui[] = {0,0,0,0,0,0,0,1};
 const uint8_t join_eui[] = {0,0,0,0,0,0,0,2};
 
-SPI spi(D11, D12, D13, D10);
-LDL::SX1272 radio(spi, A0, D2, D3);
+SPI spi(D11, D12, D13);
+LDL::SX1272 radio(spi, A0, D10, D2, D3);
 LDL::DefaultSM sm(app_key, nwk_key);
 LDL::DefaultStore store(dev_eui, join_eui);
 LDL::MAC mac(store, sm, radio);
+
+void handle_entropy(unsigned int value)
+{
+    srand(value);
+}
 
 int main()
 {
@@ -23,19 +28,28 @@ int main()
 
     /* print all the events to the terminal */
     mac.set_event_cb(callback(&mac, &LDL::MAC::print_event));
+
+    mac.set_entropy_cb(callback(handle_entropy));
     
     mac.start(LDL_EU_863_870);
 
-    mac.otaa();
-
     for(;;){
 
-        while(mac.joined()){    
+        if(mac.ready()){
 
-            const char msg[] = "hello world";
+            mac.otaa();
 
-            mac.unconfirmed(1, msg, strlen(msg));
+            while(mac.joined()){    
+
+                const char msg[] = "hello world";
+
+                mac.unconfirmed(1, msg, strlen(msg));
+
+                ThisThread::sleep_for(5000);
+            }
         }
+
+        ThisThread::sleep_for(5000);
     }
     
     return 0;

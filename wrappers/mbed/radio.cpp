@@ -4,10 +4,11 @@ using namespace LDL;
 
 /* constructors *******************************************************/
 
-Radio::Radio(enum ldl_radio_type type, SPI &spi, PinName nreset, PinName dio0, PinName dio1)
+Radio::Radio(enum ldl_radio_type type, SPI &spi, PinName nreset, PinName nselect, PinName dio0, PinName dio1)
     :
     spi(spi),
     nreset(nreset),
+    nselect(nselect),
     dio0(dio0),
     dio1(dio1)
 {
@@ -21,7 +22,6 @@ Radio::Radio(enum ldl_radio_type type, SPI &spi, PinName nreset, PinName dio0, P
     this->dio0.rise(callback(this, &Radio::dio0_handler));
     this->dio1.rise(callback(this, &Radio::dio1_handler));
     LDL_Radio_setHandler(&state, this, &Radio::interrupt_handler);
-    LDL_Radio_init(&state, &arg);
 }
 
 /* static protected ***************************************************/
@@ -59,12 +59,12 @@ Radio::chip_write(void *self, uint8_t addr, const void *data, uint8_t size)
 {
     Radio *obj = to_obj(self);
 
-    obj->spi.select();
+    obj->chip_select(true);
 
     obj->spi.write(addr | 0x80U);
     obj->spi.write((const char *)data, size, nullptr, 0);
 
-    obj->spi.deselect();
+    obj->chip_select(false);
 }
 
 void
@@ -72,12 +72,12 @@ Radio::chip_read(void *self, uint8_t addr, void *data, uint8_t size)
 {
     Radio *obj = to_obj(self);
 
-    obj->spi.select();
+    obj->chip_select(true);
 
     obj->spi.write(addr & 0x7eU);
     obj->spi.write(nullptr, 0, (char *)data, size);
 
-    obj->spi.deselect();
+    obj->chip_select(false);
 }
 
 void
@@ -155,6 +155,39 @@ void
 Radio::dio1_handler()
 {
     LDL_Radio_interrupt(&state, 1);
+}
+
+void
+Radio::chip_select(bool state)
+{
+    if(state){
+
+        if(nselect.is_connected() < 0){
+
+            spi.select();
+            spi.frequency();
+            spi.format(8U, 0U);            
+        }
+        else{
+
+            spi.lock();
+            spi.frequency();
+            spi.format(8U, 0U);            
+            nselect = 0;
+        }
+    }
+    else{
+
+        if(nselect.is_connected() < 0){
+
+            spi.deselect();            
+        }
+        else{
+
+            nselect = 1;
+            spi.unlock();
+        }
+    }
 }
 
 /* public *************************************************************/

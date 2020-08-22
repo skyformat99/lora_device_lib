@@ -12,6 +12,7 @@ namespace LDL {
 
             SPI &spi;
             DigitalInOut nreset;
+            DigitalOut nselect;
             InterruptIn dio0;
             InterruptIn dio1;                                    
             Callback<void(enum ldl_radio_event)> event_cb;
@@ -39,6 +40,8 @@ namespace LDL {
             static void chip_write(void *self, uint8_t addr, const void *data, uint8_t size);
             static void chip_read(void *self, uint8_t addr, void *data, uint8_t size);
 
+            void chip_select(bool state);
+
             const struct ldl_chip_adapter chip_adapter = {
 
                 .reset = chip_reset,
@@ -60,7 +63,7 @@ namespace LDL {
                 .min_snr = min_snr 
             };
 
-            Radio(enum ldl_radio_type type, SPI &spi, PinName nreset, PinName dio0, PinName dio1);
+            Radio(enum ldl_radio_type type, SPI &spi, PinName nreset, PinName nselect, PinName dio0, PinName dio1);
               
             void set_pa(enum ldl_radio_pa setting);
             void set_event_handler(Callback<void(enum ldl_radio_event)> handler);
@@ -70,8 +73,8 @@ namespace LDL {
         
         public:
 
-            SX1272(SPI &spi, PinName nreset, PinName dio0, PinName dio1)
-                : Radio(LDL_RADIO_SX1272, spi, nreset, dio0, dio1)        
+            SX1272(SPI &spi, PinName nreset, PinName nselect, PinName dio0, PinName dio1)
+                : Radio(LDL_RADIO_SX1272, spi, nreset, nselect, dio0, dio1)        
             {}
     };
     
@@ -79,8 +82,8 @@ namespace LDL {
 
         public:
 
-            SX1276(SPI &spi, PinName nreset, PinName dio0, PinName dio1)
-                : Radio(LDL_RADIO_SX1276, spi, nreset, dio0, dio1)        
+            SX1276(SPI &spi, PinName nreset, PinName nselect, PinName dio0, PinName dio1)
+                : Radio(LDL_RADIO_SX1276, spi, nreset, nselect, dio0, dio1)        
             {}            
     };
 };

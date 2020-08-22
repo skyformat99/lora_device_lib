@@ -13,7 +13,7 @@ MAC::MAC(Store &store, SM &sm, Radio &radio) :
     sm(sm),
     store(store)
 {
-    timer.start();
+    next_event_handler = 0;
 }
 
 /* functions  *********************************************************/
@@ -25,7 +25,7 @@ uint32_t LDL_System_ticks(void *app)
 
 uint32_t LDL_System_tps(void)
 {
-    return 1000UL;    
+    return 1000000UL;    
 }
 
 uint32_t LDL_System_advance(void)
@@ -72,12 +72,19 @@ MAC::app_handler(void *app, enum ldl_mac_response_type type, const union ldl_mac
 void
 MAC::do_process()
 {
-    LDL_MAC_process(&mac);
-    uint32_t next = LDL_MAC_ticksUntilNextEvent(&mac);
+    uint32_t next;
+
+    do{
+        LDL_MAC_process(&mac);
+        next = LDL_MAC_ticksUntilNextEvent(&mac);
+    }
+    while(next == 0U);
+    
     if(next < UINT32_MAX){
         events.cancel(next_event_handler);
-        next_event_handler = events.call_in(std::chrono::duration<uint32_t>(next), callback(this, &MAC::do_process));
-    }
+        //next_event_handler = events.call_in(std::chrono::duration<uint32_t>(next/1000U), callback(this, &MAC::do_process));        
+        next_event_handler = events.call_in(next/1000U, callback(this, &MAC::do_process));        
+    }        
 }
 
 void
@@ -261,6 +268,8 @@ MAC::start(enum ldl_region region)
         return false;
     }
 
+    timer.start();
+
     struct ldl_mac_init_arg arg = {0};
     
     uint8_t dev_eui[8];
@@ -276,7 +285,7 @@ MAC::start(enum ldl_region region)
     arg.radio_adapter = &radio.adapter;
 
     arg.sm = (struct ldl_sm *)(&sm);
-    arg.sm_adapter = &sm.adapter;
+    arg.sm_adapter = sm.adapter;
 
     arg.devEUI = dev_eui;   
     arg.joinEUI = join_eui;
@@ -301,7 +310,11 @@ MAC::start(enum ldl_region region)
 
     run_state = ON;
 
+    do_process();
+
     mutex.unlock();
+
+    
 
     return true;
 }
@@ -588,7 +601,7 @@ MAC::print_event(enum ldl_mac_response_type type, const union ldl_mac_response_a
         printf("CHIP_ERROR");
         break;            
     case LDL_MAC_RESET:
-        printf("RESET\n");
+        printf("RESET");
         break;            
     case LDL_MAC_TX_BEGIN:
         printf("TX_BEGIN: SZ=%u F=%" PRIu32 " SF=%u BW=%s P=%u",
@@ -600,7 +613,7 @@ MAC::print_event(enum ldl_mac_response_type type, const union ldl_mac_response_a
         );        
         break;
     case LDL_MAC_TX_COMPLETE:
-        printf("TX_COMPLETE\n");
+        printf("TX_COMPLETE");
         break;
     case LDL_MAC_RX1_SLOT:
     case LDL_MAC_RX2_SLOT:

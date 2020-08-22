@@ -131,7 +131,7 @@ void LDL_OPS_deriveJoinKeys(struct ldl_mac *self)
     
     (void)memset(&iv, 0, sizeof(iv));
     
-    LDL_SM_beginUpdateSessionKey(self->sm); 
+    self->sm_adapter->begin_update_session_key(self->sm);
     {                
         /* ptr[0] below */ 
         (void)putEUI(&ptr[1U], self->devEUI);
@@ -142,8 +142,6 @@ void LDL_OPS_deriveJoinKeys(struct ldl_mac *self)
         ptr[0] = 6U;
         self->sm_adapter->update_session_key(self->sm, LDL_SM_KEY_JSINT, LDL_SM_KEY_NWK, &iv);                             
     }
-    
-       
     self->sm_adapter->end_update_session_key(self->sm);        
 }
 #endif

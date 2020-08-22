@@ -411,8 +411,8 @@ void LDL_MAC_process(struct ldl_mac *self)
                 break;            
             case LDL_STATE_RECOVERY_RESET:
                 self->state = LDL_STATE_RECOVERY_LOCKOUT;
-                /* 60s */
-                LDL_MAC_timerSet(self, LDL_TIMER_WAITA, (LDL_System_tps() + LDL_System_eps()) * 60UL);
+                /* 10s */
+                LDL_MAC_timerSet(self, LDL_TIMER_WAITA, (LDL_System_tps() + LDL_System_eps()) * 10UL);
                 break;
             }            
         }    

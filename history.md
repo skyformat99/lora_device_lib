@@ -1,6 +1,21 @@
 Release History
 ===============
 
+# 0.4.0
+
+In this release I've put some effort into making it easier to evaluate
+a working version of this project on MBED. Starting from scratch is a lot
+of work and a lot of things can go wrong.
+
+- decoupled MAC from SM by replacing function calls with a const struct
+  of function pointers. This makes wrapping LDL in C++ easier and opens
+  the door to implementing more robust SMs as subclasses.
+- changed MAC so that it no longer sets the radio interrupt callback in
+  MAC_init(). This makes it easier to wrap MAC and Radio in C++ classes.
+- added mbed wrapper
+- removed duplicate source from Arduino wrapper. Arduino users (are there any users at all? :P)
+  will need to run the script themselves.
+
 # 0.3.1
 
 - fixed LDL_MAC_JOIN_COMPLETE event to pass argument instead of NULL (thanks dzurikmiroslav)

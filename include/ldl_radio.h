@@ -35,6 +35,7 @@
  * 
  * - LDL_Radio_init()
  * - LDL_Radio_setPA()
+ * - LDL_Radio_setHandler()
  * 
  * There are more radio interfaces than those documented in this group
  * but the application does not need to interact with them directly.
@@ -112,32 +113,61 @@ enum ldl_radio_pa {
     LDL_RADIO_PA_BOOST     /**< BOOST pin */
 };
 
-struct ldl_mac;
+typedef void (*ldl_radio_event_fn)(void *self, enum ldl_radio_event event);
 
-typedef void (*ldl_radio_event_fn)(struct ldl_mac *self, enum ldl_radio_event event);
+/* these are the interfaces radio calls to connect to the chip */
+struct ldl_chip_adapter {
+
+    void (*reset)(void *self, bool state);
+    void (*write)(void *self, uint8_t addr, const void *data, uint8_t size);
+    void (*read)(void *self, uint8_t addr, void *data, uint8_t size);    
+};
 
 /** Radio data */
 struct ldl_radio {
     
-    void *board;
+    void *chip;
     enum ldl_radio_pa pa;
     uint8_t dio_mapping1;    
     enum ldl_radio_type type;
-    struct ldl_mac *mac;
-    ldl_radio_event_fn handler;    
+    void *mac;
+    ldl_radio_event_fn handler;
+    const struct ldl_chip_adapter *chip_adapter;
 };
 
+/* these are the interfaces that MAC will call */
+struct ldl_radio_adapter {
+
+    void (*entropy_begin)(struct ldl_radio *self);
+    unsigned int (*entropy_end)(struct ldl_radio *self);
+    void (*reset)(struct ldl_radio *self, bool state);
+    uint8_t (*collect)(struct ldl_radio *self, struct ldl_radio_packet_metadata *meta, void *data, uint8_t max);
+    void (*sleep)(struct ldl_radio *self);
+    void (*transmit)(struct ldl_radio *self, const struct ldl_radio_tx_setting *settings, const void *data, uint8_t len);
+    void (*receive)(struct ldl_radio *self, const struct ldl_radio_rx_setting *settings);
+    void (*clear_interrupt)(struct ldl_radio *self);
+    int16_t (*min_snr)(struct ldl_radio *self, enum ldl_spreading_factor sf);
+};
+
+struct ldl_radio_init_arg {
+
+    enum ldl_radio_type type;
+    void *chip;
+    const struct ldl_chip_adapter *chip_adapter;    
+};
 
 /** Initialise radio driver
  * 
  * This must be done before calling LDL_MAC_init().
  * 
  * @param[in] self
+ * @param[in] arg   #ldl_radio_init_arg
+ * 
  * @param[in] type  driver to initialise
  * @param[in] board passed to board interface functions (e.g. LDL_Chip_write())
  * 
  * */
-void LDL_Radio_init(struct ldl_radio *self, enum ldl_radio_type type, void *board);
+void LDL_Radio_init(struct ldl_radio *self, const struct ldl_radio_init_arg *arg);
 
 /** Select power amplifier
  * 
@@ -170,7 +200,18 @@ void LDL_Radio_setPA(struct ldl_radio *self, enum ldl_radio_pa pa);
  * */
 void LDL_Radio_interrupt(struct ldl_radio *self, uint8_t n);
 
-void LDL_Radio_setHandler(struct ldl_radio *self, struct ldl_mac *mac, ldl_radio_event_fn handler);
+/** Set event handler callback
+ *
+ * This is how the Radio tells the MAC about rising interrupt lines.
+ *
+ * @note MAC used to set this in init but now the application must do it
+ *
+ * @param[in] self #ldl_radio
+ * @param[in] ctx
+ * @param[in] handler
+ *
+ * */
+void LDL_Radio_setHandler(struct ldl_radio *self, void *ctx, ldl_radio_event_fn handler);
 
 void LDL_Radio_entropyBegin(struct ldl_radio *self);
 unsigned int LDL_Radio_entropyEnd(struct ldl_radio *self);
@@ -181,7 +222,7 @@ void LDL_Radio_sleep(struct ldl_radio *self);
 void LDL_Radio_transmit(struct ldl_radio *self, const struct ldl_radio_tx_setting *settings, const void *data, uint8_t len);
 void LDL_Radio_receive(struct ldl_radio *self, const struct ldl_radio_rx_setting *settings);
 void LDL_Radio_clearInterrupt(struct ldl_radio *self);
-int16_t LDL_Radio_minSNR(const struct ldl_radio *self, enum ldl_spreading_factor sf);
+int16_t LDL_Radio_minSNR(struct ldl_radio *self, enum ldl_spreading_factor sf);
 
 #ifdef LDL_ENABLE_RADIO_TEST
 void LDL_Radio_setFreq(struct ldl_radio *self, uint32_t freq);

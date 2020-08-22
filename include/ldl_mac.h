@@ -535,6 +535,9 @@ struct ldl_mac {
     struct ldl_radio *radio;
     struct ldl_input inputs;
     struct ldl_timer timers[LDL_TIMER_MAX];
+
+    const struct ldl_sm_adapter *sm_adapter;
+    const struct ldl_radio_adapter *radio_adapter;
     
     enum ldl_region region;
     
@@ -572,16 +575,22 @@ struct ldl_mac_init_arg {
     
     /** pointer passed to #ldl_mac_response_fn and @ref ldl_system functions */
     void *app;      
-    
+
     /** pointer to initialised Radio */
     struct ldl_radio *radio;
+
+    /** pointer to Radio interfaces */
+    const struct ldl_radio_adapter *radio_adapter;
     
     /** pointer to initialised Security Module */
     struct ldl_sm *sm;
+
+    /** pointer to SM interfaces */
+    const struct ldl_sm_adapter *sm_adapter;
     
     /** application callback #ldl_mac_response_fn */
     ldl_mac_response_fn handler;
-    
+
     /** optional pointer to restored #ldl_mac_session
      * 
      * If this pointer is NULL, LDL will initialise session to default
@@ -751,6 +760,9 @@ bool LDL_MAC_confirmedData(struct ldl_mac *self, uint8_t port, const void *data,
  * 
  * */
 bool LDL_MAC_otaa(struct ldl_mac *self);
+
+
+bool LDL_MAC_rejoin(struct ldl_mac *self);
 
 /** Forget network
  * 

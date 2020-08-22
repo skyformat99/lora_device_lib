@@ -65,6 +65,34 @@ enum ldl_sm_key {
     LDL_SM_KEY_NWK         /**< network root key */        
 };
 
+struct ldl_sm_adapter {
+
+    void (*update_session_key)(struct ldl_sm *self, enum ldl_sm_key key_desc, enum ldl_sm_key root_desc, const void *iv);
+    void (*begin_update_session_key)(struct ldl_sm *self);
+    void (*end_update_session_key)(struct ldl_sm *self);
+    uint32_t (*mic)(struct ldl_sm *self, enum ldl_sm_key desc, const void *hdr, uint8_t hdrLen, const void *data, uint8_t dataLen);
+    void (*ecb)(struct ldl_sm *self, enum ldl_sm_key desc, void *b);
+    void (*ctr)(struct ldl_sm *self, enum ldl_sm_key desc, const void *iv, void *data, uint8_t len);
+};
+
+/** Adapts MAC to the default SM
+ *
+ * e.g.
+ * 
+ * @code
+ * struct ldl_mac_init_arg arg = {
+ *
+ *      // ...
+ * 
+ *      .sm_adapter = LDL_SM_adapter
+ *
+ *      // ...
+ * };
+ * @endcode
+ *
+ * */
+extern const struct ldl_sm_adapter LDL_SM_adapter;
+
 /** Update a session key and save the result in the key store
  * 
  * LoRaWAN session keys are derived from clear text encrypted with a 
@@ -166,6 +194,7 @@ void LDL_SM_ecb(struct ldl_sm *self, enum ldl_sm_key desc, void *b);
  * 
  * */
 void LDL_SM_ctr(struct ldl_sm *self, enum ldl_sm_key desc, const void *iv, void *data, uint8_t len);
+
 
 #ifdef __cplusplus
 }

@@ -76,8 +76,8 @@ void LDL_OPS_deriveKeys(struct ldl_mac *self)
     ptr = iv.value;
     
     (void)memset(&iv, 0, sizeof(iv));
-    
-    LDL_SM_beginUpdateSessionKey(self->sm); 
+
+    self->sm_adapter->begin_update_session_key(self->sm);
     {
         if(self->ctx.version == 0U){
             
@@ -88,12 +88,12 @@ void LDL_OPS_deriveKeys(struct ldl_mac *self)
             (void)putU16(&ptr[pos], self->devNonce);
             
             ptr[0] = 2U;
-            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_APPS, LDL_SM_KEY_NWK, &iv);
+            self->sm_adapter->update_session_key(self->sm, LDL_SM_KEY_APPS, LDL_SM_KEY_NWK, &iv);
             
             ptr[0] = 1U;
-            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_FNWKSINT, LDL_SM_KEY_NWK, &iv);    
-            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_SNWKSINT, LDL_SM_KEY_NWK, &iv);
-            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_NWKSENC, LDL_SM_KEY_NWK, &iv);
+            self->sm_adapter->update_session_key(self->sm, LDL_SM_KEY_FNWKSINT, LDL_SM_KEY_NWK, &iv);    
+            self->sm_adapter->update_session_key(self->sm, LDL_SM_KEY_SNWKSINT, LDL_SM_KEY_NWK, &iv);
+            self->sm_adapter->update_session_key(self->sm, LDL_SM_KEY_NWKSENC, LDL_SM_KEY_NWK, &iv);
         }
         else{
             
@@ -104,19 +104,19 @@ void LDL_OPS_deriveKeys(struct ldl_mac *self)
             (void)putU16(&ptr[pos], self->devNonce);
                
             ptr[0] = 1U;
-            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_FNWKSINT, LDL_SM_KEY_NWK, &iv);    
+            self->sm_adapter->update_session_key(self->sm, LDL_SM_KEY_FNWKSINT, LDL_SM_KEY_NWK, &iv);    
             
             ptr[0] = 2U;
-            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_APPS, LDL_SM_KEY_APP, &iv);
+            self->sm_adapter->update_session_key(self->sm, LDL_SM_KEY_APPS, LDL_SM_KEY_APP, &iv);
             
             ptr[0] = 3U;
-            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_SNWKSINT, LDL_SM_KEY_NWK, &iv);
+            self->sm_adapter->update_session_key(self->sm, LDL_SM_KEY_SNWKSINT, LDL_SM_KEY_NWK, &iv);
             
             ptr[0] = 4U;
-            LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_NWKSENC, LDL_SM_KEY_NWK, &iv);                               
+            self->sm_adapter->update_session_key(self->sm, LDL_SM_KEY_NWKSENC, LDL_SM_KEY_NWK, &iv);                               
         }        
     }    
-    LDL_SM_endUpdateSessionKey(self->sm);    
+    self->sm_adapter->end_update_session_key(self->sm);    
 }
 
 #ifndef LDL_DISABLE_POINTONE
@@ -137,12 +137,14 @@ void LDL_OPS_deriveJoinKeys(struct ldl_mac *self)
         (void)putEUI(&ptr[1U], self->devEUI);
         
         ptr[0] = 5U;
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_JSENC, LDL_SM_KEY_NWK, &iv);                
+        self->sm_adapter->update_session_key(self->sm, LDL_SM_KEY_JSENC, LDL_SM_KEY_NWK, &iv);                
         
         ptr[0] = 6U;
-        LDL_SM_updateSessionKey(self->sm, LDL_SM_KEY_JSINT, LDL_SM_KEY_NWK, &iv);                             
-    }    
-    LDL_SM_endUpdateSessionKey(self->sm);        
+        self->sm_adapter->update_session_key(self->sm, LDL_SM_KEY_JSINT, LDL_SM_KEY_NWK, &iv);                             
+    }
+    
+       
+    self->sm_adapter->end_update_session_key(self->sm);        
 }
 #endif
 
@@ -165,13 +167,13 @@ uint8_t LDL_OPS_prepareData(struct ldl_mac *self, const struct ldl_frame_data *f
             
             initA(&A, f->devAddr, true, f->counter, 0U);
             
-            LDL_SM_ctr(self->sm, LDL_SM_KEY_NWKSENC, &A, &out[off.opts], f->optsLen);            
+            self->sm_adapter->ctr(self->sm, LDL_SM_KEY_NWKSENC, &A, &out[off.opts], f->optsLen);            
         }
         
         initA(&A, f->devAddr, true, f->counter, 1U);
         
         /* encrypt data */
-        LDL_SM_ctr(self->sm, (f->port == 0U) ? LDL_SM_KEY_NWKSENC : LDL_SM_KEY_APPS, &A, &out[off.data], f->dataLen);                
+        self->sm_adapter->ctr(self->sm, (f->port == 0U) ? LDL_SM_KEY_NWKSENC : LDL_SM_KEY_APPS, &A, &out[off.data], f->dataLen);                
         
     }
      
@@ -188,11 +190,11 @@ void LDL_OPS_micDataFrame(struct ldl_mac *self, void *buffer, uint8_t size)
     initB(&B0, 0U, 0U, 0U, true, self->ctx.devAddr, self->tx.counter, size - sizeof(micF)); 
     initB(&B1, 0U, self->tx.rate, self->tx.chIndex, true, self->ctx.devAddr, self->tx.counter, size - sizeof(micS));
 
-    micF = LDL_SM_mic(self->sm, LDL_SM_KEY_FNWKSINT, &B0, sizeof(B0.value), buffer, size - sizeof(micF));       
+    micF = self->sm_adapter->mic(self->sm, LDL_SM_KEY_FNWKSINT, &B0, sizeof(B0.value), buffer, size - sizeof(micF));       
 
     if(self->ctx.version == 1U){
     
-        micS = LDL_SM_mic(self->sm, LDL_SM_KEY_SNWKSINT, &B1, sizeof(B1.value), buffer, size - sizeof(micS));
+        micS = self->sm_adapter->mic(self->sm, LDL_SM_KEY_SNWKSINT, &B1, sizeof(B1.value), buffer, size - sizeof(micS));
         
         LDL_Frame_updateMIC(buffer, size, ((micF << 16) | (micS & 0xffffUL))); 
     } 
@@ -209,7 +211,7 @@ uint8_t LDL_OPS_prepareJoinRequest(struct ldl_mac *self, const struct ldl_frame_
     
     retval = LDL_Frame_putJoinRequest(f, out, max);
     
-    mic = LDL_SM_mic(self->sm, LDL_SM_KEY_NWK, NULL, 0U, out, retval-sizeof(mic));
+    mic = self->sm_adapter->mic(self->sm, LDL_SM_KEY_NWK, NULL, 0U, out, retval-sizeof(mic));
     
     LDL_Frame_updateMIC(out, retval, mic);
     
@@ -237,11 +239,11 @@ bool LDL_OPS_receiveFrame(struct ldl_mac *self, struct ldl_frame_down *f, uint8_
                 
                 key = (self->op == LDL_OP_JOINING) ? LDL_SM_KEY_NWK : LDL_SM_KEY_JSENC;
                 
-                LDL_SM_ecb(self->sm, key, &in[1U]);
+                self->sm_adapter->ecb(self->sm, key, &in[1U]);
         
                 if(len == LDL_Frame_sizeofJoinAccept(true)){
                     
-                    LDL_SM_ecb(self->sm, key, &in[LDL_Frame_sizeofJoinAccept(false)]);
+                    self->sm_adapter->ecb(self->sm, key, &in[LDL_Frame_sizeofJoinAccept(false)]);
                 }
                 
                 if(LDL_Frame_decode(f, in, len)){
@@ -268,7 +270,7 @@ bool LDL_OPS_receiveFrame(struct ldl_mac *self, struct ldl_frame_down *f, uint8_
                             pos += putEUI(&hdr.value[pos], self->joinEUI);
                             pos += putU16(&hdr.value[pos], self->devNonce);
                             
-                            mic = LDL_SM_mic(self->sm, LDL_SM_KEY_JSINT, &hdr, pos, in, len-sizeof(mic));
+                            mic = self->sm_adapter->mic(self->sm, LDL_SM_KEY_JSINT, &hdr, pos, in, len-sizeof(mic));
                             
                             if(f->mic == mic){
                             
@@ -286,7 +288,7 @@ bool LDL_OPS_receiveFrame(struct ldl_mac *self, struct ldl_frame_down *f, uint8_
                     }
                     else{
                         
-                        mic = LDL_SM_mic(self->sm, LDL_SM_KEY_NWK, NULL, 0U, in, len-sizeof(mic));                        
+                        mic = self->sm_adapter->mic(self->sm, LDL_SM_KEY_NWK, NULL, 0U, in, len-sizeof(mic));                        
                         
                         if(f->mic == mic){
                         
@@ -334,7 +336,7 @@ bool LDL_OPS_receiveFrame(struct ldl_mac *self, struct ldl_frame_down *f, uint8_
                         initB(&B, 0U, 0U, 0U, false, f->devAddr, counter, len-sizeof(mic));
                     }
                     
-                    mic = LDL_SM_mic(self->sm, LDL_SM_KEY_SNWKSINT, &B, sizeof(B.value), in, len-sizeof(mic));
+                    mic = self->sm_adapter->mic(self->sm, LDL_SM_KEY_SNWKSINT, &B, sizeof(B.value), in, len-sizeof(mic));
                     
                     if(mic == f->mic){
                         
@@ -343,12 +345,12 @@ bool LDL_OPS_receiveFrame(struct ldl_mac *self, struct ldl_frame_down *f, uint8_
                             
                             initA(&A, f->devAddr, false, f->counter, 0U);
                             
-                            LDL_SM_ctr(self->sm, LDL_SM_KEY_NWKSENC, &A, f->opts, f->optsLen);    
+                            self->sm_adapter->ctr(self->sm, LDL_SM_KEY_NWKSENC, &A, f->opts, f->optsLen);    
                         }
                         
                         initA(&A, f->devAddr, false, f->counter, 1U);
                         
-                        LDL_SM_ctr(self->sm, (f->port == 0U) ? LDL_SM_KEY_NWKSENC : LDL_SM_KEY_APPS, &A, f->data, f->dataLen);
+                        self->sm_adapter->ctr(self->sm, (f->port == 0U) ? LDL_SM_KEY_NWKSENC : LDL_SM_KEY_APPS, &A, f->data, f->dataLen);
                        
                         retval = true;
                     }

@@ -23,7 +23,6 @@
 
 #include "ldl_debug.h"
 #include "ldl_radio.h"
-#include "ldl_chip.h"
 #include "ldl_platform.h"
 
 #if defined(LDL_ENABLE_SX1272) || defined(LDL_ENABLE_SX1276)
@@ -140,8 +139,22 @@ enum ldl_radio_sx1272_register {
     RegBitRateFrac=0x70
 };
 
+const struct ldl_radio_adapter LDL_Radio_adapter = {
+
+    .entropy_begin = LDL_Radio_entropyBegin,
+    .entropy_end = LDL_Radio_entropyEnd,
+    .reset = LDL_Radio_reset,
+    .collect = LDL_Radio_collect,
+    .sleep = LDL_Radio_sleep,
+    .transmit = LDL_Radio_transmit,
+    .receive = LDL_Radio_receive,
+    .clear_interrupt = LDL_Radio_clearInterrupt,
+    .min_snr = LDL_Radio_minSNR 
+};
+
 /* static function prototypes *****************************************/
 
+static enum ldl_radio_event interruptToEvent(struct ldl_radio *self, uint8_t n);
 static uint8_t readFIFO(struct ldl_radio *self, uint8_t *data, uint8_t max);
 static void writeFIFO(struct ldl_radio *self, const uint8_t *data, uint8_t len);
 static void setFreq(struct ldl_radio *self, uint32_t freq);
@@ -164,14 +177,16 @@ static uint8_t sfSetting(const struct ldl_radio *self, enum ldl_spreading_factor
 
 /* functions **********************************************************/
 
-void LDL_Radio_init(struct ldl_radio *self, enum ldl_radio_type type, void *board)
+void LDL_Radio_init(struct ldl_radio *self, const struct ldl_radio_init_arg *arg)
 {
     LDL_PEDANTIC(self != NULL)
+    LDL_PEDANTIC(arg != NULL)
     
     (void)memset(self, 0, sizeof(*self));
-    self->board = board;
 
-    self->type = type;
+    self->chip = arg->chip;
+    self->chip_adapter = arg->chip_adapter;
+    self->type = arg->type;
 }
 
 void LDL_Radio_setPA(struct ldl_radio *self, enum ldl_radio_pa pa)
@@ -181,12 +196,12 @@ void LDL_Radio_setPA(struct ldl_radio *self, enum ldl_radio_pa pa)
     self->pa = pa;    
 }
 
-void LDL_Radio_setHandler(struct ldl_radio *self, struct ldl_mac *mac, ldl_radio_event_fn handler)
+void LDL_Radio_setHandler(struct ldl_radio *self, void *ctx, ldl_radio_event_fn handler)
 {
     LDL_PEDANTIC(self != NULL)
     
     self->handler = handler;
-    self->mac = mac;
+    self->mac = ctx;
 }
 
 void LDL_Radio_interrupt(struct ldl_radio *self, uint8_t n)
@@ -195,15 +210,15 @@ void LDL_Radio_interrupt(struct ldl_radio *self, uint8_t n)
     
     if(self->handler != NULL){
         
-        self->handler(self->mac, LDL_Radio_signal(self, n));
+        self->handler(self->mac, interruptToEvent(self, n));
     }
 }
 
 void LDL_Radio_reset(struct ldl_radio *self, bool state)
 {
     LDL_PEDANTIC(self != NULL)
-    
-    LDL_Chip_reset(self->board, state);
+
+    self->chip_adapter->reset(self->chip, state);
 }
 
 void LDL_Radio_transmit(struct ldl_radio *self, const struct ldl_radio_tx_setting *settings, const void *data, uint8_t len)
@@ -277,47 +292,7 @@ uint8_t LDL_Radio_collect(struct ldl_radio *self, struct ldl_radio_packet_metada
     return retval;
 }
 
-enum ldl_radio_event LDL_Radio_signal(struct ldl_radio *self, uint8_t n)
-{    
-    LDL_PEDANTIC(self != NULL)
-    
-    enum ldl_radio_event retval = LDL_RADIO_EVENT_NONE;
-    
-    switch(n){
-    case 0U:  
-    
-        switch(self->dio_mapping1){
-        case 0U:
-            retval = LDL_RADIO_EVENT_RX_READY;
-            break;
-        case 0x40U:
-            retval = LDL_RADIO_EVENT_TX_COMPLETE;
-            break;
-        default:
-            /* do nothing */
-            break;
-        }         
-        break;
-        
-    case 1U:
-    
-        switch(self->dio_mapping1){
-        case 0U:
-            retval = LDL_RADIO_EVENT_RX_TIMEOUT;
-            break;
-        default:
-            /* do nothing */
-            break;
-        }         
-        break;
-    
-    default:
-        /* do nothing */
-        break;
-    }
-    
-    return retval;
-}
+
 
 void LDL_Radio_entropyBegin(struct ldl_radio *self)
 {
@@ -403,7 +378,7 @@ void LDL_Radio_enableLora(struct ldl_radio *self)
 }
 #endif
 
-int16_t LDL_Radio_minSNR(const struct ldl_radio *self, enum ldl_spreading_factor sf)
+int16_t LDL_Radio_minSNR(struct ldl_radio *self, enum ldl_spreading_factor sf)
 {
     int16_t retval = 0;
     
@@ -436,6 +411,48 @@ int16_t LDL_Radio_minSNR(const struct ldl_radio *self, enum ldl_spreading_factor
 }
     
 /* static functions ***************************************************/
+
+static enum ldl_radio_event interruptToEvent(struct ldl_radio *self, uint8_t n)
+{    
+    LDL_PEDANTIC(self != NULL)
+    
+    enum ldl_radio_event retval = LDL_RADIO_EVENT_NONE;
+    
+    switch(n){
+    case 0U:  
+    
+        switch(self->dio_mapping1){
+        case 0U:
+            retval = LDL_RADIO_EVENT_RX_READY;
+            break;
+        case 0x40U:
+            retval = LDL_RADIO_EVENT_TX_COMPLETE;
+            break;
+        default:
+            /* do nothing */
+            break;
+        }         
+        break;
+        
+    case 1U:
+    
+        switch(self->dio_mapping1){
+        case 0U:
+            retval = LDL_RADIO_EVENT_RX_TIMEOUT;
+            break;
+        default:
+            /* do nothing */
+            break;
+        }         
+        break;
+    
+    default:
+        /* do nothing */
+        break;
+    }
+    
+    return retval;
+}
 
 static void enableLora(struct ldl_radio *self)
 {
@@ -767,23 +784,23 @@ static void writeFIFO(struct ldl_radio *self, const uint8_t *data, uint8_t len)
 static uint8_t readReg(struct ldl_radio *self, uint8_t reg)
 {
     uint8_t data;
-    LDL_Chip_read(self->board, reg, &data, sizeof(data));
+    self->chip_adapter->read(self->chip, reg, &data, sizeof(data));
     return data;
 }
 
 static void writeReg(struct ldl_radio *self, uint8_t reg, uint8_t data)
 {
-    LDL_Chip_write(self->board, reg, &data, sizeof(data));
+    self->chip_adapter->write(self->chip, reg, &data, sizeof(data));
 }
 
 static void burstWrite(struct ldl_radio *self, uint8_t reg, const uint8_t *data, uint8_t len)
 {
-    LDL_Chip_write(self->board, reg, data, len);    
+    self->chip_adapter->write(self->chip, reg, data, len);
 }
 
 static void burstRead(struct ldl_radio *self, uint8_t reg, uint8_t *data, uint8_t len)
 {
-    LDL_Chip_read(self->board, reg, data, len);    
+    self->chip_adapter->read(self->chip, reg, data, len); 
 }
 
 #endif

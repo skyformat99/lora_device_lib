@@ -56,9 +56,11 @@ int main(void)
     struct ldl_mac_init_arg arg = {0};
     
     arg.radio = &radio;
+    arg.radio = &LDL_Radio_adapter;
     arg.app = app_pointer;
     arg.handler = app_handler;    
     arg.sm = &sm;
+    arg.sm_adapter = &LDL_SM_adapter;
     arg.session = NULL; /* restore cached session state (or not, in this case) */
     arg.devNonce = 0U;  /* restore devNonce */
     arg.joinNonce = 0U; /* restore joinNonce */

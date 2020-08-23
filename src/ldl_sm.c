@@ -39,7 +39,7 @@ void *LDL_SM_getKey(struct ldl_sm *self, enum ldl_sm_key desc) __attribute__((we
 
 static void *getKey(struct ldl_sm *self, enum ldl_sm_key desc);
 
-const struct ldl_sm_adapter LDL_SM_adapter = {
+const struct ldl_sm_interface LDL_SM_interface = {
     .update_session_key = LDL_SM_updateSessionKey,
     .begin_update_session_key = LDL_SM_beginUpdateSessionKey,
     .end_update_session_key = LDL_SM_endUpdateSessionKey,

@@ -65,7 +65,7 @@ enum ldl_sm_key {
     LDL_SM_KEY_NWK         /**< network root key */        
 };
 
-struct ldl_sm_adapter {
+struct ldl_sm_interface {
 
     void (*update_session_key)(struct ldl_sm *self, enum ldl_sm_key key_desc, enum ldl_sm_key root_desc, const void *iv);
     void (*begin_update_session_key)(struct ldl_sm *self);
@@ -75,7 +75,7 @@ struct ldl_sm_adapter {
     void (*ctr)(struct ldl_sm *self, enum ldl_sm_key desc, const void *iv, void *data, uint8_t len);
 };
 
-/** Adapts MAC to the default SM
+/** MAC can use this interface to talk to the default SM implementation
  *
  * e.g.
  * 
@@ -84,14 +84,14 @@ struct ldl_sm_adapter {
  *
  *      // ...
  * 
- *      .sm_adapter = LDL_SM_adapter
+ *      .sm_interfaces = LDL_SM_interface
  *
  *      // ...
  * };
  * @endcode
  *
  * */
-extern const struct ldl_sm_adapter LDL_SM_adapter;
+extern const struct ldl_sm_interface LDL_SM_interface;
 
 /** Update a session key and save the result in the key store
  * 

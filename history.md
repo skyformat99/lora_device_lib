@@ -7,14 +7,26 @@ In this release I've put some effort into making it easier to evaluate
 a working version of this project on MBED. Starting from scratch is a lot
 of work and a lot of things can go wrong.
 
-- decoupled MAC from SM by replacing function calls with a const struct
-  of function pointers. This makes wrapping LDL in C++ easier and opens
-  the door to implementing more robust SMs as subclasses.
-- changed MAC so that it no longer sets the radio interrupt callback in
-  MAC_init(). This makes it easier to wrap MAC and Radio in C++ classes.
-- added mbed wrapper
-- removed duplicate source from Arduino wrapper. Arduino users (are there any users at all? :P)
-  will need to run the script themselves.
+I've made a number of breaking changes to make the project easier to
+wrap in C++. A consequence of this is that you will likely need to change
+the way you init the library if you are updating from an ealier version.
+Recommend looking at the Initialisation section in the porting guide.
+
+- decoupled MAC from SM by way of struct ldl_sm_interface
+- decoupled MAC from Radio by way of struct ldl_radio_interface
+- decoupled Radio from Chip Interface by way of struct ldl_chip_interface
+- MAC no longer sets the radio interrupt callback in MAC_init(), the
+  application must now do this during initialisation
+- removed duplicate code from the Arduino wrapper
+- added MBED wrapper
+
+The decoupling structs make it possible to wrap SM and Radio up as classes
+without any weird linkages caused by the underlying C code. Being
+able to decouple the SM is especially useful for implementing different
+types of SMs for different application requirements.
+
+I've not updated the Arduino wrapper to suit the breaking changes since
+I'm not sure anyone uses this. 
 
 # 0.3.1
 

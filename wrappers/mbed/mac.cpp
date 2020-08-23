@@ -51,9 +51,16 @@ MAC::app_handler(void *app, enum ldl_mac_response_type type, const union ldl_mac
 {
     MAC *self = to_obj(app);
 
-    if((type == LDL_MAC_STARTUP) && (self->entropy_cb)){
+    if(type == LDL_MAC_STARTUP){
 
-        self->entropy_cb(arg->startup.entropy);                   
+        if(self->entropy_cb){
+
+            self->entropy_cb(arg->startup.entropy);
+        }
+        else{
+
+            srand(arg->startup.entropy);
+        }
     }
 
     if((type == LDL_MAC_RX) && (self->data_cb)){
@@ -282,10 +289,10 @@ MAC::start(enum ldl_region region)
     arg.handler = app_handler;
     
     arg.radio = (struct ldl_radio *)(&radio);
-    arg.radio_adapter = &radio.adapter;
+    arg.radio_interface = &radio.interface;
 
     arg.sm = (struct ldl_sm *)(&sm);
-    arg.sm_adapter = sm.adapter;
+    arg.sm_interface = sm.interface;
 
     arg.devEUI = dev_eui;   
     arg.joinEUI = join_eui;

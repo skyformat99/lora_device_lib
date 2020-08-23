@@ -15,13 +15,13 @@ Radio::Radio(enum ldl_radio_type type, SPI &spi, PinName nreset, PinName nselect
     struct ldl_radio_init_arg arg = {
         .type = type,
         .chip = this,
-        .chip_adapter = &chip_adapter        
+        .chip_interface = &chip_interface        
     };
 
     LDL_Radio_init(&state, &arg);
     this->dio0.rise(callback(this, &Radio::dio0_handler));
     this->dio1.rise(callback(this, &Radio::dio1_handler));
-    LDL_Radio_setHandler(&state, this, &Radio::interrupt_handler);
+    LDL_Radio_setHandler(&state, (struct ldl_mac *)this, &Radio::interrupt_handler);
 }
 
 /* static protected ***************************************************/

@@ -25,29 +25,15 @@
 /** @file */
 
 /**
- * @defgroup ldl_radio_connector Radio Connector
+ * @defgroup ldl_chip_interface Chip Interface
  * @ingroup ldl
  * 
- * # Radio Connector
- * 
- * The Radio Connector connects the @ref ldl_radio driver to the transceiver digital interface.
- * 
- * The following interfaces MUST be implemented:
- * 
- * - LDL_Chip_read()
- * - LDL_Chip_write()
- * - LDL_Chip_reset()
- * 
- * The following interface MUST be called when the radio signals an interrupt:
- * 
- * - LDL_Radio_interrupt()
- * 
- * The @ref ldl_radio_connector must be implemented in such a way as to ensure that LDL_Radio_interrupt()
- * will not be called before LDL_MAC_init() has been performed.
- * 
- * ## Transceiver Digital Interface
- * 
- * ### SX1272 and SX1276
+ * # Chip Interface
+ *
+ * The Radio driver uses the members of ldl_chip_interface to control
+ * the transceiver.
+ *
+ * ## SX1272 and SX1276
  * 
  * The following connections are required:
  * 
@@ -59,17 +45,18 @@
  * | NSS    | input        | hiz                     | active-low  |
  * | Reset  | input/output | open-collector + pullup | active-low  |
  * | DIO0   | output       | push-pull               | active-high |
- * | DIO1   | output       | push-pull               | active-high |
- * | DIO2   | output       | push-pull               | active-high |
- * | DIO3   | output       | push-pull               | active-high | 
+ * | DIO1   | output       | push-pull               | active-high | 
  * 
  * - Direction is from perspective of transceiver
  * - SPI mode is CPOL=0 and CPHA=0
  * - consider adding pullup to MISO to prevent floating when not selected
- * - LDL_Chip_reset() should be implemented like this:
- * 
+ *
+ * ### ldl_chip_interface.reset
+ *
+ * Should manipulate the chip reset line like this:
+ *
  * @code{.c}
- * void LDL_Chip_reset(void *self, bool state)
+ * void chip_reset(void *self, bool state)
  * {
  *      if(state){
  * 
@@ -81,12 +68,25 @@
  *      }
  * }
  * @endcode
+ *
+ * ### ldl_chip_interface.read
+ *
+ * Should manipulate the chip select line and SPI like this:
+ *
+ * @include examples/chip_interface/read_example.c
  * 
- * - DIOx become active to indicate events and stay active until they are cleared by LDL
- *  - The radio connector needs to detect the rising edge and call LDL_Radio_interrupt() with the line number as argument
- *  - Edge detection can be by interrupt or polling
- *  - If interrupt is used, LDL_SYSTEM_ENTER_CRITICAL() and LDL_SYSTEM_LEAVE_CRITICAL() must be defined
- * - DIOx interrupt example:
+ * ### ldl_chip_interface.write
+ *
+ * Should manipulate the chip select line and SPI like this:
+ *
+ * @include examples/chip_interface/write_example.c
+ *
+ * ### LDL_Radio_interrupt()
+ *
+ * The chip interface code needs to be able to detect the rising edge and call
+ * LDL_Radio_interrupt().
+ *
+ * The code might look like this:
  * 
  * @code{.c}
  * extern ldl_radio radio;
@@ -99,16 +99,10 @@
  * {
  *   LDL_Radio_interrupt(&radio, 1);
  * }
- * void dio2_rising_edge_isr(void)
- * {
- *   LDL_Radio_interrupt(&radio, 2);
- * }
- * void dio3_rising_edge_isr(void)
- * {
- *   LDL_Radio_interrupt(&radio, 3);
- * }
  * @endcode
- * 
+ *
+ * Note that LDL_SYSTEM_ENTER_CRITICAL() and LDL_SYSTEM_LEAVE_CRITICAL() must be defined
+ * if LDL_Radio_interrupt() is called from an ISR.
  * 
  * @{
  * */
@@ -117,7 +111,6 @@
 extern "C" {
 #endif
 
-#include "ldl_platform.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -127,11 +120,11 @@ extern "C" {
  * @param[in] state     **true** for hold, **true** for release
  * 
  * */
-void LDL_Chip_reset(void *self, bool state);
+typedef void (*ldl_chip_reset_fn)(void *self, bool state);
 
 /** Write bytes to address
  * 
- * @param[in] self      board from LDL_Radio_init()
+ * @param[in] self      chip from LDL_Radio_init()
  * @param[in] addr      register address
  * @param[in] data      buffer to write
  * @param[in] size      size of buffer in bytes
@@ -142,7 +135,7 @@ void LDL_Chip_reset(void *self, bool state);
  * @include examples/chip_interface/write_example.c
  * 
  * */
-void LDL_Chip_write(void *self, uint8_t addr, const void *data, uint8_t size);
+typedef void (*ldl_chip_write_fn)(void *self, uint8_t addr, const void *data, uint8_t size);
 
 /** Read bytes from address
  * 
@@ -157,12 +150,24 @@ void LDL_Chip_write(void *self, uint8_t addr, const void *data, uint8_t size);
  * @include examples/chip_interface/read_example.c
  * 
  * */
-void LDL_Chip_read(void *self, uint8_t addr, void *data, uint8_t size);
+typedef void (*ldl_chip_read_fn)(void *self, uint8_t addr, void *data, uint8_t size);
+
+/** This struct connects the radio to the transceiver
+ *
+ * A const pointer to this struct must be passed to @ref ldl_radio
+ * as a member of #ldl_radio_init_arg at LDL_Radio_init().
+ *
+ * */
+struct ldl_chip_interface {
+
+    ldl_chip_reset_fn reset;    /**< #ldl_chip_reset_fn */
+    ldl_chip_write_fn write;    /**< #ldl_chip_write_fn */
+    ldl_chip_read_fn read;      /**< #ldl_chip_read_fn */
+};
 
 #ifdef __cplusplus
 }
 #endif
 
 /** @} */
-
 #endif

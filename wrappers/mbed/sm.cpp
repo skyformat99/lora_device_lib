@@ -2,7 +2,7 @@
 
 using namespace LDL;
 
-const struct ldl_sm_adapter DefaultSM::_adapter = {
+const struct ldl_sm_interface DefaultSM::_interface = {
     .update_session_key = update_session_key,
     .begin_update_session_key = begin_update_session_key,
     .end_update_session_key = end_update_session_key,
@@ -13,7 +13,7 @@ const struct ldl_sm_adapter DefaultSM::_adapter = {
 
 DefaultSM::DefaultSM(const void *app_key, const void *nwk_key)    
 {
-    adapter = &_adapter;
+    interface = &_interface;
     LDL_SM_init(&state, app_key, nwk_key);
 }
 

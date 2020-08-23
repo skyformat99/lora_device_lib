@@ -29,13 +29,13 @@
  * 
  * # LDL Interface Documentation
  * 
- * - @ref ldl_mac MAC layer interface
- * - @ref ldl_radio radio driver interface
- * - @ref ldl_system portable system interface
- * - @ref ldl_radio_connector portable connector between radio driver and transceiver digital interface
- * - @ref ldl_build_options portable build options
- * - @ref ldl_tsm portable security module interface
- * - @ref ldl_crypto cryptographic implementations used by the default security module
+ * - @ref ldl_mac MAC
+ * - @ref ldl_radio radio driver
+ * - @ref ldl_system system interface(s)
+ * - @ref ldl_chip_interface connects @ref ldl_radio to the transceiver
+ * - @ref ldl_build_options build options
+ * - @ref ldl_tsm security module
+ * - @ref ldl_crypto default cipher and cipher modes
  * 
  * ## Usage
  * 
@@ -536,8 +536,8 @@ struct ldl_mac {
     struct ldl_input inputs;
     struct ldl_timer timers[LDL_TIMER_MAX];
 
-    const struct ldl_sm_adapter *sm_adapter;
-    const struct ldl_radio_adapter *radio_adapter;
+    const struct ldl_sm_interface *sm_interface;
+    const struct ldl_radio_interface *radio_interface;
     
     enum ldl_region region;
     
@@ -580,13 +580,13 @@ struct ldl_mac_init_arg {
     struct ldl_radio *radio;
 
     /** pointer to Radio interfaces */
-    const struct ldl_radio_adapter *radio_adapter;
+    const struct ldl_radio_interface *radio_interface;
     
     /** pointer to initialised Security Module */
     struct ldl_sm *sm;
 
     /** pointer to SM interfaces */
-    const struct ldl_sm_adapter *sm_adapter;
+    const struct ldl_sm_interface *sm_interface;
     
     /** application callback #ldl_mac_response_fn */
     ldl_mac_response_fn handler;
@@ -1034,9 +1034,18 @@ uint8_t LDL_MAC_getMaxDCycle(const struct ldl_mac *self);
  * */
 bool LDL_MAC_priority(const struct ldl_mac *self, uint8_t interval);
 
+/** Radio calls this function to notify MAC that an event has occurred.
+ *
+ * Normally this will happen via the function pointer set as an
+ * argument in LDL_Radio_setHandler().
+ *
+ * @param[in] ctx               cast to #ldl_mac
+ * @param[in] #ldl_radio_event
+ *
+ * */
+void LDL_MAC_radioEvent(void *ctx, enum ldl_radio_event event);
 
 /* for internal use only */
-void LDL_MAC_radioEvent(struct ldl_mac *self, enum ldl_radio_event event);
 bool LDL_MAC_addChannel(struct ldl_mac *self, uint8_t chIndex, uint32_t freq, uint8_t minRate, uint8_t maxRate);
 void LDL_MAC_removeChannel(struct ldl_mac *self, uint8_t chIndex);
 bool LDL_MAC_maskChannel(struct ldl_mac *self, uint8_t chIndex);

@@ -11,7 +11,7 @@ namespace LDL {
 
         public:
 
-            const struct ldl_sm_adapter *adapter;
+            const struct ldl_sm_interface *interface;
 
     };
 
@@ -30,7 +30,7 @@ namespace LDL {
             static void ecb(struct ldl_sm *self, enum ldl_sm_key desc, void *b);
             static void ctr(struct ldl_sm *self, enum ldl_sm_key desc, const void *iv, void *data, uint8_t len);
 
-            static const struct ldl_sm_adapter _adapter;
+            static const struct ldl_sm_interface _interface;
 
         public:
 

@@ -42,7 +42,7 @@ namespace LDL {
 
             void chip_select(bool state);
 
-            const struct ldl_chip_adapter chip_adapter = {
+            const struct ldl_chip_interface chip_interface = {
 
                 .reset = chip_reset,
                 .write = chip_write,
@@ -51,7 +51,7 @@ namespace LDL {
 
         public:
 
-            const struct ldl_radio_adapter adapter = {
+            const struct ldl_radio_interface interface = {
                 .entropy_begin = entropy_begin,
                 .entropy_end = entropy_end,
                 .reset = reset,

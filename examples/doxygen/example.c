@@ -19,8 +19,8 @@ extern const void *nwk_key_ptr;
 /* a pointer to be passed back to the application (anything you like) */
 void *app_pointer;
 
-/* a pointer to be passed to the radio connector (anything you like) */
-void *radio_connector_pointer;
+/* a pointer to be passed to the chip interface (anything you like) */
+void *chip_interface_pointer;
 
 /* somehow set a timer event that will ensure a wakeup so many ticks in future */
 extern void wakeup_after(uint32_t ticks);
@@ -34,39 +34,73 @@ extern void enable_interrupts(void);
 /* Called from within LDL_MAC_process() to pass events back to the application */
 void app_handler(void *app, enum ldl_mac_response_type type, const union ldl_mac_response_arg *arg);
 
+void chip_reset(void *self, bool state);
+void chip_write(void *self, uint8_t addr, const void *data, uint8_t size);
+void chip_read(void *self, uint8_t addr, void *data, uint8_t size);
+
 int main(void)
 {
     /* initialise the default security module */
     LDL_SM_init(&sm, app_key_ptr, nwk_key_ptr);
+
+    /* setup the radio */
+    {        
+        static const struct ldl_chip_interface chip_interface = {
+            .reset = chip_reset,
+            .write = chip_write,
+            .read = chip_read
+        };
+
+        struct ldl_radio_init_arg arg = {
+
+            .type = LDL_RADIO_SX1272,
+
+            .chip = chip_interface_pointer,
+            .chip_interface = &chip_interface
+        };
     
-    LDL_Radio_init(&radio, LDL_RADIO_SX1272, radio_connector_pointer);
+        LDL_Radio_init(&radio, &arg);
     
-    /* This radio has two power amplifiers. The amplifier in use
-     * depends on the hardware (i.e. which pin the PCB traces connect).
-     * 
-     * You have to tell the driver which amplifier is connected:
-     * 
-     * - The Semtech MBED SX1272 shield uses LDL_RADIO_PA_RFO
-     * - The HopeRF RFM95 SX1276 module uses LDL_RADIO_PA_BOOST
-     * 
-     * */
-    LDL_Radio_setPA(&radio, LDL_RADIO_PA_RFO);
-    
-    /* clearing the arg struct is recommended */
-    struct ldl_mac_init_arg arg = {0};
-    
-    arg.radio = &radio;
-    arg.radio = &LDL_Radio_adapter;
-    arg.app = app_pointer;
-    arg.handler = app_handler;    
-    arg.sm = &sm;
-    arg.sm_adapter = &LDL_SM_adapter;
-    arg.session = NULL; /* restore cached session state (or not, in this case) */
-    arg.devNonce = 0U;  /* restore devNonce */
-    arg.joinNonce = 0U; /* restore joinNonce */
-    arg.gain = 0;      /* +/- dBm gain correction  */
+        /* This radio has two power amplifiers. The amplifier in use
+         * depends on the hardware (i.e. which pin the PCB traces connect).
+         * 
+         * You have to tell the driver which amplifier is connected:
+         * 
+         * - The Semtech MBED SX1272 shield uses LDL_RADIO_PA_RFO
+         * - The HopeRF RFM95 SX1276 module uses LDL_RADIO_PA_BOOST
+         * 
+         * */
+        LDL_Radio_setPA(&radio, LDL_RADIO_PA_RFO);
+    }
+
+    {
+        /* clearing the arg struct is recommended */
+        struct ldl_mac_init_arg arg = {0};
+
+        /* note that if ldl_mac_init_arg.radio_interface is NULL, the MAC
+         * will use the default interface (LDL_Radio_interface).
+         *
+         * */
+        arg.radio = &radio;
+
+        /* note that if ldl_mac_init_arg.sm_interface is NULL, the MAC
+         * will use the default interface (LDL_SM_interface).
+         *
+         * */         
+        arg.sm = &sm;
         
-    LDL_MAC_init(&mac, LDL_EU_863_870, &arg);
+        arg.app = app_pointer;
+        arg.handler = app_handler;        
+        arg.session = NULL; /* restore cached session state (or not, in this case) */
+        arg.devNonce = 0U;  /* restore devNonce */
+        arg.joinNonce = 0U; /* restore joinNonce */
+        arg.gain = 0;      /* +/- dBm gain correction  */
+            
+        LDL_MAC_init(&mac, LDL_EU_863_870, &arg);
+
+        /* remember to connect the radio events back to the MAC */
+        LDL_Radio_setHandler(&radio, &mac, LDL_MAC_radioEvent);
+    }
 
     /* Ensure a maximum aggregated duty cycle of ~1%
      * 
@@ -207,12 +241,12 @@ void handle_radio_interrupt_dio3(void)
 
 
 /* these must connect to SPI and GPIO */
-void LDL_Chip_reset(void *self, bool state)
+void chip_reset(void *self, bool state)
 {
 }
-void LDL_Chip_write(void *self, uint8_t addr, const void *data, uint8_t size)
+void chip_write(void *self, uint8_t addr, const void *data, uint8_t size)
 {
 }
-void LDL_Chip_read(void *self, uint8_t addr, void *data, uint8_t size)
+void chip_read(void *self, uint8_t addr, void *data, uint8_t size)
 {
 }

@@ -139,7 +139,7 @@ enum ldl_radio_sx1272_register {
     RegBitRateFrac=0x70
 };
 
-const struct ldl_radio_adapter LDL_Radio_adapter = {
+const struct ldl_radio_interface LDL_Radio_interface = {
 
     .entropy_begin = LDL_Radio_entropyBegin,
     .entropy_end = LDL_Radio_entropyEnd,
@@ -185,7 +185,7 @@ void LDL_Radio_init(struct ldl_radio *self, const struct ldl_radio_init_arg *arg
     (void)memset(self, 0, sizeof(*self));
 
     self->chip = arg->chip;
-    self->chip_adapter = arg->chip_adapter;
+    self->chip_interface = arg->chip_interface;
     self->type = arg->type;
 }
 
@@ -201,7 +201,7 @@ void LDL_Radio_setHandler(struct ldl_radio *self, void *ctx, ldl_radio_event_fn 
     LDL_PEDANTIC(self != NULL)
     
     self->handler = handler;
-    self->mac = ctx;
+    self->ctx = ctx;
 }
 
 void LDL_Radio_interrupt(struct ldl_radio *self, uint8_t n)
@@ -210,7 +210,7 @@ void LDL_Radio_interrupt(struct ldl_radio *self, uint8_t n)
     
     if(self->handler != NULL){
         
-        self->handler(self->mac, interruptToEvent(self, n));
+        self->handler(self->ctx, interruptToEvent(self, n));
     }
 }
 
@@ -218,7 +218,7 @@ void LDL_Radio_reset(struct ldl_radio *self, bool state)
 {
     LDL_PEDANTIC(self != NULL)
 
-    self->chip_adapter->reset(self->chip, state);
+    self->chip_interface->reset(self->chip, state);
 }
 
 void LDL_Radio_transmit(struct ldl_radio *self, const struct ldl_radio_tx_setting *settings, const void *data, uint8_t len)
@@ -784,23 +784,23 @@ static void writeFIFO(struct ldl_radio *self, const uint8_t *data, uint8_t len)
 static uint8_t readReg(struct ldl_radio *self, uint8_t reg)
 {
     uint8_t data;
-    self->chip_adapter->read(self->chip, reg, &data, sizeof(data));
+    self->chip_interface->read(self->chip, reg, &data, sizeof(data));
     return data;
 }
 
 static void writeReg(struct ldl_radio *self, uint8_t reg, uint8_t data)
 {
-    self->chip_adapter->write(self->chip, reg, &data, sizeof(data));
+    self->chip_interface->write(self->chip, reg, &data, sizeof(data));
 }
 
 static void burstWrite(struct ldl_radio *self, uint8_t reg, const uint8_t *data, uint8_t len)
 {
-    self->chip_adapter->write(self->chip, reg, data, len);
+    self->chip_interface->write(self->chip, reg, data, len);
 }
 
 static void burstRead(struct ldl_radio *self, uint8_t reg, uint8_t *data, uint8_t len)
 {
-    self->chip_adapter->read(self->chip, reg, data, len); 
+    self->chip_interface->read(self->chip, reg, data, len); 
 }
 
 #endif

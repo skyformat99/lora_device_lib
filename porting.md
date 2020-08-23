@@ -40,11 +40,15 @@ Porting Guide
     - LDL_ENABLE_SX1272
     - LDL_ENABLE_SX1276
 
-6. Implement the radio connector
+6. Implement the chip interface
 
-    - See [radio connector](https://cjhdev.github.io/lora_device_lib_api/group__ldl__radio__connector.html)
+    - See [chip interface](https://cjhdev.github.io/lora_device_lib_api/group__ldl__chip__interfaces.html)
 
-7. Integrate with your application
+7. Understand initialisation requirements
+
+    - See [below](#initialisation)
+
+8. Integrate with your application
 
     - See [main()](examples/doxygen/example.c)
 
@@ -53,6 +57,10 @@ Porting Guide
 - define preprocessor symbols as needed ([see build options](https://cjhdev.github.io/lora_device_lib_api/group__ldl__build__options.html))
 - add `include` folder to include search path
 - build all sources in `src`
+
+## Initialisation
+
+
 
 ## Advanced Topics
 

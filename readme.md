@@ -35,6 +35,8 @@ void main(void)
     arg.sm = &sm;
     
     LDL_MAC_init(&mac, LDL_EU_863_870, &arg);
+
+    LDL_Radio_setHandler(&radio, &mac, LDL_MAC_radioEvent);
     
     LDL_MAC_setMaxDCycle(&mac, 12U);
     
@@ -59,9 +61,12 @@ void main(void)
 }
 ~~~
 
-Behind the scenes you will need to implement the [radio connector](https://cjhdev.github.io/lora_device_lib_api/group__ldl__radio__connector.html), 
+Behind the scenes you will need to implement the [chip interface](https://cjhdev.github.io/lora_device_lib_api/group__ldl__chip__interface.html), 
 find somewhere to keep your root keys, and implement `your_app_handler()`. 
 More information can be found in the [porting guide](porting.md).
+
+To quickly evaluate LDL I recommend trying the [MBED wrapper](wrappers/mbed). This project repository
+can be imported directly into an MBED project.
 
 It is important to keep in mind that LDL is still experimental. This means that things may not work properly and that
 interfaces may change. Use one of the [tagged](https://github.com/cjhdev/lora_device_lib/releases) commits for best results.
@@ -104,6 +109,7 @@ interfaces may change. Use one of the [tagged](https://github.com/cjhdev/lora_de
 - [Build options](https://cjhdev.github.io/lora_device_lib_api/group__ldl__build__options.html)
 - [Interface documentation](https://cjhdev.github.io/lora_device_lib_api/)
 - Examples
+    - [mbed example](examples/mbed)
     - [Arduino wrapper](wrappers/arduino/output/arduino_ldl)
     - [documentation example](examples/doxygen/example.c)
     

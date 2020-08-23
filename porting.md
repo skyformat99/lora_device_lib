@@ -44,9 +44,16 @@ Porting Guide
 
     - See [chip interface](https://cjhdev.github.io/lora_device_lib_api/group__ldl__chip__interfaces.html)
 
-7. Understand initialisation requirements
+7. Initialise in correct order
 
-    - See [below](#initialisation)
+    MAC depends on Radio to be initialised first, and Radio should be
+    set to callback to MAC only after MAC has been initialised.
+
+    In other words:
+
+    1. LDL_Radio_init() and LDL_SM_init()
+    2. LDL_MAC_init()
+    3. LDL_Radio_setHandler()
 
 8. Integrate with your application
 
@@ -57,10 +64,6 @@ Porting Guide
 - define preprocessor symbols as needed ([see build options](https://cjhdev.github.io/lora_device_lib_api/group__ldl__build__options.html))
 - add `include` folder to include search path
 - build all sources in `src`
-
-## Initialisation
-
-
 
 ## Advanced Topics
 

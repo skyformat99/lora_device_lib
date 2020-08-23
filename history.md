@@ -3,18 +3,24 @@ Release History
 
 # 0.4.0
 
-In this release I've put some effort into making it easier to evaluate
-a working version of this project on MBED. Starting from scratch is a lot
-of work and a lot of things can go wrong.
+In this release effort has gone into making it easier to evaluate
+a working version of this project on MBED. This is useful for quick
+evaluations as well as regression testing. 
+
+Arduino was meant to be the evaluation platform but frankly it's a nuisance
+to use. To save time, the Arduino wrapper has not been updated
+to work with the changes made in this release.
 
 I've made a number of breaking changes to make the project easier to
 wrap in C++. A consequence of this is that you will likely need to change
 the way you init the library if you are updating from an ealier version.
-Recommend looking at the Initialisation section in the porting guide.
+Recommend brushing up on the initialisation notes in the porting guide.
 
 - decoupled MAC from SM by way of struct ldl_sm_interface
 - decoupled MAC from Radio by way of struct ldl_radio_interface
 - decoupled Radio from Chip Interface by way of struct ldl_chip_interface
+- added default behaviour to LDL_MAC_init() so that the default
+  interfaces are used if the interface struct pointers are left NULL
 - MAC no longer sets the radio interrupt callback in MAC_init(), the
   application must now do this during initialisation
 - removed duplicate code from the Arduino wrapper
@@ -24,9 +30,6 @@ The decoupling structs make it possible to wrap SM and Radio up as classes
 without any weird linkages caused by the underlying C code. Being
 able to decouple the SM is especially useful for implementing different
 types of SMs for different application requirements.
-
-I've not updated the Arduino wrapper to suit the breaking changes since
-I'm not sure anyone uses this. 
 
 # 0.3.1
 

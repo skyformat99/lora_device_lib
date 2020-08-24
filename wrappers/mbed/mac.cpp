@@ -11,8 +11,10 @@ Timer MAC::timer;
 MAC::MAC(Store &store, SM &sm, Radio &radio) : 
     radio(radio),
     sm(sm),
-    store(store)
-{
+    store(store),
+    event_thread(1024U),
+    events()
+{    
     next_event_handler = 0;
 }
 

@@ -4,3 +4,4 @@ secrets/*
 test/*
 vendor/*
 wrappers/arduino/*
+examples/*

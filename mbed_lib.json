@@ -6,8 +6,6 @@
         "LDL_ENABLE_EU_863_870",
         "LDL_ENABLE_US_902_928",
         "LDL_ENABLE_AU_915_928",
-        "LDL_ENABLE_US_902_928_TTN",
-        "LDL_ENABLE_AU_915_928_TTN",
         "LDL_ENABLE_STATIC_RX_BUFFER",
         "LDL_LITTLE_ENDIAN"
     ],
@@ -15,12 +13,16 @@
         "buffer_size" : {
             "help" : "frame buffer size (max is 255)",
             "macro_name" : "LDL_MAX_PACKET",
-            "value" : 255
+            "value" : 255,
+            "value_max" : 255,
+            "value_min" : 64
         },
-        "redundancy_max" : {
+        "max_redundancy" : {
             "help" : "maximum number of redundant packets allowed",
             "macro_name" : "LDL_REDUNDANCY_MAX",
-            "value" : 3
-        }
-    }
+            "value" : 3,
+            "value_max" : 15,
+            "value_min" : 0
+        }        
+    }    
 }

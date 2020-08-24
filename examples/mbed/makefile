@@ -7,8 +7,8 @@ DIR_ROOT := $(shell cd ../..;pwd)
 DOCKER := docker run --mount type=bind,source=$(DIR_ROOT),destination=/mbed/lora_device_lib --device=/dev/ttyACM0:/dev/ttyACM0 -ti --rm --user 1000:1000 -v $(shell pwd):/mbed:cached my-mbed-cli
 
 # special MBED name for target
-#DEVICE ?= NUCLEO_F429ZI
-DEVICE ?= DISCO_L072CZ_LRWAN1
+DEVICE ?= NUCLEO_F429ZI
+#DEVICE ?= DISCO_L072CZ_LRWAN1
 
 # special JLINK name for the target
 JLINK_DEVICE ?= STM32F429ZI
@@ -47,7 +47,7 @@ $(DIR_BUILD)/mbed.hex: $(DIR_BUILD)/mbed.elf
 flash: upload_flash.jlink $(DIR_BUILD)/mbed.hex
 	$(JLINK) -device $(JLINK_DEVICE) -if swd  -speed $(JLINK_SPEED) -CommanderScript $<
 
-gdb: $(DIR_BUILD)/mbed.elf .gdbinit	
+gdb: $(DIR_BUILD)/mbed.elf .gdbinit flash
 	$(GDB) --command=.gdbinit -tui -q $<
 	
 gdb_server:
